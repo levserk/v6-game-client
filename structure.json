@@ -1,0 +1,25 @@
+{
+  "components": "socket",
+  "lib": ["eventsEmitter"],
+  "modules": [
+    "client",
+    "user_list",
+    "game_manager",
+    "invite_manager",
+    "chat_manager",
+    "history",
+    "rating"
+  ],
+  "view": [
+    "user_list",
+    "chat",
+    "invites",
+    "game",
+    "history",
+    "rating"
+  ],
+  "test": [
+    "unit_tests",
+    "imitation"
+  ]
+}

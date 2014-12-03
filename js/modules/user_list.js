@@ -17,7 +17,6 @@ UserList.prototype  = new EventEmitter();
 UserList.prototype.onMessage = function(message){
     switch (message.type){
         case 'user_login': this.onUserLogin(message.data); break;
-
     }
 };
 
@@ -32,7 +31,7 @@ UserList.prototype.onUserLogin = function(data, fIsPlayer){
         }
     }
     this.users.push(user);
-    this.emit('user_add', user);
+    this.emit('new_user', user);
 };
 
 
@@ -41,7 +40,7 @@ UserList.prototype.onUserLeave = function(userId){
         if (this.users[i].userId == userId){
             var user = this.users[i];
             this.users.splice(i, 1);
-            this.emit('user_leave', user);
+            this.emit('add_user', user);
             return;
         }
     }

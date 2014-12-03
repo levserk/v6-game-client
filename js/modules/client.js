@@ -8,23 +8,23 @@ function Client(opts){
 
     this.socket = new Socket();
     this.socket.on("connection", function () {
-        console.log("connection");
+        console.log('client;', 'socket connected');
     });
 
     this.socket.on("disconnection", function() {
-        console.log("disconnection");
+        console.log('client;', 'socket disconnected');
     });
 
     this.socket.on("failed", function() {
-        console.log("failed");
+        console.log('client;', 'socket connection failed');
     });
 
     this.socket.on("message", function(message) {
-        console.log('client;', "message", message);
+        console.log('client;', "socket message", message);
         self.onMessage(message);
     });
 
-    this.getUser = this.userList.getUser;
+    this.getUser = this.userList.getUser.bind(this.userList);
 }
 
 Client.prototype  = new EventEmitter();

@@ -18,6 +18,7 @@ InviteManager.prototype  = new EventEmitter();
 
 
 InviteManager.prototype.onMessage = function(message){
+    console.log('invite_manager;', 'message', message);
     switch (message.type) {
         case 'invite': this.onInvite(message.data); break;
         case 'reject': this.onReject(message.data.target, message.data.from, 'rejected'); break;

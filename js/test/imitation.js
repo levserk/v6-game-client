@@ -42,9 +42,25 @@ function start() {
         return new Promise(function (res) {
             clients[1].inviteManager.on('new_invite', function(invite){
                 console.log('imitation;','invite!', invite);
-                res(true);
+                res(invite);
             });
         });
+    }).then(function (invite) {
+        //send accept and wait game;
+        clients[1].inviteManager.accept(invite.from);
+        return new Promise(function(res){
+            clients[0].gameManager.on('game_start',function(room){
+                console.log('imitation;', 'game_start', room);
+                clients[0].socket.ws.close();
+            });
+            clients[1].gameManager.on('user_leave', function(user){
+                console.log('imitation;', 'user_leave', user);
+            });
+            clients[1].gameManager.on('game_end',function(room){
+                console.log('imitation;', 'game_end', room);
+                res(true);
+            });
+        })
     }).then(function(){
         console.log('imitation;','done!');
     });

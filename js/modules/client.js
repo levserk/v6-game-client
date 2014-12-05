@@ -38,7 +38,7 @@ Client.prototype.onMessage = function(message){
     switch (message.module){
         case 'server': this.onServerMessage(message); break;
         case 'invite_manager': this.inviteManager.onMessage(message); break;
-        case 'game_manager': this.gameManager.onMessage(); break;
+        case 'game_manager': this.gameManager.onMessage(message); break;
     }
 };
 

@@ -9,22 +9,41 @@ var dialogs = (function() {
         client.inviteManager.on('remove_invite', _removeInvite);
     }
 
-    function _newInvite(obj) {
+    function _newInvite(invite) {
         var div = $('<div>');
         div.addClass(INVITE_CLASS);
-        div.attr('data-fromId', obj.from.userId);
+        div.attr('data-userId', invite.from.userId);
 
-        div.html('Вас пригласил в игру пользователь ' + obj.from.userName).dialog({
+        div.html('Вас пригласил в игру пользователь ' + invite.from.userName).dialog({
             resizable: false,
-            modal: true,
+            modal: false,
             buttons: {
                 "Принять": function() {
                     //client.inviteManager.accept(this.attr('data-fromId'));
-                    $( this ).dialog( "close" );
+                    client.inviteManager.rejectAll();
                     this.remove();
                 },
-                "Отклонить": function() {
-                    client.inviteManager.reject(this.getAttribute('data-fromId'));
+                "Отклонить": function(){
+                    client.inviteManager.reject(this.getAttribute('data-userId'));
+                    this.remove();
+                }
+            },
+            close: function() {
+                client.inviteManager.reject(this.getAttribute('data-userId'));
+                this.remove();
+            }
+        });
+    }
+
+    function _rejectInvite(invite) {
+        var div = $('<div>');
+        div.addClass(INVITE_CLASS);
+
+        div.html('Пользователь ' + invite.user.userName + ' отклонил ваше приглашение').dialog({
+            resizable: false,
+            modal: true,
+            buttons: {
+                "Ок": function() {
                     $( this ).dialog( "close" );
                     this.remove();
                 }
@@ -32,16 +51,14 @@ var dialogs = (function() {
         });
     }
 
-    function _rejectInvite(opt) {
-
-    }
-
     function _cancelInvite(opt) {
-
+        console.log('cancel invite', opt);
     }
 
-    function _removeInvite(opt) {
-
+    function _removeInvite(invite) {
+        var userId = invite.from;
+        console.log('remove invite', userId);
+        $('.' + INVITE_CLASS + '[data-userId="' + userId + '"]').remove();
     }
 
     return {

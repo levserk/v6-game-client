@@ -5,7 +5,7 @@ function InviteManager(client){
     this.invites = {}; // userId : invite
     this.invite = null;
 
-    client.userList.on('user_leave', function (user) {
+    client.userList.on('leave_user', function (user) {
         if (self.invite && self.invite.target == user.userId) {
             self.invite = null;
         }
@@ -49,7 +49,7 @@ InviteManager.prototype.onReject = function(userId, senderId, reason){
 InviteManager.prototype.onCancel = function(invite){
     if (this.invites[invite.from]){
         this.emit('cancel_invite', this.invites[invite.from]);
-        delete this.invites[invite.from];
+        this.removeInvite(invite.from);
     }
 };
 
@@ -107,6 +107,7 @@ InviteManager.prototype.cancel = function(){
 
 
 InviteManager.prototype.removeInvite = function(userId){
+    console.log('invite_manger;', 'removeInvite', userId);
     if (this.invites[userId]){
         this.emit('remove_invite', this.invites[userId]);
         delete this.invites[userId];

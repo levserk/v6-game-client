@@ -27,6 +27,10 @@ var UserListView = Backbone.View.extend({
         this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
         this.listenTo(client.userList, 'new_user', this.render.bind(this));
         this.listenTo(client.userList, 'leave_user', this.render.bind(this));
+        this.listenTo(client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
+    },
+    onRejectInvite: function(invite) {
+        this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
     },
     render: function() {
         this.$el.html(this.tpl({

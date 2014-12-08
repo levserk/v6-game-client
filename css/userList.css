@@ -1,4 +1,5 @@
 #userList .inviteBtn {
+    cursor: pointer;
     background-color: #fff;
 }
 

@@ -7,6 +7,7 @@ var UserListView = Backbone.View.extend({
         var target = $(e.currentTarget),
             userId = target.attr('data-userId');
 
+
         if (target.hasClass(this.ACTIVE_INVITE_CLASS)) {
             // cancel invite
             client.inviteManager.cancel();
@@ -14,12 +15,11 @@ var UserListView = Backbone.View.extend({
             target.html('Пригласить');
         } else {
             // send invite
+            this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
             client.inviteManager.sendInvite(userId, {});
             target.addClass(this.ACTIVE_INVITE_CLASS);
             target.html('Отмена');
         }
-
-
 
         console.log('invite user', userId);
     },

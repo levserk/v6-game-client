@@ -30,7 +30,7 @@ var UserListView = Backbone.View.extend({
     },
     render: function() {
         this.$el.html(this.tpl({
-            users: client.userList.users
+            users: client.userList.getUsers()
         }));
         return this;
     }

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="css/userList.css"/>
     <script id="userListTpl" type="template">
         <table>
             <% _.each(users, function(user) { %>
@@ -8,6 +9,8 @@
             <td><%= user.userName %></td>
                 <% if (user.isPlayer) { %>
                     <td></td>
+                <% } else if (user.isInvited) { %>
+                    <td class="inviteBtn activeInvite" data-userId="<%= user.userId %>">Отмена</td>
                 <% } else { %>
                     <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>
                 <% } %>

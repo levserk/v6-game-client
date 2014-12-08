@@ -20,6 +20,22 @@ UserList.prototype.onMessage = function(message){
     }
 };
 
+UserList.prototype.getUsers = function() {
+    var invite = client.inviteManager.invite;
+    console.log('invite:', invite);
+    if (invite) {
+        return _.map(this.users, function(usr) {
+            if (usr.userId === invite.target) {
+                usr.isInvited = true;
+            }
+            return usr;
+        });
+    } else {
+        return this.users;
+    }
+
+};
+
 
 UserList.prototype.onUserLogin = function(data, fIsPlayer){
     var user = new User(data, fIsPlayer);

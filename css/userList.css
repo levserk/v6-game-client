@@ -1,7 +1,7 @@
 #userList .inviteBtn {
-
+    background-color: #fff;
 }
 
-#userList .inviteBtn .activeInvite {
-    content: 'Отмена';
+#userList .inviteBtn.activeInviteBtn {
+    background-color: blanchedalmond;
 }

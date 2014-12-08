@@ -4,10 +4,27 @@ var UserListView = Backbone.View.extend({
         'click .inviteBtn': 'invitePlayer'
     },
     invitePlayer: function(e) {
-        var userId = $(e.currentTarget).attr('data-userId');
+        var target = $(e.currentTarget),
+            userId = target.attr('data-userId');
+
+        if (target.hasClass(this.ACTIVE_INVITE_CLASS)) {
+            // cancel invite
+            client.inviteManager.cancel();
+            target.removeClass(this.ACTIVE_INVITE_CLASS);
+            target.html('Пригласить');
+        } else {
+            // send invite
+            client.inviteManager.sendInvite(userId, {});
+            target.addClass(this.ACTIVE_INVITE_CLASS);
+            target.html('Отмена');
+        }
+
+
+
         console.log('invite user', userId);
     },
     initialize: function() {
+        this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
         this.listenTo(client.userList, 'new_user', this.render.bind(this));
         this.listenTo(client.userList, 'leave_user', this.render.bind(this));
     },

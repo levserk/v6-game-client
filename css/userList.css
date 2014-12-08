@@ -1,0 +1,7 @@
+#userList .inviteBtn {
+
+}
+
+#userList .inviteBtn .activeInvite {
+    content: 'Отмена';
+}

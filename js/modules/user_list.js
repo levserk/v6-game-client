@@ -39,8 +39,8 @@ UserList.prototype.onUserLeave = function(userId){
     for (var i = 0; i < this.users.length; i++) {
         if (this.users[i].userId == userId){
             var user = this.users[i];
-            this.emit('leave_user', user);
             this.users.splice(i, 1);
+            this.emit('leave_user', user);
             return;
         }
     }

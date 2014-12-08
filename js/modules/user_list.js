@@ -22,7 +22,6 @@ UserList.prototype.onMessage = function(message){
 
 UserList.prototype.getUsers = function() {
     var invite = client.inviteManager.invite;
-    console.log('invite:', invite);
     if (invite) {
         return _.map(this.users, function(usr) {
             if (usr.userId === invite.target) {
@@ -33,7 +32,6 @@ UserList.prototype.getUsers = function() {
     } else {
         return this.users;
     }
-
 };
 
 

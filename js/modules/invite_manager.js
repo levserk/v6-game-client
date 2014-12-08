@@ -30,7 +30,9 @@ InviteManager.prototype.onMessage = function(message){
 InviteManager.prototype.onInvite = function(invite){
     //TODO: CHECK INVITE AVAILABLE
     this.invites[invite.from] = invite;
-    this.emit('new_invite', invite);
+    this.emit('new_invite', {
+        from: this.client.getUser(invite.from)
+    });
 };
 
 

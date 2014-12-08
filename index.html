@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
     <link rel="stylesheet" href="css/userList.css"/>
+    <link rel="stylesheet" href="css/dialogInvite.css"/>
     <script id="userListTpl" type="template">
         <table>
             <% _.each(users, function(user) { %>
@@ -25,12 +27,14 @@
     <title>StepByStep</title>
 
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+
     <script src="js/lib/EventEmitter.min.js"></script>
     <script src="js/lib/underscore-min.js"></script>
     <script src="js/lib/backbone-min.js"></script>
 
     <script src="js/main.js"></script>
-
+    <script src="js/views/dialogs.js"></script>
     <script src="js/views/user_list.js"></script>
 
     <script src="js/components/socket.js"></script>

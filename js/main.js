@@ -8,6 +8,7 @@ document.ready = function(){
     document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
     client = new Client({domain:'localhost'});
     client.init();
+    dialogs.init();
     _initViews();
 };
 
@@ -22,3 +23,7 @@ function getCookie(name) {
 function _initViews() {
     views.userList = new UserListView({el: $('#userList')});
 }
+
+var dialogManager = function() {
+
+};

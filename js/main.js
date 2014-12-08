@@ -1,4 +1,5 @@
-var client;
+var client,
+    views = {};
 
 
 
@@ -7,7 +8,7 @@ document.ready = function(){
     document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
     client = new Client({domain:'localhost'});
     client.init();
-
+    _initViews();
 };
 
 
@@ -16,4 +17,8 @@ function getCookie(name) {
         "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
     ));
     return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+
+function _initViews() {
+    views.userList = new UserListView({el: $('#userList')});
 }

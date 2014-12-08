@@ -1,14 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script id="userListTpl" type="template">
+        <table>
+            <% _.each(users, function(user) { %>
+            <tr>
+            <td><%= user.userName %></td>
+                <% if (user.isPlayer) { %>
+                    <td></td>
+                <% } else { %>
+                    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>
+                <% } %>
+
+            </tr>
+
+            <% }) %>
+        </table>
+    </script>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <title>StepByStep</title>
 
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="js/lib/EventEmitter.min.js"></script>
+    <script src="js/lib/underscore-min.js"></script>
+    <script src="js/lib/backbone-min.js"></script>
 
     <script src="js/main.js"></script>
-    <script src="js/lib/EventEmitter.min.js"></script>
+
+    <script src="js/views/user_list.js"></script>
+
     <script src="js/components/socket.js"></script>
     <script src="js/modules/client.js"></script>
     <script src="js/modules/user_list.js"></script>
@@ -17,6 +38,6 @@
 
 </head>
 <body>
-
+<div id="userList"></div>
 </body>
 </html>

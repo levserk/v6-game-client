@@ -45,9 +45,12 @@ var UserListView = Backbone.View.extend({
         this.$listWrapper = this.$el.find('.tableWrap');
         this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
         this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
+
         this.listenTo(client.userList, 'new_user', this.render.bind(this));
         this.listenTo(client.userList, 'leave_user', this.render.bind(this));
         this.listenTo(client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
+        this.listenTo(client.userList, 'new_game', this.render);
+        this.listenTo(client.userList, 'end_game', this.render);
 
         this.currentActiveTabName = 'free';
         this._setActiveTab(this.currentActiveTabName);
@@ -58,7 +61,8 @@ var UserListView = Backbone.View.extend({
     },
     _setCounters: function() {
         // TODO
-        this.$counterFree.html('(' + client.userList.getUsers().length + ')');
+        this.$counterFree.html('(' + client.userList.getUserList().length + ')');
+        this.$counterinGame.html('(' + client.userList.getRoomList().length * 2 + ')');
     },
     _showPlayerListByTabName: function(tabName) {
         // default
@@ -68,7 +72,7 @@ var UserListView = Backbone.View.extend({
 
         if (tabName === 'free') {
             this.$listWrapper.html(this.tpl({
-                users: client.userList.getUsers()
+                users: client.userList.getUserList()
             }));
         }
         else if (tabName === 'inGame') {

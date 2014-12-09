@@ -105,7 +105,7 @@ UserList.prototype.getUserList = function() {
         user = this.users[i];
         if (invite && user.userId == invite.target) {
             user.isInvited = true;
-        }
+        } else delete user.isInvited;
         if (!user.isInRoom) userList.push(user);
     }
     return userList;

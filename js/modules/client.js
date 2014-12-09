@@ -3,8 +3,8 @@ function Client(opts){
     var self = this;
 
     this.userList = new UserList(this);
-    this.inviteManager = new InviteManager(this);
     this.gameManager = new GameManager(this);
+    this.inviteManager = new InviteManager(this);
 
     this.socket = new Socket();
     this.socket.on("connection", function () {
@@ -45,7 +45,7 @@ Client.prototype.onMessage = function(message){
 
 Client.prototype.onServerMessage = function(message){
     switch (message.type){
-        case 'login': this.onLogin(message.data.you, message.data.userlist); break;
+        case 'login': this.onLogin(message.data.you, message.data.userlist, message.data.rooms); break;
         case 'user_login': this.userList.onUserLogin(message.data); break;
         case 'user_leave': this.userList.onUserLeave(message.data); break;
         case 'new_game': this.userList.onGameStart(message.data.room, message.data.players); break;
@@ -53,10 +53,12 @@ Client.prototype.onServerMessage = function(message){
     }
 };
 
-Client.prototype.onLogin = function(user, userlist){
-    console.log('client;', 'login', user, userlist);
+Client.prototype.onLogin = function(user, userlist, rooms){
+    console.log('client;', 'login', user, userlist, rooms);
     this.emit('login', user);
-    for (var i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
+    var i;
+    for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
+    for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
 };
 
 

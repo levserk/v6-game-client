@@ -11,7 +11,10 @@ function InviteManager(client){
         }
         self.removeInvite(user.userId);
     });
-
+    client.gameManager.on('game_start', function(){
+        self.invite = null;
+        self.rejectAll();
+    });
 }
 
 InviteManager.prototype  = new EventEmitter();

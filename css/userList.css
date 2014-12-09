@@ -19,6 +19,11 @@
     font-weight: 700;
 }
 
+#userList .tabs div span {
+    font-weight: 400;
+    font-size: 80%;
+}
+
 #userList .tabs .activeTab {
     background-color: rgba(100,142,163,.18);
 }

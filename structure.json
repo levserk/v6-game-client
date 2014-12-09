@@ -10,10 +10,10 @@
     "history",
     "rating"
   ],
-  "view": [
+  "views": [
     "user_list",
     "chat",
-    "invites",
+    "dialogs",
     "game",
     "history",
     "rating"

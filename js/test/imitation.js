@@ -47,10 +47,12 @@ function start() {
         });
     }).then(function (invite) {
         //send accept and wait game;
-        clients[1].inviteManager.accept(invite.from);
+        clients[1].inviteManager.accept(invite.from.userId);
         return new Promise(function(res){
             clients[0].gameManager.on('game_start',function(room){
                 console.log('imitation;', 'game_start', room);
+                console.log('imitation;', 'playerList', clients[0].userList.getUserList());
+                console.log('imitation;', 'roomList', clients[0].userList.getRoomList());
                 clients[0].socket.ws.close();
             });
             clients[1].gameManager.on('user_leave', function(user){
@@ -58,6 +60,8 @@ function start() {
             });
             clients[1].gameManager.on('game_end',function(room){
                 console.log('imitation;', 'game_end', room);
+                console.log('imitation;', 'playerList', clients[0].userList.getUserList());
+                console.log('imitation;', 'roomList', clients[0].userList.getRoomList());
                 res(true);
             });
         })

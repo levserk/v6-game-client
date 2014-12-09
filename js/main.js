@@ -10,6 +10,7 @@ document.ready = function(){
     client.init();
     dialogs.init();
     _initViews();
+    views.userList.render();
 };
 
 

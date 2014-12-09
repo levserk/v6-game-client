@@ -4,17 +4,20 @@
     <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
     <link rel="stylesheet" href="css/userList.css"/>
     <link rel="stylesheet" href="css/dialogInvite.css"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>StepByStep</title>
     <script id="userListTpl" type="template">
-        <table>
+        <table class="playerList">
             <% _.each(users, function(user) { %>
             <tr>
-            <td><%= user.userName %></td>
+                <td class="userName"><%= user.userName %></td>
                 <% if (user.isPlayer) { %>
-                    <td></td>
+                <td></td>
                 <% } else if (user.isInvited) { %>
-                    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>
+                <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>
                 <% } else { %>
-                    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>
+                <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>
                 <% } %>
 
             </tr>
@@ -22,10 +25,6 @@
             <% }) %>
         </table>
     </script>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
-    <title>StepByStep</title>
-
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 
@@ -45,6 +44,21 @@
 
 </head>
 <body>
-<div id="userList"></div>
+
+<div id="userList">
+    <div class="tabs">
+        <div data-type="free" class="activeTab">Свободны <span></span></div>
+        <div data-type="inGame">Играют <span></span></div>
+    </div>
+    <div id="userListSearch">
+        <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>
+    </div>
+    <div class="tableWrap free"></div>
+    <div class="tableWrap inGame"></div>
+
+    <div class="btn">
+        <span>Играть с любым</span>
+    </div>
+</div>
 </body>
 </html>

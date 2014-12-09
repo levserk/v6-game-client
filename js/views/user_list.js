@@ -33,7 +33,7 @@ var UserListView = Backbone.View.extend({
         this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
     },
     render: function() {
-        this.$el.html(this.tpl({
+        this.$el.find('.tableWrap').html(this.tpl({
             users: client.userList.getUsers()
         }));
         return this;

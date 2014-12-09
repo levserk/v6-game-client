@@ -20,20 +20,6 @@ UserList.prototype.onMessage = function(message){
     }
 };
 
-UserList.prototype.getUsers = function() {
-    var invite = client.inviteManager.invite;
-    if (invite) {
-        return _.map(this.users, function(usr) {
-            if (usr.userId === invite.target) {
-                usr.isInvited = true;
-            }
-            return usr;
-        });
-    } else {
-        return this.users;
-    }
-};
-
 
 UserList.prototype.onUserLogin = function(data, fIsPlayer){
     var user = new User(data, fIsPlayer);
@@ -63,8 +49,12 @@ UserList.prototype.onUserLeave = function(userId){
 
 
 UserList.prototype.onGameStart = function(roomId, players){
+    for (var i = 0; i < players.length; i++){
+        players[i] = this.getUser(players[i]);
+        players[i].isInRoom = true;
+    }
     var room = {
-        id:roomId, players: players
+        room:roomId, players: players
     };
     this.rooms.push(room);
     this.emit('new_room',room);
@@ -73,14 +63,17 @@ UserList.prototype.onGameStart = function(roomId, players){
 
 UserList.prototype.onGameEnd = function(roomId, players){
     for (var i = 0; i < this.rooms.length; i++) {
-        if (this.rooms[i].id == roomId){
+        if (this.rooms[i].room == roomId){
             var room = this.rooms[i];
             this.rooms.splice(i, 1);
+            for (var j = 0; j < room.players.length; j++){
+               room.players[j].isInRoom = false;
+            }
             this.emit('close_room', room);
             return;
         }
     }
-    console.warn('user_list;', 'no user in list', userId);
+    console.warn('user_list;', 'no room in list', roomId, players);
 };
 
 
@@ -88,6 +81,39 @@ UserList.prototype.getUser = function(id){
   for (var i = 0; i < this.users.length; i++)
       if (this.users[i].userId == id) return this.users[i];
   return null;
+};
+
+
+UserList.prototype.getUsers = function() {
+    var invite = this.client.inviteManager.invite;
+    if (invite) {
+        return _.map(this.users, function(usr) {
+            if (usr.userId === invite.target) {
+                usr.isInvited = true;
+            }
+            return usr;
+        });
+    } else {
+        return this.users;
+    }
+};
+
+
+UserList.prototype.getUserList = function() {
+    var userList = [], invite = this.client.inviteManager.invite, user;
+    for (var i = 0; i < this.users.length; i++){
+        user = this.users[i];
+        if (invite && user.userId == invite.target) {
+            user.isInvited = true;
+        }
+        if (!user.isInRoom) userList.push(user);
+    }
+    return userList;
+};
+
+
+UserList.prototype.getRoomList = function() {
+    return this.rooms;
 };
 
 

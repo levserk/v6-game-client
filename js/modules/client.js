@@ -48,8 +48,8 @@ Client.prototype.onServerMessage = function(message){
         case 'login': this.onLogin(message.data.you, message.data.userlist); break;
         case 'user_login': this.userList.onUserLogin(message.data); break;
         case 'user_leave': this.userList.onUserLeave(message.data); break;
-        case 'game_start': this.userList.onGameStart(message.data.roomId, message.data.players); break;
-        case 'game_end': this.userList.onGameEnd(message.data.roomId, message.data.players); break;
+        case 'new_game': this.userList.onGameStart(message.data.room, message.data.players); break;
+        case 'end_game': this.userList.onGameEnd(message.data.room, message.data.players); break;
     }
 };
 

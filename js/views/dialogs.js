@@ -19,17 +19,16 @@ var dialogs = (function() {
             modal: false,
             buttons: {
                 "Принять": function() {
-                    //client.inviteManager.accept(this.attr('data-fromId'));
-                    client.inviteManager.rejectAll();
-                    this.remove();
+                    client.inviteManager.accept($(this).attr('data-userId'));
+                    $(this).remove();
                 },
                 "Отклонить": function(){
-                    client.inviteManager.reject(this.getAttribute('data-userId'));
+                    client.inviteManager.reject($(this).attr('data-userId'));
                     this.remove();
                 }
             },
             close: function() {
-                client.inviteManager.reject(this.getAttribute('data-userId'));
+                client.inviteManager.reject($(this).attr('data-userId'));
                 this.remove();
             }
         });

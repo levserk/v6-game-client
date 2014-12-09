@@ -8,7 +8,7 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <title>StepByStep</title>
-    <script id="userListTpl" type="template">
+    <script id="userListTplFree" type="template">
         <table class="playerList">
             <% _.each(users, function(user) { %>
             <tr>
@@ -26,6 +26,19 @@
             <% }) %>
         </table>
     </script>
+
+    <script id="userListTplInGame" type="template">
+        <table class="playerList">
+            <% _.each(rooms, function(room) { %>
+            <tr>
+                <td class="userName"><%= room.players[0].userName %></td>
+                <td class="userName"><%= room.players[1].userName %></td>
+            </tr>
+
+            <% }) %>
+        </table>
+    </script>
+
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 

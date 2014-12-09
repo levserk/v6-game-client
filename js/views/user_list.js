@@ -1,5 +1,6 @@
 var UserListView = Backbone.View.extend({
-    tpl: _.template($('#userListTpl').html()),
+    tplFree: _.template($('#userListTplFree').html()),
+    tplInGame: _.template($('#userListTplInGame').html()),
     events: {
         'click .inviteBtn': 'invitePlayer',
         'click .tabs div': 'clickTab'
@@ -49,8 +50,8 @@ var UserListView = Backbone.View.extend({
         this.listenTo(client.userList, 'new_user', this.render.bind(this));
         this.listenTo(client.userList, 'leave_user', this.render.bind(this));
         this.listenTo(client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
-        this.listenTo(client.userList, 'new_game', this.render);
-        this.listenTo(client.userList, 'end_game', this.render);
+        this.listenTo(client.userList, 'new_room', this.render.bind(this));
+        this.listenTo(client.userList, 'close_room', this.render.bind(this));
 
         this.currentActiveTabName = 'free';
         this._setActiveTab(this.currentActiveTabName);
@@ -71,12 +72,14 @@ var UserListView = Backbone.View.extend({
         }
 
         if (tabName === 'free') {
-            this.$listWrapper.html(this.tpl({
+            this.$listWrapper.html(this.tplFree({
                 users: client.userList.getUserList()
             }));
         }
         else if (tabName === 'inGame') {
-            this.$listWrapper.html('Нет игроков с такими параметрами')
+            this.$listWrapper.html(this.tplInGame({
+                rooms: client.userList.getRoomList()
+            }));
         } else {
             console.warn('unknown tab', tabName);
         }

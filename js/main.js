@@ -10,6 +10,9 @@ document.ready = function(){
     client.init();
     dialogs.init();
     _initViews();
+    $('#endGameButton').on('click', function() {
+        client.gameManager.leaveGame();
+    });
 };
 
 

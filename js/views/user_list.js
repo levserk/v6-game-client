@@ -57,7 +57,8 @@ var UserListView = Backbone.View.extend({
         this.$el.find('.tabs div[data-type="' + tabName + '"]').addClass(this.ACTIVE_TAB_CLASS);
     },
     _setCounters: function() {
-        this.$counterFree.html('(' + this.$counterFree.find('table tr').length + ')');
+        // TODO
+        this.$counterFree.html('(' + client.userList.getUsers().length + ')');
     },
     _showPlayerListByTabName: function(tabName) {
         // default

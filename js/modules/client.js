@@ -73,7 +73,7 @@ Client.prototype.send = function (module, type, target, data) {
         console.warn('client;', "some arguments undefined!", module, type, target, data);
         return;
     }
-    if (target > 0){
+    if (target != 'server'){
         if (!this.userList.getUser(target)) console.warn('client;', 'send message to offline user!', target);
     }
     this.socket.send({

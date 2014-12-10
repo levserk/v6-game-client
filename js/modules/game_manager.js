@@ -10,9 +10,44 @@ GameManager.prototype.onMessage = function(message){
     console.log('game_manager;', 'message', message);
     switch (message.type) {
         case 'game_start': this.onGameStart(message.data); break;
+        case 'ready':
+            console.log('game_manager;', 'game user ready', message.data);
+            break;
+        case 'round_start':
+            console.log('game_manager;', 'game round start', message.data);
+            break;
+        case 'turn':
+            console.log('game_manager;', 'game turn', message.data);
+            break;
+        case 'event':
+            console.log('game_manager;', 'game event', message.data);
+            break;
         case 'user_leave':
             var user = this.getPlayer(message.data);
-            this.onUserLeave(user);
+            console.log('game_manager;', 'user leave game', user);
+            this.emit('user_leave', user);
+            break;
+        case 'round_end':
+            console.log('game_manager', 'round end', message.data);
+            this.emit('round_end', message.data, this.client.getPlayer());
+            if (message.data.winner){
+                if (message.data.winner == this.client.getPlayer().userId) { // win
+                    console.log('game_manager;', 'win', message.data);
+                } else { // lose
+                    console.log('game_manager;', 'lose', message.data);
+                }
+            } else { // not save or draw
+                if (message.data.winner == 'not_save') console.log('game_manager', 'not accepted', message.data);
+                else console.log('game_manager;', 'draw', message.data);
+            }
+            break;
+        case 'game_end':
+            console.log('game_manager;', 'end game', this.currentRoom);
+            this.emit('game_end', this.currentRoom);
+            this.currentRoom = null;
+            break;
+        case 'error':
+            console.log('game_manager;', 'error', message.data);
             break;
     }
 };
@@ -24,6 +59,7 @@ GameManager.prototype.onGameStart = function(room){
     console.log('game_manager;', 'game started', room);
     this.currentRoom = room;
     this.emit('game_start', room);
+    this.sendReady();
 };
 
 
@@ -38,7 +74,17 @@ GameManager.prototype.onUserLeave = function(user){
 
 GameManager.prototype.leaveGame = function(){
     // TODO: send to server leave game, block game and wait leave message
-    this.client.send('game_manager', 'leave', 1, 1);
+    this.client.send('game_manager', 'leave', 'server', true);
+};
+
+
+GameManager.prototype.sendReady = function(){
+    this.client.send('game_manager', 'ready', 'server', true);
+};
+
+
+GameManager.prototype.sendTurn = function(turn){
+    this.client.send('game_manager', 'turn', 'server', turn);
 };
 
 

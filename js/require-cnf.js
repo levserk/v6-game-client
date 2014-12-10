@@ -7,8 +7,10 @@ define(function() {
             underscore: 'lib/underscore-min',
             backbone: 'lib/backbone-min',
             text: 'lib/text',
-            tpls: '../../tpl',
-            client: 'modules/client'
+            tpls: '../tpl',
+            client: 'modules/client',
+            EE: 'lib/EventEmitter.min',
+            'jquery-ui': 'lib/jquery-ui'
         },
         shim: {
             backbone: {
@@ -18,6 +20,9 @@ define(function() {
             'jquery-ui': {
                 exports: "$",
                 deps: ['jquery']
+            },
+            EE: {
+                exports: 'EventEmitter'
             }
         }
     });

@@ -1,4 +1,4 @@
-define(['lib/EventEmitter'], function() {
+define(['EE'], function(EE) {
     'use strict';
 
     var UserList = function(client){
@@ -14,7 +14,7 @@ define(['lib/EventEmitter'], function() {
         });
     };
 
-    UserList.prototype  = new EventEmitter();
+    UserList.prototype  = new EE();
 
 
     UserList.prototype.onMessage = function(message){

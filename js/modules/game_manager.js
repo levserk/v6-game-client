@@ -1,4 +1,4 @@
-define(['lib/EventEmitter'], function(EE) {
+define(['EE'], function(EE) {
     'use strict';
 
     var GameManager = function(client){

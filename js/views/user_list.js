@@ -1,6 +1,6 @@
-define(['underscore', 'backbone', 'jquery', 'client',
+define(['underscore', 'backbone', 'jquery',
         'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs'
-], function(_, Backbone, $, client, tplFree, tplInGame) {
+], function(_, Backbone, $, tplFree, tplInGame) {
     'use strict';
     var UserListView = Backbone.View.extend({
         tplFree: _.template(tplFree),

@@ -1,4 +1,4 @@
-define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'lib/EventEmitter.min'], function(GameManager, InviteManager, UserList, Socket, EE) {
+define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'EE'], function(GameManager, InviteManager, UserList, Socket, EE) {
     'use strict';
     var Client = function(opts) {
 

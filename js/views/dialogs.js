@@ -1,4 +1,4 @@
-define(['client'], function(client) {
+define([], function() {
     'use strict';
     var dialogs = (function() {
         var INVITE_CLASS = 'dialogInvite';

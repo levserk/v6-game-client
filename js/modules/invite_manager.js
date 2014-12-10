@@ -1,4 +1,4 @@
-define(['lib/EventEmitter'], function(EE) {
+define(['EE'], function(EE) {
     'use strict';
 
     var InviteManager = function(client){
@@ -20,7 +20,7 @@ define(['lib/EventEmitter'], function(EE) {
         });
     };
 
-    InviteManager.prototype  = new EventEmitter();
+    InviteManager.prototype  = new EE();
 
 
     InviteManager.prototype.onMessage = function(message){

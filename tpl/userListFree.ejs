@@ -1,0 +1,14 @@
+<% _.each(users, function(user) { %>
+<tr>
+    <td class="userName"><%= user.userName %></td>
+    <% if (user.isPlayer) { %>
+    <td></td>
+    <% } else if (user.isInvited) { %>
+    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>
+    <% } else { %>
+    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>
+    <% } %>
+
+</tr>
+
+<% }) %>

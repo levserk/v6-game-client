@@ -1,5 +1,6 @@
 module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-requirejs');
+    grunt.loadNpmTasks('grunt-contrib-cssmin');
 
     grunt.initConfig({
         log: {
@@ -9,6 +10,13 @@ module.exports = function(grunt) {
         },
         'usemin-handler': {
             html: 'index.html'
+        },
+        cssmin: {
+            combine: {
+                files: {
+                    'build/min.css': ['app/css/*']
+                }
+            }
         },
         requirejs: {
             compile: {
@@ -35,7 +43,7 @@ module.exports = function(grunt) {
         }
     });
 
-    grunt.registerTask('default', ['requirejs']);
+    grunt.registerTask('default', ['requirejs', 'cssmin']);
 
 //    grunt.registerMultiTask('log', 'Log stuff.', function() {
 //        grunt.log.writeln(this.target + ': ' + this.data);

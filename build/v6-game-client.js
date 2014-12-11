@@ -1384,13 +1384,19 @@ define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, fu
 
 define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
 
+
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
+
 define('views/user_list',['underscore', 'backbone', 'jquery',
-        'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs'
-], function(_, Backbone, $, tplFree, tplInGame) {
+        'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'
+], function(_, Backbone, $, tplFree, tplInGame, tplMain) {
     
     var UserListView = Backbone.View.extend({
+        tagName: 'div',
+        id: 'userList',
         tplFree: _.template(tplFree),
         tplInGame: _.template(tplInGame),
+        tplMain: _.template(tplMain),
         events: {
             'click .inviteBtn': 'invitePlayer',
             'click .tabs div': 'clickTab'
@@ -1431,8 +1437,13 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
             /*
              tabType: {'free', 'inGame'}
              */
+            debugger;
+            this.$el.html(this.tplMain());
+            $('body').append(this.el);
+
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
+
             this.$list = this.$el.find('.tableWrap table');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
@@ -1570,14 +1581,22 @@ require(['require-cnf'], function() {
             window.client = new Client({domain:'localhost'});
 
             client.init();
+            _generateEndGameBtn();
             _initViews();
-            $('#endGameButton').on('click', function() {
-                client.gameManager.leaveGame();
-            });
+
+            function _generateEndGameBtn() {
+                var div = $('<div>');
+                div.attr('id', 'endGameButton');
+                div.html('<span>Выйти из игры</span>');
+                div.on('click', function() {
+                    client.gameManager.leaveGame();
+                });
+                $('body').append(div);
+            }
 
 
             function _initViews() {
-                new userListView({el: $('#userList')});
+                new userListView();
                 dialogsView.init();
             }
         });

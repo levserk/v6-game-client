@@ -12,14 +12,22 @@ require(['require-cnf'], function() {
             window.client = new Client({domain:'localhost'});
 
             client.init();
+            _generateEndGameBtn();
             _initViews();
-            $('#endGameButton').on('click', function() {
-                client.gameManager.leaveGame();
-            });
+
+            function _generateEndGameBtn() {
+                var div = $('<div>');
+                div.attr('id', 'endGameButton');
+                div.html('<span>Выйти из игры</span>');
+                div.on('click', function() {
+                    client.gameManager.leaveGame();
+                });
+                $('body').append(div);
+            }
 
 
             function _initViews() {
-                new userListView({el: $('#userList')});
+                new userListView();
                 dialogsView.init();
             }
         });

@@ -1,10 +1,13 @@
 define(['underscore', 'backbone', 'jquery',
-        'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs'
-], function(_, Backbone, $, tplFree, tplInGame) {
+        'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'
+], function(_, Backbone, $, tplFree, tplInGame, tplMain) {
     'use strict';
     var UserListView = Backbone.View.extend({
+        tagName: 'div',
+        id: 'userList',
         tplFree: _.template(tplFree),
         tplInGame: _.template(tplInGame),
+        tplMain: _.template(tplMain),
         events: {
             'click .inviteBtn': 'invitePlayer',
             'click .tabs div': 'clickTab'
@@ -45,8 +48,13 @@ define(['underscore', 'backbone', 'jquery',
             /*
              tabType: {'free', 'inGame'}
              */
+            debugger;
+            this.$el.html(this.tplMain());
+            $('body').append(this.el);
+
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
+
             this.$list = this.$el.find('.tableWrap table');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');

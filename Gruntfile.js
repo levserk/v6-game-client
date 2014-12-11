@@ -17,8 +17,16 @@ module.exports = function(grunt) {
                     mainConfigFile: "js/require-cnf.js",
                     out: 'dist/build.min.js',
                     name: 'js/main.js',
+                    findNestedDependencies: true,
                     wrap: true,
-                    optimize: 'none'
+                    optimize: 'none',
+                    exclude: [
+                        "lib/jquery-2.1.1.min.js",
+                        "lib/jquery-ui.js",
+                        "lib/EventEmitter.min.js",
+                        "lib/underscore-min.js",
+                        "lib/backbone-min.js"
+                    ]
                 }
             }
         }

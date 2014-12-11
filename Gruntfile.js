@@ -13,20 +13,18 @@ module.exports = function(grunt) {
         requirejs: {
             compile: {
                 options: {
-                    baseUrl: 'js',
-                    mainConfigFile: "js/require-cnf.js",
-                    out: 'dist/build.min.js',
-                    name: 'js/main.js',
+                    mainConfigFile:'app/require-cnf.js',
+
+                    include: ['lib/almond.js','main.js'],
                     findNestedDependencies: true,
                     wrap: true,
                     optimize: 'none',
                     exclude: [
-                        "lib/jquery-2.1.1.min.js",
-                        "lib/jquery-ui.js",
-                        "lib/EventEmitter.min.js",
-                        "lib/underscore-min.js",
-                        "lib/backbone-min.js"
-                    ]
+                        //"require-cnf.js",
+                        //"backbone"
+                    ],
+                    //stubModules:["jquery","jquery-ui", "underscore","backbone"],
+                    out: 'build/v6-game-client.js'
                 }
             }
         }

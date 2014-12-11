@@ -1,0 +1,5 @@
+define('jquery', function() {return jQuery});
+define('jquery-ui', function() {return jQuery});
+define('underscore', function() {return Underscore});
+define('backbone', function() {return Backbone});
+}($, _, Backbone));

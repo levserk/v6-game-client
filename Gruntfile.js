@@ -13,16 +13,21 @@ module.exports = function(grunt) {
         requirejs: {
             compile: {
                 options: {
-                    mainConfigFile:'app/require-cnf.js',
-
+                    mainConfigFile: 'app/require-cnf.js',
+                    baseUrl: 'app',
                     include: ['lib/almond.js','main.js'],
                     findNestedDependencies: true,
-                    wrap: true,
                     optimize: 'none',
                     exclude: [
-                        //"require-cnf.js",
-                        //"backbone"
+                        "backbone",
+                        "jquery",
+                        "jquery-ui",
+                        "underscore"
                     ],
+                    wrap: {
+                        startFile: 'wrap.start',
+                        endFile: 'wrap.end'
+                    },
                     //stubModules:["jquery","jquery-ui", "underscore","backbone"],
                     out: 'build/v6-game-client.js'
                 }

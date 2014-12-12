@@ -10,6 +10,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.onMessage = function(message){
+        var data = message.data;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
             case 'game_start': this.onGameStart(message.data); break;
@@ -17,9 +18,18 @@ define(['EE'], function(EE) {
                 console.log('game_manager;', 'game user ready', message.data);
                 break;
             case 'round_start':
+                this.emit('round_start', {
+                    players: [
+                        this.getPlayer(data.players[0]),
+                        this.getPlayer(data.players[1])
+                    ],
+                    first: this.getPlayer(data.first),
+                    id: data.id
+                });
                 console.log('game_manager;', 'game round start', message.data);
                 break;
             case 'turn':
+                this.emit('turn', data);
                 console.log('game_manager;', 'game turn', message.data);
                 break;
             case 'event':

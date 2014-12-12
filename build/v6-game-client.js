@@ -1379,13 +1379,13 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\n<tr>\n    <td class="userName"><%= user.userName %></td>\n    <% if (user.isPlayer) { %>\n    <td></td>\n    <% } else if (user.isInvited) { %>\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\n    <% } else { %>\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\n    <% } %>\n\n</tr>\n\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName"><%= user.userName %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn">\r\n    <span>Играть с любым</span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'jquery',
         'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'

@@ -1,23 +1,31 @@
 module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-requirejs');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
 
     grunt.initConfig({
-        log: {
-            foo: [1, 2, 3],
-            bar: 'hello world',
-            baz: false
-        },
-        'usemin-handler': {
-            html: 'index.html'
-        },
         cssmin: {
+            options: {
+                banner: '/*! v6-game-client <%= grunt.template.today("yyyy-mm-dd HH:MM") %> */'
+            },
             combine: {
                 files: {
-                    'build/min.css': ['app/css/*']
+                    'build/v6-game-client.css': ['app/css/*']
                 }
             }
         },
+
+        uglify:{
+            options: {
+                banner: '/*! v6-game-client <%= grunt.template.today("yyyy-mm-dd HH:MM") %> */\n'
+            },
+            js: {
+                files: {
+                    'build/v6-game-client.min.js': 'build/v6-game-client.js'
+                }
+            }
+        },
+
         requirejs: {
             compile: {
                 options: {
@@ -36,16 +44,11 @@ module.exports = function(grunt) {
                         startFile: 'wrap.start',
                         endFile: 'wrap.end'
                     },
-                    //stubModules:["jquery","jquery-ui", "underscore","backbone"],
                     out: 'build/v6-game-client.js'
                 }
             }
         }
     });
 
-    grunt.registerTask('default', ['requirejs', 'cssmin']);
-
-//    grunt.registerMultiTask('log', 'Log stuff.', function() {
-//        grunt.log.writeln(this.target + ': ' + this.data);
-//    });
+    grunt.registerTask('default', ['requirejs', 'cssmin', 'uglify']);
 };

@@ -3,6 +3,8 @@
     "version": "0.0.1",
     "dependencies": {
         "grunt": "*",
-        "grunt-requirejs": "*"
+        "grunt-requirejs": "*",
+        "grunt-contrib-cssmin": "*",
+        "grunt-contrib-uglify":"*"
     }
 }

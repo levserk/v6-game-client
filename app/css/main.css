@@ -1,0 +1,10 @@
+#endGameButton {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    color: blue;
+    text-align: center;
+    height: 20px;
+    line-height: 20px;
+    cursor: pointer;
+}

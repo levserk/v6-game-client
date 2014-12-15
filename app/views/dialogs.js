@@ -1,4 +1,4 @@
-define([], function() {
+define(['jquery', 'jquery-ui'], function($) {
     'use strict';
     var dialogs = (function() {
         var INVITE_CLASS = 'dialogInvite';

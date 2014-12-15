@@ -21,32 +21,52 @@ module.exports = function(grunt) {
             },
             js: {
                 files: {
-                    'build/v6-game-client.min.js': 'build/v6-game-client.js'
+                    'build/v6-game-client.min.js': 'build/v6-game-client.js',
+                    'build/v6-game-client.req.min.js': 'build/v6-game-client.req.js'
                 }
             }
         },
 
         requirejs: {
-            compile: {
-                options: {
-                    mainConfigFile: 'app/require-cnf.js',
-                    baseUrl: 'app',
-                    include: ['lib/almond.js','main.js'],
-                    findNestedDependencies: true,
-                    optimize: 'none',
-                    exclude: [
-                        "backbone",
-                        "jquery",
-                        "jquery-ui",
-                        "underscore"
-                    ],
-                    wrap: {
-                        startFile: 'wrap.start',
-                        endFile: 'wrap.end'
-                    },
-                    out: 'build/v6-game-client.js'
-                }
+                compile: {
+                    options: {
+                        mainConfigFile: 'app/require-cnf.js',
+                        baseUrl: 'app',
+                        include: ['lib/almond.js','main.js'],
+                        findNestedDependencies: true,
+                        optimize: 'none',
+                        exclude: [
+                            "backbone",
+                            "jquery",
+                            "jquery-ui",
+                            "underscore"
+                        ],
+                        wrap: {
+                            startFile: 'wrap.start',
+                            endFile: 'wrap.end'
+                        },
+                        out: 'build/v6-game-client.js'
+                    }
+                },
+            compileForProduction: {
+                    options: {
+                        mainConfigFile: 'app/require-cnf.js',
+                        baseUrl: 'app',
+                        include: ['v6-game-client'],
+                        findNestedDependencies: true,
+                        optimize: 'none',
+                        exclude: [
+                            "backbone",
+                            "jquery",
+                            "jquery-ui",
+                            "underscore",
+                            'EE'
+                        ],
+                        wrap: false,
+                        out: 'build/v6-game-client.req.js'
+                    }
             }
+
         }
     });
 

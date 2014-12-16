@@ -1,6 +1,1 @@
-require(['require-cnf'], function() {
-        require(['v6-game-client'], function() {
-            console.log('app start', window.client);
-        })
-
-});
+define(['require-cnf', 'v6-game-client'], function() {});

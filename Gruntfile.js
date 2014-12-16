@@ -39,7 +39,8 @@ module.exports = function(grunt) {
                             "backbone",
                             "jquery",
                             "jquery-ui",
-                            "underscore"
+                            "underscore",
+                            "require-cnf.js"
                         ],
                         wrap: {
                             startFile: 'wrap.start',

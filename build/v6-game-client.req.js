@@ -10,14 +10,26 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.onMessage = function(message){
-        var data = message.data;
+        var data = message.data, player = client.getPlayer(), i;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
-            case 'game_start': this.onGameStart(message.data); break;
+            case 'new_game':
+                for ( i = 0; i < data.players.length; i++){
+                    if (data.players[i] == player || data.players[i] == player.userId){ //TODO: warn! userList changed user ids list to user list; leave old game
+                        if (this.currentRoom)
+                            if (this.currentRoom.isClosed) this.leaveRoom();
+                            else throw new Error('start game before current game finished! old: '+this.currentRoom.id+' new:'+data.room);
+                        this.onGameStart(data);
+                    }
+                }
+                break;
+            case 'end_game':
+                break;
             case 'ready':
-                console.log('game_manager;', 'game user ready', message.data);
+                console.log('game_manager;', 'user_ready', data);
                 break;
             case 'round_start':
+                console.log('game_manager;', 'emit round_start', data);
                 this.emit('round_start', {
                     players: [
                         this.getPlayer(data.players[0]),
@@ -26,41 +38,39 @@ define('modules/game_manager',['EE'], function(EE) {
                     first: this.getPlayer(data.first),
                     id: data.id
                 });
-                console.log('game_manager;', 'game round start', message.data);
                 break;
             case 'turn':
+                console.log('game_manager;', 'emit turn', data);
                 this.emit('turn', data);
-                console.log('game_manager;', 'game turn', message.data);
                 break;
             case 'event':
-                console.log('game_manager;', 'game event', message.data);
+                console.log('game_manager;', 'game event', data);
                 break;
             case 'user_leave':
-                var user = this.getPlayer(message.data);
-                console.log('game_manager;', 'user leave game', user);
-                this.emit('user_leave', user);
+                var user = this.getPlayer(data);
+                this.onUserLeave(user);
                 break;
             case 'round_end':
-                console.log('game_manager', 'round end', message.data);
-                this.emit('round_end', message.data, this.client.getPlayer());
-                if (message.data.winner){
-                    if (message.data.winner == this.client.getPlayer().userId) { // win
-                        console.log('game_manager;', 'win', message.data);
+                console.log('game_manager', 'emit round_end', data);
+                if (data.winner){
+                    if (data.winner == this.client.getPlayer().userId) { // win
+                        console.log('game_manager;', 'win', data);
+                        data.result = 'win'
                     } else { // lose
-                        console.log('game_manager;', 'lose', message.data);
+                        console.log('game_manager;', 'lose', data);
+                        data.result = 'lose'
                     }
                 } else { // not save or draw
-                    if (message.data.winner == 'not_save') console.log('game_manager', 'not accepted', message.data);
-                    else console.log('game_manager;', 'draw', message.data);
+                    if (data.winner == 'not_save') console.log('game_manager', 'not accepted', data);
+                    else {
+                        data.result = 'draw';
+                        console.log('game_manager;', 'draw', data);
+                    }
                 }
-                break;
-            case 'game_end':
-                console.log('game_manager;', 'end game', this.currentRoom);
-                this.emit('game_end', this.currentRoom);
-                this.currentRoom = null;
+                this.emit('round_end', data, this.client.getPlayer());
                 break;
             case 'error':
-                console.log('game_manager;', 'error', message.data);
+                console.log('game_manager;', 'error', data);
                 break;
         }
     };
@@ -69,7 +79,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.onGameStart = function(room){
         //TODO: check and hide invite
         room = new Room(room, this.client);
-        console.log('game_manager;', 'game started', room);
+        console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         this.emit('game_start', room);
         this.sendReady();
@@ -78,16 +88,24 @@ define('modules/game_manager',['EE'], function(EE) {
 
     GameManager.prototype.onUserLeave = function(user){
         //TODO: check user is opponent or me
-        console.log('game_manager', 'user leave game', user);
-        this.emit('user_leave', user);
-        this.emit('game_end', this.currentRoom);
-        this.currentRoom = null;
+        this.currentRoom.isClosed = true;
+        console.log('game_manager;', 'user_leave', this.currentRoom, user);
+        if (user != this.client.getPlayer()) this.emit('user_leave', user);
+        else this.leaveRoom();
     };
 
 
     GameManager.prototype.leaveGame = function(){
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
+    };
+
+
+    GameManager.prototype.leaveRoom = function(){
+        if (!this.currentRoom.isClosed) throw new Error('leave not closed room! '+ this.currentRoom.id);
+        console.log('game_manager;', 'emit game_leave;', this.currentRoom);
+        this.emit('game_leave', this.currentRoom);
+        this.currentRoom = null;
     };
 
 
@@ -114,7 +132,8 @@ define('modules/game_manager',['EE'], function(EE) {
         this.id = room.id;
         this.owner = client.getUser(room.owner);
         this.players = [];
-        for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
+        if (typeof room.players[0] == "object") this.players = room.players;
+        else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
     }
 
     return GameManager;
@@ -529,11 +548,22 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 
     Client.prototype.onServerMessage = function(message){
         switch (message.type){
-            case 'login': this.onLogin(message.data.you, message.data.userlist, message.data.rooms); break;
-            case 'user_login': this.userList.onUserLogin(message.data); break;
-            case 'user_leave': this.userList.onUserLeave(message.data); break;
-            case 'new_game': this.userList.onGameStart(message.data.room, message.data.players); break;
-            case 'end_game': this.userList.onGameEnd(message.data.room, message.data.players); break;
+            case 'login':
+                this.onLogin(message.data.you, message.data.userlist, message.data.rooms);
+                break;
+            case 'user_login':
+                this.userList.onUserLogin(message.data);
+                break;
+            case 'user_leave':
+                this.userList.onUserLeave(message.data);
+                break;
+            case 'new_game':
+                this.userList.onGameStart(message.data.room, message.data.players);
+                this.gameManager.onMessage(message);
+                break;
+            case 'end_game':
+                this.userList.onGameEnd(message.data.room, message.data.players);
+                break;
         }
     };
 
@@ -967,13 +997,13 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\n<tr>\n    <td class="userName"><%= user.userName %></td>\n    <% if (user.isPlayer) { %>\n    <td></td>\n    <% } else if (user.isInvited) { %>\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\n    <% } else { %>\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\n    <% } %>\n\n</tr>\n\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName"><%= user.userName %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn">\r\n    <span>Играть с любым</span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'jquery',
         'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'
@@ -1086,13 +1116,20 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
 define('views/dialogs',['jquery', 'jquery-ui'], function($) {
     
     var dialogs = (function() {
+        var NOTIFICATION_CLASS = 'dialogNotification';
         var INVITE_CLASS = 'dialogInvite';
+        var USERLEAVE_CLASS = 'dialogUserLeave';
+        var ROUNDRESULT_CLASS = 'dialogRoundResult';
 
         function _subscribe() {
             client.inviteManager.on('new_invite', _newInvite);
             client.inviteManager.on('reject_invite', _rejectInvite);
             client.inviteManager.on('cancel_invite', _cancelInvite);
             client.inviteManager.on('remove_invite', _removeInvite);
+            client.gameManager.on('user_leave', _userLeave);
+            client.gameManager.on('game_start', _hideDialogs);
+            client.gameManager.on('round_end', _roundEnd);
+            client.gameManager.on('game_leave', _hideDialogs);
         }
 
         function _newInvite(invite) {
@@ -1110,12 +1147,12 @@ define('views/dialogs',['jquery', 'jquery-ui'], function($) {
                     },
                     "Отклонить": function(){
                         client.inviteManager.reject($(this).attr('data-userId'));
-                        this.remove();
+                        $(this).remove();
                     }
                 },
                 close: function() {
                     client.inviteManager.reject($(this).attr('data-userId'));
-                    this.remove();
+                    $(this).remove();
                 }
             });
         }
@@ -1123,14 +1160,14 @@ define('views/dialogs',['jquery', 'jquery-ui'], function($) {
         function _rejectInvite(invite) {
             var div = $('<div>');
             div.addClass(INVITE_CLASS);
+            div.addClass(NOTIFICATION_CLASS);
 
             div.html('Пользователь ' + invite.user.userName + ' отклонил ваше приглашение').dialog({
                 resizable: false,
-                modal: true,
+                modal: false,
                 buttons: {
                     "Ок": function() {
-                        $( this ).dialog( "close" );
-                        this.remove();
+                        $(this).remove();
                     }
                 }
             });
@@ -1144,6 +1181,60 @@ define('views/dialogs',['jquery', 'jquery-ui'], function($) {
             var userId = invite.from;
             console.log('remove invite', userId);
             $('.' + INVITE_CLASS + '[data-userId="' + userId + '"]').remove();
+        }
+
+        function _userLeave(user) {
+            _hideDialogs();
+
+            var div = $('<div>');
+            div.addClass(INVITE_CLASS);
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Пользователь ' + user.userName + ' покинул игру').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Ок": function() {
+                        $(this).remove();
+                        client.gameManager.leaveRoom();
+                    }
+                }
+            });
+        }
+
+
+        function _roundEnd(data) {
+            var div = $('<div>');
+            div.addClass(ROUNDRESULT_CLASS);
+
+            var result = "";
+            switch (data.result){
+                case 'win': result = 'Победа'; break;
+                case 'lose': result = 'Поражение'; break;
+                case 'draw': result = 'Ничья'; break;
+                default : result = 'игра окночена';
+            }
+            // TODO: get opponent name;
+            div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
+                resizable: false,
+                modal: false,
+                width: 350,
+                buttons: {
+                    "Да, начать новую игру": function() {
+                        $(this).remove();
+                        client.gameManager.sendReady();
+                    },
+                    "Нет, выйти": function() {
+                        $(this).remove();
+                        client.gameManager.leaveGame();
+                    }
+                }
+            });
+        }
+
+        function _hideDialogs() { //TODO: hide all dialogs and messages
+            $('.' + NOTIFICATION_CLASS).remove();
+            $('.' + ROUNDRESULT_CLASS).remove();
         }
 
         return {
@@ -1166,18 +1257,8 @@ define('v6-game-client',['client', 'views/user_list', 'views/dialogs'], function
     window.client = new Client({domain:'localhost'});
 
     client.init();
-    _generateEndGameBtn();
     _initViews();
 
-    function _generateEndGameBtn() {
-        var div = $('<div>');
-        div.attr('id', 'endGameButton');
-        div.html('<span>Выйти из игры</span>');
-        div.on('click', function() {
-            client.gameManager.leaveGame();
-        });
-        $('body').append(div);
-    }
     function _initViews() {
         new userListView();
         dialogsView.init();

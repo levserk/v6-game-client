@@ -1,0 +1,11 @@
+.ui-dialog .ui-dialog-titlebar {
+    display: none;
+}
+
+.ui-dialog {
+    font-size: 10pt;
+}
+
+.ui-dialog .dialog-buttonset {
+    font-size: 10pt;
+}

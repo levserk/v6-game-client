@@ -10,14 +10,26 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.onMessage = function(message){
-        var data = message.data;
+        var data = message.data, player = client.getPlayer(), i;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
-            case 'game_start': this.onGameStart(message.data); break;
+            case 'new_game':
+                for ( i = 0; i < data.players.length; i++){
+                    if (data.players[i] == player || data.players[i] == player.userId){ //TODO: warn! userList changed user ids list to user list; leave old game
+                        if (this.currentRoom)
+                            if (this.currentRoom.isClosed) this.leaveRoom();
+                            else throw new Error('start game before current game finished! old: '+this.currentRoom.id+' new:'+data.room);
+                        this.onGameStart(data);
+                    }
+                }
+                break;
+            case 'end_game':
+                break;
             case 'ready':
-                console.log('game_manager;', 'game user ready', message.data);
+                console.log('game_manager;', 'user_ready', data);
                 break;
             case 'round_start':
+                console.log('game_manager;', 'emit round_start', data);
                 this.emit('round_start', {
                     players: [
                         this.getPlayer(data.players[0]),
@@ -26,41 +38,39 @@ define(['EE'], function(EE) {
                     first: this.getPlayer(data.first),
                     id: data.id
                 });
-                console.log('game_manager;', 'game round start', message.data);
                 break;
             case 'turn':
+                console.log('game_manager;', 'emit turn', data);
                 this.emit('turn', data);
-                console.log('game_manager;', 'game turn', message.data);
                 break;
             case 'event':
-                console.log('game_manager;', 'game event', message.data);
+                console.log('game_manager;', 'game event', data);
                 break;
             case 'user_leave':
-                var user = this.getPlayer(message.data);
-                console.log('game_manager;', 'user leave game', user);
-                this.emit('user_leave', user);
+                var user = this.getPlayer(data);
+                this.onUserLeave(user);
                 break;
             case 'round_end':
-                console.log('game_manager', 'round end', message.data);
-                this.emit('round_end', message.data, this.client.getPlayer());
-                if (message.data.winner){
-                    if (message.data.winner == this.client.getPlayer().userId) { // win
-                        console.log('game_manager;', 'win', message.data);
+                console.log('game_manager', 'emit round_end', data);
+                if (data.winner){
+                    if (data.winner == this.client.getPlayer().userId) { // win
+                        console.log('game_manager;', 'win', data);
+                        data.result = 'win'
                     } else { // lose
-                        console.log('game_manager;', 'lose', message.data);
+                        console.log('game_manager;', 'lose', data);
+                        data.result = 'lose'
                     }
                 } else { // not save or draw
-                    if (message.data.winner == 'not_save') console.log('game_manager', 'not accepted', message.data);
-                    else console.log('game_manager;', 'draw', message.data);
+                    if (data.winner == 'not_save') console.log('game_manager', 'not accepted', data);
+                    else {
+                        data.result = 'draw';
+                        console.log('game_manager;', 'draw', data);
+                    }
                 }
-                break;
-            case 'game_end':
-                console.log('game_manager;', 'end game', this.currentRoom);
-                this.emit('game_end', this.currentRoom);
-                this.currentRoom = null;
+                this.emit('round_end', data, this.client.getPlayer());
                 break;
             case 'error':
-                console.log('game_manager;', 'error', message.data);
+                console.log('game_manager;', 'error', data);
                 break;
         }
     };
@@ -69,7 +79,7 @@ define(['EE'], function(EE) {
     GameManager.prototype.onGameStart = function(room){
         //TODO: check and hide invite
         room = new Room(room, this.client);
-        console.log('game_manager;', 'game started', room);
+        console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         this.emit('game_start', room);
         this.sendReady();
@@ -78,16 +88,24 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.onUserLeave = function(user){
         //TODO: check user is opponent or me
-        console.log('game_manager', 'user leave game', user);
-        this.emit('user_leave', user);
-        this.emit('game_end', this.currentRoom);
-        this.currentRoom = null;
+        this.currentRoom.isClosed = true;
+        console.log('game_manager;', 'user_leave', this.currentRoom, user);
+        if (user != this.client.getPlayer()) this.emit('user_leave', user);
+        else this.leaveRoom();
     };
 
 
     GameManager.prototype.leaveGame = function(){
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
+    };
+
+
+    GameManager.prototype.leaveRoom = function(){
+        if (!this.currentRoom.isClosed) throw new Error('leave not closed room! '+ this.currentRoom.id);
+        console.log('game_manager;', 'emit game_leave;', this.currentRoom);
+        this.emit('game_leave', this.currentRoom);
+        this.currentRoom = null;
     };
 
 
@@ -114,7 +132,8 @@ define(['EE'], function(EE) {
         this.id = room.id;
         this.owner = client.getUser(room.owner);
         this.players = [];
-        for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
+        if (typeof room.players[0] == "object") this.players = room.players;
+        else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
     }
 
     return GameManager;

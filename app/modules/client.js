@@ -47,11 +47,22 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 
     Client.prototype.onServerMessage = function(message){
         switch (message.type){
-            case 'login': this.onLogin(message.data.you, message.data.userlist, message.data.rooms); break;
-            case 'user_login': this.userList.onUserLogin(message.data); break;
-            case 'user_leave': this.userList.onUserLeave(message.data); break;
-            case 'new_game': this.userList.onGameStart(message.data.room, message.data.players); break;
-            case 'end_game': this.userList.onGameEnd(message.data.room, message.data.players); break;
+            case 'login':
+                this.onLogin(message.data.you, message.data.userlist, message.data.rooms);
+                break;
+            case 'user_login':
+                this.userList.onUserLogin(message.data);
+                break;
+            case 'user_leave':
+                this.userList.onUserLeave(message.data);
+                break;
+            case 'new_game':
+                this.userList.onGameStart(message.data.room, message.data.players);
+                this.gameManager.onMessage(message);
+                break;
+            case 'end_game':
+                this.userList.onGameEnd(message.data.room, message.data.players);
+                break;
         }
     };
 

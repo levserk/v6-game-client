@@ -1703,7 +1703,6 @@ define('v6-game-client',['client', 'views/user_list', 'views/dialogs'], function
         dialogsView.init();
     }
 });
-
 define('main.js',['require-cnf', 'v6-game-client'], function() {});
 define('require-cnf',[],function() {});
 define('jquery', function() {return jQuery});

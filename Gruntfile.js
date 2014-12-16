@@ -61,7 +61,8 @@ module.exports = function(grunt) {
                             "jquery",
                             "jquery-ui",
                             "underscore",
-                            'EE'
+                            'EE',
+                            'lib/text.js'
                         ],
                         wrap: false,
                         out: 'build/v6-game-client.req.js'

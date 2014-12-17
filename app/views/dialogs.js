@@ -23,7 +23,8 @@ define(['jquery', 'jquery-ui'], function($) {
             div.attr('data-userId', invite.from.userId);
 
             div.html('Вас пригласил в игру пользователь ' + invite.from.userName).dialog({
-                resizable: false,
+                resizable: true,
+                draggable: false,
                 modal: false,
                 buttons: {
                     "Принять": function() {
@@ -39,7 +40,7 @@ define(['jquery', 'jquery-ui'], function($) {
                     client.inviteManager.reject($(this).attr('data-userId'));
                     $(this).remove();
                 }
-            });
+            }).parent().draggable();
         }
 
         function _rejectInvite(invite) {

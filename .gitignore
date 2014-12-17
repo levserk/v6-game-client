@@ -42,12 +42,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-<<<<<<< HEAD
-
-.idea/*
-=======
 
 .idea/*
 js/lib/Promise.js
->>>>>>> develop
 node_modules/*

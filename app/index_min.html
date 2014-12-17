@@ -14,5 +14,17 @@
 <script src="lib/underscore-min.js"></script>
 <script src="lib/backbone-min.js"></script>
 <script src="../build/v6-game-client.js"></script>
+<script>
+    _generateEndGameBtn();
+    function _generateEndGameBtn() {
+        var div = $('<div>');
+        div.attr('id', 'endGameButton');
+        div.html('<span>Выйти из игры</span>');
+        div.on('click', function() {
+            client.gameManager.leaveGame();
+        });
+        $('body').append(div);
+    }
+</script>
 </body>
 </html>

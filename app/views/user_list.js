@@ -48,7 +48,6 @@ define(['underscore', 'backbone', 'jquery',
             /*
              tabType: {'free', 'inGame'}
              */
-            debugger;
             this.$el.html(this.tplMain());
             $('body').append(this.el);
 

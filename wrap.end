@@ -1,5 +1,11 @@
+define('require-cnf',[],function() {});
 define('jquery', function() {return jQuery});
 define('jquery-ui', function() {return jQuery});
 define('underscore', function() {return Underscore});
 define('backbone', function() {return Backbone});
+require(['require-cnf'], function() {
+        require(['v6-game-client'], function() {
+            console.log('app v6-game-client start', window.client);
+        });
+});
 }($, _, Backbone));

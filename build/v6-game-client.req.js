@@ -119,6 +119,11 @@ define('modules/game_manager',['EE'], function(EE) {
     };
 
 
+    GameManager.prototype.sendThrow = function(){
+        this.client.send('game_manager', 'event', 'server', 'throw');
+    };
+
+
     GameManager.prototype.getPlayer = function(id){
         if (this.currentRoom)
             for (var i = 0; i < this.currentRoom.players.length; i++)
@@ -747,7 +752,8 @@ define('views/dialogs',['jquery', 'jquery-ui'], function($) {
             div.attr('data-userId', invite.from.userId);
 
             div.html('Вас пригласил в игру пользователь ' + invite.from.userName).dialog({
-                resizable: false,
+                resizable: true,
+                draggable: false,
                 modal: false,
                 buttons: {
                     "Принять": function() {
@@ -763,7 +769,7 @@ define('views/dialogs',['jquery', 'jquery-ui'], function($) {
                     client.inviteManager.reject($(this).attr('data-userId'));
                     $(this).remove();
                 }
-            });
+            }).parent().draggable();
         }
 
         function _rejectInvite(invite) {

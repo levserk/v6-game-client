@@ -119,6 +119,11 @@ define(['EE'], function(EE) {
     };
 
 
+    GameManager.prototype.sendThrow = function(){
+        this.client.send('game_manager', 'event', 'server', 'throw');
+    };
+
+
     GameManager.prototype.getPlayer = function(id){
         if (this.currentRoom)
             for (var i = 0; i < this.currentRoom.players.length; i++)

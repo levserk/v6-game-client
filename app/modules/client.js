@@ -1,4 +1,5 @@
-define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'EE'], function(GameManager, InviteManager, UserList, Socket, EE) {
+define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'EE'],
+    function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
     'use strict';
     var Client = function(opts) {
 
@@ -7,8 +8,9 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
         this.inviteManager = new InviteManager(this);
+        this.viewsManager = new ViewsManager(this);
 
-        this.socket = new Socket();
+        this.socket = new Socket(opts);
         this.socket.on("connection", function () {
             console.log('client;', 'socket connected');
         });
@@ -33,6 +35,8 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 
     Client.prototype.init = function(){
         this.socket.init();
+        this.viewsManager.init();
+        return this;
     };
 
 

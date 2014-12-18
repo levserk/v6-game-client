@@ -5,8 +5,10 @@ define(['jquery', 'jquery-ui'], function($) {
         var INVITE_CLASS = 'dialogInvite';
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
+        var client;
 
-        function _subscribe() {
+        function _subscribe(_client) {
+            client = _client;
             client.inviteManager.on('new_invite', _newInvite);
             client.inviteManager.on('reject_invite', _rejectInvite);
             client.inviteManager.on('cancel_invite', _cancelInvite);

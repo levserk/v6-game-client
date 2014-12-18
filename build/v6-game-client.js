@@ -449,7 +449,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.onMessage = function(message){
-        var data = message.data, player = client.getPlayer(), i;
+        var data = message.data, player = this.client.getPlayer(), i;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
             case 'new_game':
@@ -943,112 +943,6 @@ define('modules/socket',['EE'], function(EE) {
 
     return Socket;
 });
-define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'EE'], function(GameManager, InviteManager, UserList, Socket, EE) {
-    
-    var Client = function(opts) {
-
-        var self = this;
-
-        this.userList = new UserList(this);
-        this.gameManager = new GameManager(this);
-        this.inviteManager = new InviteManager(this);
-
-        this.socket = new Socket();
-        this.socket.on("connection", function () {
-            console.log('client;', 'socket connected');
-        });
-
-        this.socket.on("disconnection", function() {
-            console.log('client;', 'socket disconnected');
-        });
-
-        this.socket.on("failed", function() {
-            console.log('client;', 'socket connection failed');
-        });
-
-        this.socket.on("message", function(message) {
-            console.log('client;', "socket message", message);
-            self.onMessage(message);
-        });
-
-        this.getUser = this.userList.getUser.bind(this.userList);
-    };
-
-    Client.prototype  = new EE();
-
-    Client.prototype.init = function(){
-        this.socket.init();
-    };
-
-
-    Client.prototype.onMessage = function(message){
-        switch (message.module){
-            case 'server': this.onServerMessage(message); break;
-            case 'invite_manager': this.inviteManager.onMessage(message); break;
-            case 'game_manager': this.gameManager.onMessage(message); break;
-        }
-    };
-
-
-    Client.prototype.onServerMessage = function(message){
-        switch (message.type){
-            case 'login':
-                this.onLogin(message.data.you, message.data.userlist, message.data.rooms);
-                break;
-            case 'user_login':
-                this.userList.onUserLogin(message.data);
-                break;
-            case 'user_leave':
-                this.userList.onUserLeave(message.data);
-                break;
-            case 'new_game':
-                this.userList.onGameStart(message.data.room, message.data.players);
-                this.gameManager.onMessage(message);
-                break;
-            case 'end_game':
-                this.userList.onGameEnd(message.data.room, message.data.players);
-                break;
-        }
-    };
-
-    Client.prototype.onLogin = function(user, userlist, rooms){
-        console.log('client;', 'login', user, userlist, rooms);
-        this.emit('login', user);
-        var i;
-        for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
-        for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
-    };
-
-
-    Client.prototype.send = function (module, type, target, data) {
-        if (typeof module == "object" && module.module && module.type && module.data) {
-            type = module.type;
-            data = module.data;
-            target = module.target;
-            module = module.module;
-        }
-        if (!module || !type || !data || !target){
-            console.warn('client;', "some arguments undefined!", module, type, target, data);
-            return;
-        }
-        if (target != 'server'){
-            if (!this.userList.getUser(target)) console.warn('client;', 'send message to offline user!', target);
-        }
-        this.socket.send({
-            module:module,
-            type:type,
-            target:target,
-            data:data
-        });
-    };
-
-
-    Client.prototype.getPlayer = function(){
-        return this.userList.player;
-    };
-
-    return Client;
-});
 /**
  * @license RequireJS text 2.0.12 Copyright (c) 2010-2014, The Dojo Foundation All Rights Reserved.
  * Available via the MIT or new BSD license.
@@ -1482,20 +1376,21 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
 
             if (target.hasClass(this.ACTIVE_INVITE_CLASS)) {
                 // cancel invite
-                client.inviteManager.cancel();
+                this.client.inviteManager.cancel();
                 target.removeClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Пригласить');
             } else {
                 // send invite
                 this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
-                client.inviteManager.sendInvite(userId, {});
+                this.client.inviteManager.sendInvite(userId, {});
                 target.addClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Отмена');
             }
 
             console.log('invite user', userId);
         },
-        initialize: function() {
+        initialize: function(_client) {
+            this.client = _client;
             /*
              tabType: {'free', 'inGame'}
              */
@@ -1509,11 +1404,11 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
 
-            this.listenTo(client.userList, 'new_user', this.render.bind(this));
-            this.listenTo(client.userList, 'leave_user', this.render.bind(this));
-            this.listenTo(client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
-            this.listenTo(client.userList, 'new_room', this.render.bind(this));
-            this.listenTo(client.userList, 'close_room', this.render.bind(this));
+            this.listenTo(this.client.userList, 'new_user', this.render.bind(this));
+            this.listenTo(this.client.userList, 'leave_user', this.render.bind(this));
+            this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
+            this.listenTo(this.client.userList, 'new_room', this.render.bind(this));
+            this.listenTo(this.client.userList, 'close_room', this.render.bind(this));
 
             this.currentActiveTabName = 'free';
             this._setActiveTab(this.currentActiveTabName);
@@ -1524,8 +1419,8 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
         },
         _setCounters: function() {
             // TODO
-            this.$counterFree.html('(' + client.userList.getUserList().length + ')');
-            this.$counterinGame.html('(' + client.userList.getRoomList().length * 2 + ')');
+            this.$counterFree.html('(' + this.client.userList.getUserList().length + ')');
+            this.$counterinGame.html('(' + this.client.userList.getRoomList().length * 2 + ')');
         },
         _showPlayerListByTabName: function(tabName) {
             // default
@@ -1535,12 +1430,12 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
 
             if (tabName === 'free') {
                 this.$list.html(this.tplFree({
-                    users: client.userList.getUserList()
+                    users: this.client.userList.getUserList()
                 }));
             }
             else if (tabName === 'inGame') {
                 this.$list.html(this.tplInGame({
-                    rooms: client.userList.getRoomList()
+                    rooms: this.client.userList.getRoomList()
                 }));
             } else {
                 console.warn('unknown tab', tabName);
@@ -1564,8 +1459,10 @@ define('views/dialogs',['jquery', 'jquery-ui'], function($) {
         var INVITE_CLASS = 'dialogInvite';
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
+        var client;
 
-        function _subscribe() {
+        function _subscribe(_client) {
+            client = _client;
             client.inviteManager.on('new_invite', _newInvite);
             client.inviteManager.on('reject_invite', _rejectInvite);
             client.inviteManager.on('cancel_invite', _cancelInvite);
@@ -1690,34 +1587,152 @@ define('views/dialogs',['jquery', 'jquery-ui'], function($) {
     return dialogs;
 });
 
-define('v6-game-client',['client', 'views/user_list', 'views/dialogs'], function(Client, userListView, dialogsView) {
+define('modules/views_manager',['views/user_list', 'views/dialogs'], function(userListView, dialogsView) {
+    var ViewsManager = function(client){
+        this.client = client;
+        this.userListView = null;
+        this.dialogsView = dialogsView;
+    };
+
+    ViewsManager.prototype.init = function() {
+        this.userListView = new userListView(this.client);
+        this.dialogsView.init(this.client);
+    };
+
+    return ViewsManager;
+});
+
+define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'EE'],
+    function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
+    
+    var Client = function(opts) {
+
+        var self = this;
+
+        this.userList = new UserList(this);
+        this.gameManager = new GameManager(this);
+        this.inviteManager = new InviteManager(this);
+        this.viewsManager = new ViewsManager(this);
+
+        this.socket = new Socket(opts);
+        this.socket.on("connection", function () {
+            console.log('client;', 'socket connected');
+        });
+
+        this.socket.on("disconnection", function() {
+            console.log('client;', 'socket disconnected');
+        });
+
+        this.socket.on("failed", function() {
+            console.log('client;', 'socket connection failed');
+        });
+
+        this.socket.on("message", function(message) {
+            console.log('client;', "socket message", message);
+            self.onMessage(message);
+        });
+
+        this.getUser = this.userList.getUser.bind(this.userList);
+    };
+
+    Client.prototype  = new EE();
+
+    Client.prototype.init = function(){
+        this.socket.init();
+        this.viewsManager.init();
+        return this;
+    };
+
+
+    Client.prototype.onMessage = function(message){
+        switch (message.module){
+            case 'server': this.onServerMessage(message); break;
+            case 'invite_manager': this.inviteManager.onMessage(message); break;
+            case 'game_manager': this.gameManager.onMessage(message); break;
+        }
+    };
+
+
+    Client.prototype.onServerMessage = function(message){
+        switch (message.type){
+            case 'login':
+                this.onLogin(message.data.you, message.data.userlist, message.data.rooms);
+                break;
+            case 'user_login':
+                this.userList.onUserLogin(message.data);
+                break;
+            case 'user_leave':
+                this.userList.onUserLeave(message.data);
+                break;
+            case 'new_game':
+                this.userList.onGameStart(message.data.room, message.data.players);
+                this.gameManager.onMessage(message);
+                break;
+            case 'end_game':
+                this.userList.onGameEnd(message.data.room, message.data.players);
+                break;
+        }
+    };
+
+    Client.prototype.onLogin = function(user, userlist, rooms){
+        console.log('client;', 'login', user, userlist, rooms);
+        this.emit('login', user);
+        var i;
+        for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
+        for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
+    };
+
+
+    Client.prototype.send = function (module, type, target, data) {
+        if (typeof module == "object" && module.module && module.type && module.data) {
+            type = module.type;
+            data = module.data;
+            target = module.target;
+            module = module.module;
+        }
+        if (!module || !type || !data || !target){
+            console.warn('client;', "some arguments undefined!", module, type, target, data);
+            return;
+        }
+        if (target != 'server'){
+            if (!this.userList.getUser(target)) console.warn('client;', 'send message to offline user!', target);
+        }
+        this.socket.send({
+            module:module,
+            type:type,
+            target:target,
+            data:data
+        });
+    };
+
+
+    Client.prototype.getPlayer = function(){
+        return this.userList.player;
+    };
+
+    return Client;
+});
+define('v6-game-client',['client'], function(Client) {
     // TODO client is global(make singleton)
     // TODO css images not found)
     
 
     console.log('main;', new Date(), 'ready');
 
-    document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
-
-    window.client = new Client({domain:'localhost'});
-
-    client.init();
-    _initViews();
-
-    function _initViews() {
-        new userListView();
-        dialogsView.init();
-    }
+    return Client;
 });
-define('main.js',['require-cnf', 'v6-game-client'], function() {});
+define('main.js',['require-cnf', 'v6-game-client'], function(c, Client) {
+    return Client;
+});
 define('require-cnf',[],function() {});
 define('jquery', function() {return jQuery});
 define('jquery-ui', function() {return jQuery});
 define('underscore', function() {return Underscore});
 define('backbone', function() {return Backbone});
 require(['require-cnf'], function() {
-        require(['v6-game-client'], function() {
-            console.log('app v6-game-client start', window.client);
-        });
-});
+        require(['v6-game-client'], function(Client) {
+            console.log('app v6-game-client start');
+            window.Client = Client;
+        }, undefined, true);
+}, undefined, true);
 }($, _, Backbone));

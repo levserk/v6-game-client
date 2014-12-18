@@ -10,7 +10,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.onMessage = function(message){
-        var data = message.data, player = client.getPlayer(), i;
+        var data = message.data, player = this.client.getPlayer(), i;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
             case 'new_game':

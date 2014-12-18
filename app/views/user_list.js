@@ -31,20 +31,21 @@ define(['underscore', 'backbone', 'jquery',
 
             if (target.hasClass(this.ACTIVE_INVITE_CLASS)) {
                 // cancel invite
-                client.inviteManager.cancel();
+                this.client.inviteManager.cancel();
                 target.removeClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Пригласить');
             } else {
                 // send invite
                 this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
-                client.inviteManager.sendInvite(userId, {});
+                this.client.inviteManager.sendInvite(userId, {});
                 target.addClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Отмена');
             }
 
             console.log('invite user', userId);
         },
-        initialize: function() {
+        initialize: function(_client) {
+            this.client = _client;
             /*
              tabType: {'free', 'inGame'}
              */
@@ -58,11 +59,11 @@ define(['underscore', 'backbone', 'jquery',
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
 
-            this.listenTo(client.userList, 'new_user', this.render.bind(this));
-            this.listenTo(client.userList, 'leave_user', this.render.bind(this));
-            this.listenTo(client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
-            this.listenTo(client.userList, 'new_room', this.render.bind(this));
-            this.listenTo(client.userList, 'close_room', this.render.bind(this));
+            this.listenTo(this.client.userList, 'new_user', this.render.bind(this));
+            this.listenTo(this.client.userList, 'leave_user', this.render.bind(this));
+            this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
+            this.listenTo(this.client.userList, 'new_room', this.render.bind(this));
+            this.listenTo(this.client.userList, 'close_room', this.render.bind(this));
 
             this.currentActiveTabName = 'free';
             this._setActiveTab(this.currentActiveTabName);
@@ -73,8 +74,8 @@ define(['underscore', 'backbone', 'jquery',
         },
         _setCounters: function() {
             // TODO
-            this.$counterFree.html('(' + client.userList.getUserList().length + ')');
-            this.$counterinGame.html('(' + client.userList.getRoomList().length * 2 + ')');
+            this.$counterFree.html('(' + this.client.userList.getUserList().length + ')');
+            this.$counterinGame.html('(' + this.client.userList.getRoomList().length * 2 + ')');
         },
         _showPlayerListByTabName: function(tabName) {
             // default
@@ -84,12 +85,12 @@ define(['underscore', 'backbone', 'jquery',
 
             if (tabName === 'free') {
                 this.$list.html(this.tplFree({
-                    users: client.userList.getUserList()
+                    users: this.client.userList.getUserList()
                 }));
             }
             else if (tabName === 'inGame') {
                 this.$list.html(this.tplInGame({
-                    rooms: client.userList.getRoomList()
+                    rooms: this.client.userList.getRoomList()
                 }));
             } else {
                 console.warn('unknown tab', tabName);

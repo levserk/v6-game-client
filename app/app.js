@@ -1,20 +1,24 @@
-require(['main.js'], function (Client) {
-    console.log('app start');
+require(['require-cnf'], function () {
+    require(['jquery-ui'], function () {
+        require(['main.js'], function (Client) {
+            console.log('app start');
 
-    // Test generate userId
-    document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
+            // Test generate userId
+            document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
 
-    window.client = new Client().init();
+            window.client = new Client().init();
 
-    _generateEndGameBtn();
+            _generateEndGameBtn();
 
-    function _generateEndGameBtn() {
-        var div = $('<div>');
-        div.attr('id', 'endGameButton');
-        div.html('<span>Выйти из игры</span>');
-        div.on('click', function () {
-            window.client.gameManager.leaveGame();
+            function _generateEndGameBtn() {
+                var div = $('<div>');
+                div.attr('id', 'endGameButton');
+                div.html('<span>Выйти из игры</span>');
+                div.on('click', function () {
+                    window.client.gameManager.leaveGame();
+                });
+                $('body').append(div);
+            }
         });
-        $('body').append(div);
-    }
+    });
 });

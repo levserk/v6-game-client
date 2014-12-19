@@ -1,6 +1,5 @@
-define(['underscore', 'backbone', 'jquery',
-        'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'
-], function(_, Backbone, $, tplFree, tplInGame, tplMain) {
+define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
+    function(_, Backbone, tplFree, tplInGame, tplMain) {
     'use strict';
     var UserListView = Backbone.View.extend({
         tagName: 'div',
@@ -14,6 +13,7 @@ define(['underscore', 'backbone', 'jquery',
             'click .disconnectButton': '_reconnect'
         },
         _reconnect: function() {
+            this.$list.html(this.$loadingTab);
             this.client.socket.init();
         },
         clickTab: function(e) {
@@ -63,6 +63,7 @@ define(['underscore', 'backbone', 'jquery',
                 '<br>' +
                 '<span class="disconnectButton">Переподключиться</span>' +
                 '</div></td></tr>');
+            this.$loadingTab = $('<tr><td>Загрузка..</td></tr>');
             /*
              tabType: {'free', 'inGame'}
              */
@@ -81,11 +82,11 @@ define(['underscore', 'backbone', 'jquery',
             this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
             this.listenTo(this.client.userList, 'new_room', bindedRender);
             this.listenTo(this.client.userList, 'close_room', bindedRender);
-            this.listenTo(this.client.socket, 'failed', bindedRender);
-            this.listenTo(this.client.socket, 'disconnection', bindedRender);
+            this.listenTo(this.client, 'disconnected', bindedRender);
 
             this.currentActiveTabName = 'free';
             this._setActiveTab(this.currentActiveTabName);
+            this.$list.html(this.$loadingTab);
         },
         _setActiveTab: function(tabName) {
             this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
@@ -126,6 +127,7 @@ define(['underscore', 'backbone', 'jquery',
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
+            console.log('render');
             this._showPlayerListByTabName();
             this._setCounters();
             return this;

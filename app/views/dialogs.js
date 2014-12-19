@@ -1,4 +1,4 @@
-define(['jquery', 'jquery-ui'], function($) {
+define(function() {
     'use strict';
     var dialogs = (function() {
         var NOTIFICATION_CLASS = 'dialogNotification';

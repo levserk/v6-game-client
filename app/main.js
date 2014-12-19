@@ -1,3 +1,3 @@
-define(['require-cnf', 'v6-game-client'], function(c, Client) {
+define(['v6-game-client'], function (Client) {
     return Client;
 });

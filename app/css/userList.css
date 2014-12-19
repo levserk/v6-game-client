@@ -96,3 +96,30 @@
 #userList .inGame {
     display: none;
 }
+
+#userList tr.disconnected {
+    height: 100%;
+}
+
+#userList tr.disconnected td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+#userList tr.disconnected div {
+    margin-top: 35%;
+    opacity: 0.4;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 14px;
+}
+
+#userList .disconnectButton {
+    font-size: 120%;
+    color: blue;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#userList .disconnectText {
+    color: #444;
+}

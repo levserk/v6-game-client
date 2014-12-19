@@ -107,10 +107,10 @@
 }
 
 #userList tr.disconnected div {
-    margin-top: 33%;
+    margin-top: 30%;
     opacity: 0.4;
     font-family: Verdana, Geneva, sans-serif;
-    font-size: 14px;
+    font-size: 11pt;
 }
 
 #userList .disconnectButton {

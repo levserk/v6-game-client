@@ -18,6 +18,8 @@ define(['EE'], function(EE) {
 
     Socket.prototype.init = function(){
         var self = this;
+        self.isConnecting = true;
+        self.isConnected = false;
 
         try{
 

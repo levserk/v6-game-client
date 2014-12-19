@@ -17,10 +17,12 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 
         this.socket.on("disconnection", function() {
             console.log('client;', 'socket disconnected');
+            self.emit('disconnected');
         });
 
         this.socket.on("failed", function() {
             console.log('client;', 'socket connection failed');
+            self.emit('disconnected');
         });
 
         this.socket.on("message", function(message) {

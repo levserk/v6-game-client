@@ -23,8 +23,10 @@ define(function() {
             var div = $('<div>');
             div.addClass(INVITE_CLASS);
             div.attr('data-userId', invite.from.userId);
-
-            div.html('Вас пригласил в игру пользователь ' + invite.from.userName).dialog({
+            var text = 'Вас пригласил в игру пользователь ' + invite.from.userName;
+            if (typeof this.client.opts.generateInviteText == "function")
+                text = this.client.opts.generateInviteText(invite);
+            div.html(text).dialog({
                 resizable: true,
                 draggable: false,
                 modal: false,

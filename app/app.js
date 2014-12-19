@@ -6,7 +6,13 @@ require(['require-cnf'], function () {
             // Test generate userId
             document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
 
-            window.client = new Client().init();
+            window.client = new Client({
+                getUserParams: function(){return {gameType:1}},
+                generateInviteText: function(invite){
+                    return 'Вас пригласил пользователь ' + invite.from.userName
+                        + ' в игру ' + invite.data.gameType;
+                }
+            }).init();
 
             _generateEndGameBtn();
 

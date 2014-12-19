@@ -44,7 +44,8 @@ define(['EE'], function(EE) {
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
         this.emit('new_invite', {
-            from: this.client.getUser(invite.from)
+            from: this.client.getUser(invite.from),
+            data: invite
         });
     };
 

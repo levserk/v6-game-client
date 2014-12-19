@@ -5,6 +5,8 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 
         var self = this;
 
+        this.opts = opts;
+
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
         this.inviteManager = new InviteManager(this);

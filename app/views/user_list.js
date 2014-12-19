@@ -29,6 +29,7 @@ define(['underscore', 'backbone', 'jquery',
             }
 
             this.currentActiveTabName = clickedTabName;
+            this._setActiveTab(this.currentActiveTabName);
             this.render();
         },
         invitePlayer: function(e) {
@@ -58,6 +59,7 @@ define(['underscore', 'backbone', 'jquery',
 
             this.$disconnectedTab = $('<tr class="disconnected"><td><div>' +
                 '<span class="disconnectText">Соединение с сервером отсутствует</span>' +
+                '<br>' +
                 '<br>' +
                 '<span class="disconnectButton">Переподключиться</span>' +
                 '</div></td></tr>');

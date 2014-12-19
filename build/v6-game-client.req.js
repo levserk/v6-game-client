@@ -505,13 +505,13 @@ define('modules/socket',['EE'], function(EE) {
     return Socket;
 });
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName"><%= user.userName %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\n<tr>\n    <td class="userName"><%= user.userName %></td>\n    <% if (user.isPlayer) { %>\n    <td></td>\n    <% } else if (user.isInvited) { %>\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\n    <% } else { %>\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\n    <% } %>\n\n</tr>\n\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn">\r\n    <span>Играть с любым</span>\r\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'jquery',
         'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'
@@ -525,9 +525,17 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
         tplMain: _.template(tplMain),
         events: {
             'click .inviteBtn': 'invitePlayer',
-            'click .tabs div': 'clickTab'
+            'click .tabs div': 'clickTab',
+            'click .disconnectButton': '_reconnect'
+        },
+        _reconnect: function() {
+            this.client.socket.init();
         },
         clickTab: function(e) {
+            if (!this.client.socket.isConnected) {
+                return;
+            }
+
             var target = $(e.currentTarget),
                 clickedTabName = target.attr('data-type');
 
@@ -536,8 +544,7 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
             }
 
             this.currentActiveTabName = clickedTabName;
-            this._setActiveTab(this.currentActiveTabName);
-            this._showPlayerListByTabName(this.currentActiveTabName);
+            this.render();
         },
         invitePlayer: function(e) {
             var target = $(e.currentTarget),
@@ -560,7 +567,16 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
             console.log('invite user', userId);
         },
         initialize: function(_client) {
+            var bindedRender = this.render.bind(this);
+
             this.client = _client;
+
+            this.$disconnectedTab = $('<tr class="disconnected"><td><div>' +
+                '<span class="disconnectText">Соединение с сервером отсутствует</span>' +
+                '<br>' +
+                '<br>' +
+                '<span class="disconnectButton">Переподключиться</span>' +
+                '</div></td></tr>');
             /*
              tabType: {'free', 'inGame'}
              */
@@ -574,11 +590,13 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
 
-            this.listenTo(this.client.userList, 'new_user', this.render.bind(this));
-            this.listenTo(this.client.userList, 'leave_user', this.render.bind(this));
+            this.listenTo(this.client.userList, 'new_user', bindedRender);
+            this.listenTo(this.client.userList, 'leave_user', bindedRender);
             this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
-            this.listenTo(this.client.userList, 'new_room', this.render.bind(this));
-            this.listenTo(this.client.userList, 'close_room', this.render.bind(this));
+            this.listenTo(this.client.userList, 'new_room', bindedRender);
+            this.listenTo(this.client.userList, 'close_room', bindedRender);
+            this.listenTo(this.client.socket, 'failed', bindedRender);
+            this.listenTo(this.client.socket, 'disconnection', bindedRender);
 
             this.currentActiveTabName = 'free';
             this._setActiveTab(this.currentActiveTabName);
@@ -588,27 +606,34 @@ define('views/user_list',['underscore', 'backbone', 'jquery',
             this.$el.find('.tabs div[data-type="' + tabName + '"]').addClass(this.ACTIVE_TAB_CLASS);
         },
         _setCounters: function() {
-            // TODO
+            if (!this.client.socket.isConnected) {
+                this.$counterFree.html('');
+                this.$counterinGame.html('');
+                return;
+            }
+
             this.$counterFree.html('(' + this.client.userList.getUserList().length + ')');
             this.$counterinGame.html('(' + this.client.userList.getRoomList().length * 2 + ')');
         },
-        _showPlayerListByTabName: function(tabName) {
+        _showPlayerListByTabName: function() {
             // default
-            if (tabName === undefined) {
-                tabName = this.currentActiveTabName;
+
+            if (!this.client.socket.isConnected) {
+                this.$list.html(this.$disconnectedTab);
+                return;
             }
 
-            if (tabName === 'free') {
+            if (this.currentActiveTabName === 'free') {
                 this.$list.html(this.tplFree({
                     users: this.client.userList.getUserList()
                 }));
             }
-            else if (tabName === 'inGame') {
+            else if (this.currentActiveTabName === 'inGame') {
                 this.$list.html(this.tplInGame({
                     rooms: this.client.userList.getRoomList()
                 }));
             } else {
-                console.warn('unknown tab', tabName);
+                console.warn('unknown tab', this.currentActiveTabName);
             }
         },
         onRejectInvite: function(invite) {

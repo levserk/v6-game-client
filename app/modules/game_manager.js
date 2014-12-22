@@ -39,7 +39,8 @@ define(['EE'], function(EE) {
                         this.getPlayer(data.players[1])
                     ],
                     first: this.getPlayer(data.first),
-                    id: data.id
+                    id: data.id,
+                    inviteData: data.inviteData
                 });
                 break;
             case 'turn':
@@ -137,7 +138,7 @@ define(['EE'], function(EE) {
 
     function Room(room, client){
         this.data = room;
-        this.id = room.id;
+        this.id = room.room;
         this.owner = client.getUser(room.owner);
         this.players = [];
         if (typeof room.players[0] == "object") this.players = room.players;

@@ -63,7 +63,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 },
                 msg: {
                     msgId: 52,
-                    msgText: 'yoyoyo!'
+                    msgText: '<div>hack you!</div>!'
                 }
             }
         ];
@@ -79,7 +79,77 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             tplMsg: _.template(tplMsg),
             events: {
                 'click .chatMsg': '_deleteMsg',
-                'click .tab': 'clickTab'
+                'click .tab': 'clickTab',
+                'blur .inputMsg': 'blurInputMsg',
+                'click .inputMsg': 'clickInputMsg',
+                'click .sendMsgBtn': 'sendMsgEvent',
+                'keyup .inputMsg': 'sendMsgEvent',
+                'change #chat-select': 'changeChatSelect'
+            },
+            changeChatSelect: function(e) {
+                var textMsg = e.target.options[e.target.selectedIndex].innerHTML;
+                this.$SELECTED_OPTION.attr('selected', true);
+                this.$inputMsg.text(textMsg);
+            },
+            sendMsgEvent: function(e) {
+                var msgText = '';
+                console.log("TEST FIRE", e.type);
+                // e используется здесь только если нажат enter
+
+                if (e.type === 'keyup' && e.keyCode !== 13) {
+                    return;
+                }
+
+                if (this.$inputMsg.has(this.$placeHolderSpan).length) {
+                    return;
+                }
+
+                msgText = this.$inputMsg.text();
+                this._sendMsg(msgText);
+            },
+            _sendMsg: function(text) {
+                if (text === '' || typeof text !== 'string') {
+                    return;
+                }
+
+                console.log('now check');
+                if (text.length > this.MAX_MSG_LENGTH) {
+                    alert(this.MAX_LENGTH_MSG);
+                    return;
+                }
+
+                this._addOneMsg({
+                    user: {
+                        userName: 'goof',
+                        userId: 665
+                    },
+                    msg: {
+                        msgText: text,
+                        msgId: 3,
+                        time: '07:30'
+                    }
+                });
+
+                this._onMsgAdded();
+            },
+            _onMsgAdded: function() {
+                this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight);
+                this.$inputMsg.empty();
+                this.$inputMsg.focus();
+            },
+            blurInputMsg: function(e) {
+                var target = $(e.currentTarget);
+
+                if (target.text() === '') {
+                    target.empty().append(this.$placeHolderSpan); // empty на всякий случай
+                }
+            },
+            clickInputMsg: function(e) {
+                var target = $(e.currentTarget);
+
+                if (target.has(this.$placeHolderSpan).length) {
+                    target.empty();
+                }
             },
             clickTab: function(e) {
                 var $target = $(e.target),
@@ -99,19 +169,28 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             initialize: function(_client) {
                 this.$el.html(this.tplMain());
 
+                this.MAX_MSG_LENGTH = 128;
+                this.MAX_LENGTH_MSG = 'Сообщение слишком длинное (максимальная длина - 128 символов). Сократите его попробуйте снова';
+
                 this.CLASS_DISABLED = 'disabled';
                 this.CLASS_DELETE_CHAT_MESSAGE = 'delete';
                 this.ACTIVE_TAB_CLASS = 'activeTab';
 
+                this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
+
                 this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner"></div></li>');
                 this.$messagesWrap = this.$el.find('.messagesWrap');
                 this.$msgsList = this.$messagesWrap.find('ul');
+                this.$inputMsg = this.$el.find('.inputMsg');
+                this.$SELECTED_OPTION = this.$el.find('select option:selected');
 
                 this.currentActiveTabName = 'public';
                 this._setActiveTab(this.currentActiveTabName);
 
                 $('body').append(this.el);
                 this._addAllMsgs(TEST_DATA.pub);
+
+                this.$inputMsg.empty().append(this.$placeHolderSpan);
                 //this._setLoadingState();
 
                 window.view = this;

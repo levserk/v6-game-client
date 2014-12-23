@@ -60,6 +60,10 @@
     padding: 5px;
 }
 
+#v6Chat .placeHolderSpan {
+    color: #444;
+}
+
 #v6Chat .messagesWrap ul{
     list-style: none;
     margin: 0;
@@ -120,9 +124,7 @@
     cursor: text;
     padding: 4px;
     word-wrap: break-word;
-    overflow: hidden;
     font-size: 10pt;
-    color: #444;
 }
 
 #v6Chat .spinner {
@@ -135,6 +137,10 @@
 
 #v6Chat .chatMsg .userName {
     font-size: 100%;
+}
+
+#v6Chat .chatMsg:hover {
+    background-color: #edf1f5!important;
 }
 
 #v6Chat .spinnerWrap {
@@ -161,4 +167,12 @@
     font-size: 85%;
     color: #AAA;
     margin: 0 5px;
+}
+
+#v6Chat .chatMsg .msgTextWrap {
+    max-width: 90%;
+}
+
+#v6Chat .chatMsg .msgText {
+    word-wrap: break-word;
 }

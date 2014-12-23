@@ -8,9 +8,9 @@
         </div>
     </div>
     <div class="msgRow2">
-        <span class="msgText">
-            <%= msg.msgText %>
-    </span>
         <div class="delete">&dagger;</div>
+        <div class="msgTextWrap">
+            <span class="msgText"><%= _.escape(msg.msgText) %></span>
+        </div>
     </div>
 </li>

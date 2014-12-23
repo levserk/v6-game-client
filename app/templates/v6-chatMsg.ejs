@@ -1,13 +1,16 @@
-<li>
+<li class="chatMsg" data-msgId="<%= msg.msgId %>">
     <div class="msgRow1">
+        <div class="smallRight time"><%= msg.time %></div>
+        <div class="smallRight rate"><%= (user.rate || '-') %></div>
+
         <div data-userId="<%= user.userId%>">
             <span class="userName"><%= user.userName %></span>
         </div>
-        <span <%= msg.time%>></span>
     </div>
     <div class="msgRow2">
-        <span class="msgText" data-msgId="<%= msg.msgId %>">
+        <span class="msgText">
             <%= msg.msgText %>
     </span>
+        <div class="delete">&dagger;</div>
     </div>
 </li>

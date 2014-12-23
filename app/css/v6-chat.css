@@ -11,6 +11,10 @@
 
 }
 
+#v6Chat .tabs .activeTab {
+    background-color: rgba(100,142,163,.18);
+}
+
 #v6Chat .tabs {
     width: 100%;
     height: 20px;
@@ -27,7 +31,7 @@
 }
 
 #v6Chat .tabs div {
-    width: 50%;
+    width: 33%;
     float: left;
     text-align: center;
     font-size: 95%;
@@ -35,6 +39,10 @@
 
 #v6Chat .tabs div[data-type="public"] {
     text-align: left;
+}
+
+#v6Chat .clear {
+    clear: both;
 }
 
 #v6Chat .messagesWrap {
@@ -45,7 +53,11 @@
     background: #fff;
     box-shadow: 0 2px 2px rgba(0,0,0,.03);
     color: #444;
-    margin-top: 10px;
+    margin-top: 5px;
+}
+
+#v6Chat .tabs .tab {
+    padding: 5px;
 }
 
 #v6Chat .messagesWrap ul{
@@ -121,9 +133,8 @@
     display: inline-block;
 }
 
-#v6Chat table {
-    width: 100%;
-    height: 100%;
+#v6Chat .chatMsg .userName {
+    font-size: 100%;
 }
 
 #v6Chat .spinnerWrap {
@@ -133,4 +144,21 @@
 
 #v6Chat .messagesWrap.disabled {
     background: rgba(128, 128, 128, 0.1);
+}
+
+#v6Chat .delete {
+    float: right;
+    display: none;
+    cursor: pointer;
+}
+
+#v6Chat .chatMsg:hover .delete {
+    display: block;
+}
+
+#v6Chat .chatMsg .smallRight {
+    float: right;
+    font-size: 85%;
+    color: #AAA;
+    margin: 0 5px;
 }

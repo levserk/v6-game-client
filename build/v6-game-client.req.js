@@ -39,7 +39,8 @@ define('modules/game_manager',['EE'], function(EE) {
                         this.getPlayer(data.players[1])
                     ],
                     first: this.getPlayer(data.first),
-                    id: data.id
+                    id: data.id,
+                    inviteData: data.inviteData
                 });
                 break;
             case 'turn':
@@ -137,7 +138,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
     function Room(room, client){
         this.data = room;
-        this.id = room.id;
+        this.id = room.room;
         this.owner = client.getUser(room.owner);
         this.players = [];
         if (typeof room.players[0] == "object") this.players = room.players;
@@ -192,7 +193,8 @@ define('modules/invite_manager',['EE'], function(EE) {
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
         this.emit('new_invite', {
-            from: this.client.getUser(invite.from)
+            from: this.client.getUser(invite.from),
+            data: invite
         });
     };
 
@@ -521,13 +523,13 @@ define('modules/socket',['EE'], function(EE) {
     return Socket;
 });
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName"><%= user.userName %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\n<tr>\n    <td class="userName"><%= user.userName %></td>\n    <% if (user.isPlayer) { %>\n    <td></td>\n    <% } else if (user.isInvited) { %>\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\n    <% } else { %>\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\n    <% } %>\n\n</tr>\n\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn">\r\n    <span>Играть с любым</span>\r\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -576,7 +578,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             } else {
                 // send invite
                 this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
-                this.client.inviteManager.sendInvite(userId, {});
+                this.client.inviteManager.sendInvite(userId, (typeof this.client.opts.getUserParams == 'function'?this.client.opts.getUserParams():{}));
                 target.addClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Отмена');
             }
@@ -691,8 +693,10 @@ define('views/dialogs',[],function() {
             var div = $('<div>');
             div.addClass(INVITE_CLASS);
             div.attr('data-userId', invite.from.userId);
-
-            div.html('Вас пригласил в игру пользователь ' + invite.from.userName).dialog({
+            var text = 'Вас пригласил в игру пользователь ' + invite.from.userName;
+            if (typeof this.client.opts.generateInviteText == "function")
+                text = this.client.opts.generateInviteText(invite);
+            div.html(text).dialog({
                 resizable: true,
                 draggable: false,
                 modal: false,
@@ -822,6 +826,8 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
     var Client = function(opts) {
 
         var self = this;
+
+        this.opts = opts;
 
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);

@@ -17,6 +17,8 @@ define(function() {
             client.gameManager.on('game_start', _hideDialogs);
             client.gameManager.on('round_end', _roundEnd);
             client.gameManager.on('game_leave', _hideDialogs);
+            client.gameManager.on('ask_draw', _askDraw);
+            client.gameManager.on('cancel_draw', _cancelDraw);
         }
 
         function _newInvite(invite) {
@@ -93,7 +95,48 @@ define(function() {
         }
 
 
+        function _askDraw(user) {
+            console.log('ask draw', user);
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Пользователь ' + user.userName + ' пердлогает ничью').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Принять": function() {
+                        client.gameManager.acceptDraw();
+                        $(this).remove();
+                    },
+                    "Отклонить": function() {
+                        client.gameManager.cancelDraw();
+                        $(this).remove();
+                    }
+                }
+            }).parent().draggable();
+        }
+
+
+        function _cancelDraw(user) {
+            console.log('cancel draw', user);
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Пользователь ' + user.userName + ' отклонил ваше предложение о ничье').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Ок": function() {
+                        $(this).remove();
+                    }
+                }
+            });
+        }
+
+
         function _roundEnd(data) {
+            _hideDialogs();
+
             var div = $('<div>');
             div.addClass(ROUNDRESULT_CLASS);
 

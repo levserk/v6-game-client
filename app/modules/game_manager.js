@@ -48,7 +48,9 @@ define(['EE'], function(EE) {
                 this.emit('turn', data);
                 break;
             case 'event':
-                console.log('game_manager;', 'game event', data);
+                var user = this.getPlayer(data.user);
+                console.log('game_manager;', 'game event', data, user);
+                this.onUserEvent(user, data);
                 break;
             case 'user_leave':
                 var user = this.getPlayer(data);
@@ -99,6 +101,23 @@ define(['EE'], function(EE) {
     };
 
 
+    GameManager.prototype.onUserEvent = function(user, event){
+        switch (event.type){
+            case 'draw':
+                if (user == this.client.getPlayer()) return; // draw to yourself
+                switch (event.action){
+                    case 'ask':
+                        this.emit('ask_draw', user);
+                        break;
+                    case 'cancel':
+                        this.emit('cancel_draw', user);
+                        break;
+                }
+                break;
+        }
+    };
+
+
     GameManager.prototype.leaveGame = function(){
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
@@ -124,7 +143,22 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendThrow = function(){
-        this.client.send('game_manager', 'event', 'server', 'throw');
+        this.client.send('game_manager', 'event', 'server', {type:'throw'});
+    };
+
+
+    GameManager.prototype.sendDraw = function(){
+        this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
+    };
+
+
+    GameManager.prototype.acceptDraw = function(){
+        this.client.send('game_manager', 'event', 'server', {type:'draw', action:'accept'});
+    };
+
+
+    GameManager.prototype.cancelDraw = function(){
+        this.client.send('game_manager', 'event', 'server', {type:'draw', action:'cancel'});
     };
 
 

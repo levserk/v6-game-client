@@ -20,27 +20,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 },
                 msg: {
                     msgId: 52,
-                    msgText: '50 cent!'
-                }
-            },
-            {
-                user: {
-                    userId: 10,
-                    userName: 'fan'
-                },
-                msg: {
-                    msgId: 498,
-                    msgText: 'hi, fifty!!!'
-                }
-            },
-            {
-                user: {
-                    userId: 15646,
-                    userName: '50 cent'
-                },
-                msg: {
-                    msgId: 12,
-                    msgText: 'fuck you'
+                    msgText: '50 cent!',
+                    time: '15:40'
                 }
             }
         ];

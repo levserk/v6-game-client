@@ -487,7 +487,9 @@ define('modules/game_manager',['EE'], function(EE) {
                 this.emit('turn', data);
                 break;
             case 'event':
-                console.log('game_manager;', 'game event', data);
+                var user = this.getPlayer(data.user);
+                console.log('game_manager;', 'game event', data, user);
+                this.onUserEvent(user, data);
                 break;
             case 'user_leave':
                 var user = this.getPlayer(data);
@@ -538,6 +540,23 @@ define('modules/game_manager',['EE'], function(EE) {
     };
 
 
+    GameManager.prototype.onUserEvent = function(user, event){
+        switch (event.type){
+            case 'draw':
+                if (user == this.client.getPlayer()) return; // draw to yourself
+                switch (event.action){
+                    case 'ask':
+                        this.emit('ask_draw', user);
+                        break;
+                    case 'cancel':
+                        this.emit('cancel_draw', user);
+                        break;
+                }
+                break;
+        }
+    };
+
+
     GameManager.prototype.leaveGame = function(){
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
@@ -563,7 +582,22 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.sendThrow = function(){
-        this.client.send('game_manager', 'event', 'server', 'throw');
+        this.client.send('game_manager', 'event', 'server', {type:'throw'});
+    };
+
+
+    GameManager.prototype.sendDraw = function(){
+        this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
+    };
+
+
+    GameManager.prototype.acceptDraw = function(){
+        this.client.send('game_manager', 'event', 'server', {type:'draw', action:'accept'});
+    };
+
+
+    GameManager.prototype.cancelDraw = function(){
+        this.client.send('game_manager', 'event', 'server', {type:'draw', action:'cancel'});
     };
 
 
@@ -1353,13 +1387,13 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\n<tr>\n    <td class="userName"><%= user.userName %></td>\n    <% if (user.isPlayer) { %>\n    <td></td>\n    <% } else if (user.isInvited) { %>\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\n    <% } else { %>\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\n    <% } %>\n\n</tr>\n\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName"><%= user.userName %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn">\r\n    <span>Играть с любым</span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -1517,6 +1551,8 @@ define('views/dialogs',[],function() {
             client.gameManager.on('game_start', _hideDialogs);
             client.gameManager.on('round_end', _roundEnd);
             client.gameManager.on('game_leave', _hideDialogs);
+            client.gameManager.on('ask_draw', _askDraw);
+            client.gameManager.on('cancel_draw', _cancelDraw);
         }
 
         function _newInvite(invite) {
@@ -1593,7 +1629,48 @@ define('views/dialogs',[],function() {
         }
 
 
+        function _askDraw(user) {
+            console.log('ask draw', user);
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Пользователь ' + user.userName + ' пердлогает ничью').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Принять": function() {
+                        client.gameManager.acceptDraw();
+                        $(this).remove();
+                    },
+                    "Отклонить": function() {
+                        client.gameManager.cancelDraw();
+                        $(this).remove();
+                    }
+                }
+            }).parent().draggable();
+        }
+
+
+        function _cancelDraw(user) {
+            console.log('cancel draw', user);
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Пользователь ' + user.userName + ' отклонил ваше предложение о ничье').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Ок": function() {
+                        $(this).remove();
+                    }
+                }
+            });
+        }
+
+
         function _roundEnd(data) {
+            _hideDialogs();
+
             var div = $('<div>');
             div.addClass(ROUNDRESULT_CLASS);
 
@@ -1635,16 +1712,258 @@ define('views/dialogs',[],function() {
     return dialogs;
 });
 
-define('modules/views_manager',['views/user_list', 'views/dialogs'], function(userListView, dialogsView) {
+
+define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    <span class="chatRules">Правила чата</span>\r\n</div>';});
+
+
+define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.msgId %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.time %></div>\r\n        <div class="smallRight rate"><%= (user.rate || \'-\') %></div>\r\n\r\n        <div data-userId="<%= user.userId%>">\r\n            <span class="userName"><%= user.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete">&dagger;</div>\r\n        <div class="msgTextWrap">\r\n            <span class="msgText"><%= _.escape(msg.msgText) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
+
+define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs'],
+    function(_, Backbone, tplMain, tplMsg) {
+        
+        var pub = [
+            {
+                user: {
+                    userId: 1,
+                    userName: 'viteck'
+                },
+                msg: {
+                    msgId: 1,
+                    msgText: 'Привет ребята!!',
+                    time: '5:45'
+                }
+            },
+            {
+                user: {
+                    userId: 55555555555,
+                    userName: '50 cent'
+                },
+                msg: {
+                    msgId: 52,
+                    msgText: '50 cent!',
+                    time: '15:40'
+                }
+            }
+        ];
+        var priv = [
+            {
+                user: {
+                    userId: 1,
+                    userName: 'viteck'
+                },
+                msg: {
+                    msgId: 1,
+                    msgText: 'Привет!',
+                    time: '5:46'
+                }
+            },
+            {
+                user: {
+                    userId: 55555555555,
+                    userName: '50 cent'
+                },
+                msg: {
+                    msgId: 52,
+                    msgText: '<div>hack you!</div>!'
+                }
+            }
+        ];
+        var TEST_DATA = {
+            pub: pub,
+            priv: priv
+        };
+
+        var ChatView = Backbone.View.extend({
+            tagName: 'div',
+            id: 'v6Chat',
+            tplMain: _.template(tplMain),
+            tplMsg: _.template(tplMsg),
+            events: {
+                'click .chatMsg': '_deleteMsg',
+                'click .tab': 'clickTab',
+                'blur .inputMsg': 'blurInputMsg',
+                'click .inputMsg': 'clickInputMsg',
+                'click .sendMsgBtn': 'sendMsgEvent',
+                'keyup .inputMsg': 'sendMsgEvent',
+                'change #chat-select': 'changeChatSelect'
+            },
+            changeChatSelect: function(e) {
+                var textMsg = e.target.options[e.target.selectedIndex].innerHTML;
+                this.$SELECTED_OPTION.attr('selected', true);
+                this.$inputMsg.text(textMsg);
+            },
+            sendMsgEvent: function(e) {
+                var msgText = '';
+                console.log("TEST FIRE", e.type);
+                // e используется здесь только если нажат enter
+
+                if (e.type === 'keyup' && e.keyCode !== 13) {
+                    return;
+                }
+
+                if (this.$inputMsg.has(this.$placeHolderSpan).length) {
+                    return;
+                }
+
+                msgText = this.$inputMsg.text();
+                this._sendMsg(msgText);
+            },
+            _sendMsg: function(text) {
+                if (text === '' || typeof text !== 'string') {
+                    return;
+                }
+
+                console.log('now check');
+                if (text.length > this.MAX_MSG_LENGTH) {
+                    alert(this.MAX_LENGTH_MSG);
+                    return;
+                }
+
+                this._addOneMsg({
+                    user: {
+                        userName: 'goof',
+                        userId: 665
+                    },
+                    msg: {
+                        msgText: text,
+                        msgId: 3,
+                        time: '07:30'
+                    }
+                });
+
+                this._onMsgAdded();
+            },
+            _onMsgAdded: function() {
+                this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight);
+                this.$inputMsg.empty();
+                this.$inputMsg.focus();
+            },
+            blurInputMsg: function(e) {
+                var target = $(e.currentTarget);
+
+                if (target.text() === '') {
+                    target.empty().append(this.$placeHolderSpan); // empty на всякий случай
+                }
+            },
+            clickInputMsg: function(e) {
+                var target = $(e.currentTarget);
+
+                if (target.has(this.$placeHolderSpan).length) {
+                    target.empty();
+                }
+            },
+            clickTab: function(e) {
+                var $target = $(e.target),
+                    tabName = $target.attr('data-type');
+
+                if (tabName === this.currentActiveTabName) {
+                    return;
+                }
+
+                this.currentActiveTabName = tabName;
+                this._setActiveTab(this.currentActiveTabName);
+
+                this._addAllMsgs(this.currentActiveTabName === 'public'? TEST_DATA.pub: TEST_DATA.priv);
+            },
+            invitePlayer: function(e) {
+            },
+            initialize: function(_client) {
+                this.$el.html(this.tplMain());
+
+                this.MAX_MSG_LENGTH = 128;
+                this.MAX_LENGTH_MSG = 'Сообщение слишком длинное (максимальная длина - 128 символов). Сократите его попробуйте снова';
+
+                this.CLASS_DISABLED = 'disabled';
+                this.CLASS_DELETE_CHAT_MESSAGE = 'delete';
+                this.ACTIVE_TAB_CLASS = 'activeTab';
+
+                this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
+
+                this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner"></div></li>');
+                this.$messagesWrap = this.$el.find('.messagesWrap');
+                this.$msgsList = this.$messagesWrap.find('ul');
+                this.$inputMsg = this.$el.find('.inputMsg');
+                this.$SELECTED_OPTION = this.$el.find('select option:selected');
+
+                this.currentActiveTabName = 'public';
+                this._setActiveTab(this.currentActiveTabName);
+
+                $('body').append(this.el);
+                this._addAllMsgs(TEST_DATA.pub);
+
+                this.$inputMsg.empty().append(this.$placeHolderSpan);
+                //this._setLoadingState();
+
+                window.view = this;
+            },
+            _setActiveTab: function(tabName) {
+                this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
+                this.$el.find('.tabs div[data-type="' + tabName + '"]').addClass(this.ACTIVE_TAB_CLASS);
+            },
+            render: function() {
+                return this;
+            },
+            _deleteMsg: function(e) {
+                // delete by id or as click .delete handler
+                var $msg, msgId;
+
+                if (!isNaN(+e) && typeof +e === 'number') {
+                    msgId = e;
+                } else {
+                    //клик не по кнопке удалить
+                    if (!$(e.target).hasClass(this.CLASS_DELETE_CHAT_MESSAGE)) {
+                        return;
+                    }
+
+                    $msg = $(e.currentTarget);
+                    msgId = $msg.attr('data-msgId')
+                }
+
+                // если был передан id сообщения
+                if (!$msg) {
+                    $msg = this.$el.find('li[data-msgId="' + msgId + '"]').remove();
+                }
+
+                if (!$msg) {
+                    console.warn('cannot find msg with  id', msgId, e);
+                    return;
+                }
+
+                $msg.remove();
+            },
+            _addAllMsgs: function(msgs) {
+                this.$msgsList.empty();
+                _.each(msgs, function(msg) {
+                    this._addOneMsg(msg);
+                }, this);
+            },
+            _addOneMsg: function(msg) {
+                var $msg = this.tplMsg(msg);
+                this.$msgsList.append($msg);
+            },
+            _setLoadingState: function() {
+                this.$msgsList.prepend(this.$spinnerWrap);
+                this.$messagesWrap.addClass(this.CLASS_DISABLED);
+            },
+            _removeLoadingState: function() {
+                this.$spinnerWrap.remove();
+                this.$messagesWrap.removeClass(this.CLASS_DISABLED);
+            }
+        });
+        return ChatView;
+    });
+define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'], function(userListView, dialogsView, v6ChatView) {
     var ViewsManager = function(client){
         this.client = client;
         this.userListView = null;
         this.dialogsView = dialogsView;
+        this.chat = null;
     };
 
     ViewsManager.prototype.init = function() {
         this.userListView = new userListView(this.client);
         this.dialogsView.init(this.client);
+        this.v6ChatView = new v6ChatView();
     };
 
     return ViewsManager;

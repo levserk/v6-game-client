@@ -7,7 +7,7 @@ require(['require-cnf'], function () {
             document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
 
             window.client = new Client({
-                getUserParams: function(){return {gameType:1}},
+                getUserParams: function(){return {gameType:'Main Mode'}},
                 generateInviteText: function(invite){
                     return 'Вас пригласил пользователь ' + invite.from.userName
                         + ' в игру ' + invite.data.gameType;
@@ -24,6 +24,23 @@ require(['require-cnf'], function () {
                     window.client.gameManager.leaveGame();
                 });
                 $('body').append(div);
+
+                div = $('<div>');
+                div.attr('id', 'drawButton');
+                div.html('<span>Предложить ничью</span>');
+                div.on('click', function () {
+                    window.client.gameManager.sendDraw();
+                });
+                $('body').append(div);
+
+                div = $('<div>');
+                div.attr('id', 'winButton');
+                div.html('<span>Победный ход</span>');
+                div.on('click', function () {
+                    window.client.gameManager.sendTurn({result:1});
+                });
+                $('body').append(div);
+
             }
         });
     });

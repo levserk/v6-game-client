@@ -173,6 +173,6 @@
     max-width: 90%;
 }
 
-#v6Chat .chatMsg .msgText {
+#v6Chat .chatMsg .v6-msgText {
     word-wrap: break-word;
 }

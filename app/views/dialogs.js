@@ -100,7 +100,7 @@ define(function() {
             var div = $('<div>');
             div.addClass(NOTIFICATION_CLASS);
 
-            div.html('Пользователь ' + user.userName + ' пердлогает ничью').dialog({
+            div.html('Пользователь ' + user.userName + ' предлагает ничью').dialog({
                 resizable: false,
                 modal: false,
                 buttons: {

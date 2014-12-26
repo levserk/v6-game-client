@@ -35,8 +35,13 @@ define(['EE'], function(EE) {
             };
 
             this.ws.onmessage = function (data, flags) {
-                console.log('socket;', 'ws message', data, flags);
 
+                if (data.data == 'ping') {
+                    console.log('socket;', 'ws ping', data, flags);
+                    self.ws.send('pong');
+                    return;
+                }
+                console.log('socket;', 'ws message', data, flags);
                 try{
                     data = JSON.parse(data.data)
                 } catch (e) {

@@ -49,8 +49,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             }
         ];
         var TEST_DATA = {
-            pub: pub,
-            priv: priv
+            pub: [],
+            priv: []
         };
 
         var ChatView = Backbone.View.extend({

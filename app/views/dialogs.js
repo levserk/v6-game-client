@@ -6,6 +6,7 @@ define(function() {
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var client;
+        var dialogTimeout;
 
         function _subscribe(_client) {
             client = _client;
@@ -148,26 +149,31 @@ define(function() {
                 default : result = 'игра окночена';
             }
             // TODO: get opponent name;
-            div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
-                resizable: false,
-                modal: false,
-                width: 350,
-                buttons: {
-                    "Да, начать новую игру": function() {
-                        $(this).remove();
-                        client.gameManager.sendReady();
-                    },
-                    "Нет, выйти": function() {
-                        $(this).remove();
-                        client.gameManager.leaveGame();
+
+            dialogTimeout = setTimeout(function(){
+                div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
+                    resizable: false,
+                    modal: false,
+                    width: 350,
+                    buttons: {
+                        "Да, начать новую игру": function() {
+                            $(this).remove();
+                            client.gameManager.sendReady();
+                        },
+                        "Нет, выйти": function() {
+                            $(this).remove();
+                            client.gameManager.leaveGame();
+                        }
                     }
-                }
-            });
+                });
+            }, client.opts.resultDialogDelay);
+
         }
 
         function _hideDialogs() { //TODO: hide all dialogs and messages
             $('.' + NOTIFICATION_CLASS).remove();
             $('.' + ROUNDRESULT_CLASS).remove();
+            clearTimeout(dialogTimeout);
         }
 
         return {

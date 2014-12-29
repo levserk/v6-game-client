@@ -2,11 +2,11 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
     function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
     'use strict';
     var Client = function(opts) {
+        opts.resultDialogDelay = opts.resultDialogDelay || 0;
 
         var self = this;
 
         this.opts = opts;
-
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
         this.inviteManager = new InviteManager(this);
@@ -76,10 +76,10 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 
     Client.prototype.onLogin = function(user, userlist, rooms){
         console.log('client;', 'login', user, userlist, rooms);
-        this.emit('login', user);
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
+        this.emit('login', user);
     };
 
 

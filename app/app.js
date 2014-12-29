@@ -7,6 +7,9 @@ require(['require-cnf'], function () {
             document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
 
             window.client = new Client({
+                port: 8080,
+                domain: 'localhost',
+                resultDialogDelay: 1000,
                 getUserParams: function(){return {gameType:'Main Mode'}},
                 generateInviteText: function(invite){
                     return 'Вас пригласил пользователь ' + invite.from.userName

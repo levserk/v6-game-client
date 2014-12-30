@@ -3,6 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
     'use strict';
     var Client = function(opts) {
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
+        opts.modes = opts.modes || opts.gameModes || ['default'];
 
         var self = this;
 

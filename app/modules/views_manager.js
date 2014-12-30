@@ -9,7 +9,7 @@ define(['views/user_list', 'views/dialogs', 'views/chat'], function(userListView
     ViewsManager.prototype.init = function() {
         this.userListView = new userListView(this.client);
         this.dialogsView.init(this.client);
-        this.v6ChatView = new v6ChatView();
+        this.v6ChatView = new v6ChatView(this.client);
     };
 
     return ViewsManager;

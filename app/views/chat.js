@@ -101,13 +101,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this._addOneMsg({
                     user: {
-                        userName: 'goof',
+                        userName: this.client.getPlayer().userName,
                         userId: 665
                     },
                     msg: {
                         msgText: text,
                         msgId: 3,
-                        time: '07:30'
+                        time: _getTime()
                     }
                 });
 
@@ -148,12 +148,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             invitePlayer: function(e) {
             },
             initialize: function(_client) {
+                this.client = _client;
                 this.$el.html(this.tplMain());
 
                 this.MAX_MSG_LENGTH = 128;
                 this.MAX_LENGTH_MSG = 'Сообщение слишком длинное (максимальная длина - 128 символов). Сократите его попробуйте снова';
 
                 this.CLASS_DISABLED = 'disabled';
+                this.CLASS_CHATADMIN = 'chatAdmin';
                 this.CLASS_DELETE_CHAT_MESSAGE = 'delete';
                 this.ACTIVE_TAB_CLASS = 'activeTab';
 
@@ -173,7 +175,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 //this._setLoadingState();
-
+                if (window.LogicGame && window.LogicGame.isSuperUser()) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
                 window.view = this;
             },
             _setActiveTab: function(tabName) {
@@ -231,4 +233,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             }
         });
         return ChatView;
+
+        //TODO use momentjs
+        function _getTime(){
+            var d = new Date();
+            var h = d.getHours();
+            var m = d.getMinutes();
+            if (h < 10) h = '0' + h;
+            if (m < 10) m = '0' + m;
+            return h + ':' + m;
+        }
     });

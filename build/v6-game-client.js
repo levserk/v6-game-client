@@ -880,9 +880,13 @@ define('modules/user_list',['EE'], function(EE) {
 
     function User(data, fIsPlayer){
         if (!data || !data.userId || !data.userName) throw new Error("wrong user data!");
-        this.userId = data.userId;
-        this.userName = data.userName;
+        for (var key in data){
+            if (data.hasOwnProperty(key)) this[key] = data[key];
+        }
         this.isPlayer = fIsPlayer || false;
+        this.getRank = function (mode) {
+            return this[mode].rank || '—';
+        }
     }
 
     return UserList;
@@ -926,7 +930,6 @@ define('modules/socket',['EE'], function(EE) {
             this.ws.onmessage = function (data, flags) {
 
                 if (data.data == 'ping') {
-                    console.log('socket;', 'ws ping', data, flags);
                     self.ws.send('pong');
                     return;
                 }
@@ -1392,13 +1395,13 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName"><%= user.userName %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\n<tr>\n    <td class="userName"><%= user.userName %></td>\n    <td class="userRank"><%= user.getRank(\'default\') %></td>\n    <% if (user.isPlayer) { %>\n    <td></td>\n    <% } else if (user.isInvited) { %>\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\n    <% } else { %>\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\n    <% } %>\n\n</tr>\n\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn">\r\n    <span>Играть с любым</span>\r\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -1545,6 +1548,7 @@ define('views/dialogs',[],function() {
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var client;
+        var dialogTimeout;
 
         function _subscribe(_client) {
             client = _client;
@@ -1687,26 +1691,31 @@ define('views/dialogs',[],function() {
                 default : result = 'игра окночена';
             }
             // TODO: get opponent name;
-            div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
-                resizable: false,
-                modal: false,
-                width: 350,
-                buttons: {
-                    "Да, начать новую игру": function() {
-                        $(this).remove();
-                        client.gameManager.sendReady();
-                    },
-                    "Нет, выйти": function() {
-                        $(this).remove();
-                        client.gameManager.leaveGame();
+
+            dialogTimeout = setTimeout(function(){
+                div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
+                    resizable: false,
+                    modal: false,
+                    width: 350,
+                    buttons: {
+                        "Да, начать новую игру": function() {
+                            $(this).remove();
+                            client.gameManager.sendReady();
+                        },
+                        "Нет, выйти": function() {
+                            $(this).remove();
+                            client.gameManager.leaveGame();
+                        }
                     }
-                }
-            });
+                });
+            }, client.opts.resultDialogDelay);
+
         }
 
         function _hideDialogs() { //TODO: hide all dialogs and messages
             $('.' + NOTIFICATION_CLASS).remove();
             $('.' + ROUNDRESULT_CLASS).remove();
+            clearTimeout(dialogTimeout);
         }
 
         return {
@@ -1718,10 +1727,10 @@ define('views/dialogs',[],function() {
 });
 
 
-define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    <span class="chatRules">Правила чата</span>\r\n</div>';});
+define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\n    <div class="tab" data-type="public">Общий чат</div>\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\n</div>\n<div class="clear"></div>\n<div class="messagesWrap"><ul></ul></div>\n<div class="inputMsg" contenteditable="true"></div>\n<div class="layer1">\n    <div class="sendMsgBtn">Отправить</div>\n    <select id="chat-select">\n        <option selected>Готовые сообщения</option>\n        <option>Привет!</option>\n        <option>Молодец!</option>\n        <option>Здесь кто-нибудь умеет играть?</option>\n        <option>Кто со мной?</option>\n        <option>Спасибо!</option>\n        <option>Спасибо! Интересная игра!</option>\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\n        <option>Отличная партия. Спасибо!</option>\n        <option>Ты мог выиграть</option>\n        <option>Ты могла выиграть</option>\n        <option>Ходи!</option>\n        <option>Дай ссылку на твою страницу вконтакте</option>\n        <option>Снимаю шляпу!</option>\n        <option>Красиво!</option>\n        <option>Я восхищен!</option>\n        <option>Где вы так научились играть?</option>\n        <option>Еще увидимся!</option>\n        <option>Ухожу после этой партии. Спасибо!</option>\n        <option>Минуточку</option>\n    </select>\n</div>\n<div class="layer2">\n    <span class="chatAdmin">\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\n    </span>\n\n    <span class="chatRules">Правила чата</span>\n</div>';});
 
 
-define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.msgId %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.time %></div>\r\n        <div class="smallRight rate"><%= (user.rate || \'-\') %></div>\r\n\r\n        <div data-userId="<%= user.userId%>">\r\n            <span class="userName"><%= user.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete">&dagger;</div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.msgText) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
+define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.msgId %>">\n    <div class="msgRow1">\n        <div class="smallRight time"><%= msg.time %></div>\n        <div class="smallRight rate"><%= (user.rate || \'—\') %></div>\n\n        <div data-userId="<%= user.userId%>">\n            <span class="userName"><%= user.userName %></span>\n        </div>\n    </div>\n    <div class="msgRow2">\n        <div class="delete">&dagger;</div>\n        <div class="msgTextWrap">\n            <span class="v6-msgText"><%= _.escape(msg.msgText) %></span>\n        </div>\n    </div>\n</li>';});
 
 define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs'],
     function(_, Backbone, tplMain, tplMsg) {
@@ -1826,13 +1835,13 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 this._addOneMsg({
                     user: {
-                        userName: 'goof',
+                        userName: this.client.getPlayer().userName,
                         userId: 665
                     },
                     msg: {
                         msgText: text,
                         msgId: 3,
-                        time: '07:30'
+                        time: _getTime()
                     }
                 });
 
@@ -1873,12 +1882,14 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             invitePlayer: function(e) {
             },
             initialize: function(_client) {
+                this.client = _client;
                 this.$el.html(this.tplMain());
 
                 this.MAX_MSG_LENGTH = 128;
                 this.MAX_LENGTH_MSG = 'Сообщение слишком длинное (максимальная длина - 128 символов). Сократите его попробуйте снова';
 
                 this.CLASS_DISABLED = 'disabled';
+                this.CLASS_CHATADMIN = 'chatAdmin';
                 this.CLASS_DELETE_CHAT_MESSAGE = 'delete';
                 this.ACTIVE_TAB_CLASS = 'activeTab';
 
@@ -1898,7 +1909,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 //this._setLoadingState();
-
+                if (window.LogicGame && window.LogicGame.isSuperUser()) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
                 window.view = this;
             },
             _setActiveTab: function(tabName) {
@@ -1956,6 +1967,16 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             }
         });
         return ChatView;
+
+        //TODO use momentjs
+        function _getTime(){
+            var d = new Date();
+            var h = d.getHours();
+            var m = d.getMinutes();
+            if (h < 10) h = '0' + h;
+            if (m < 10) m = '0' + m;
+            return h + ':' + m;
+        }
     });
 define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'], function(userListView, dialogsView, v6ChatView) {
     var ViewsManager = function(client){
@@ -1968,7 +1989,7 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
     ViewsManager.prototype.init = function() {
         this.userListView = new userListView(this.client);
         this.dialogsView.init(this.client);
-        this.v6ChatView = new v6ChatView();
+        this.v6ChatView = new v6ChatView(this.client);
     };
 
     return ViewsManager;
@@ -1978,11 +1999,12 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
     function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
     
     var Client = function(opts) {
+        opts.resultDialogDelay = opts.resultDialogDelay || 0;
+        opts.modes = opts.modes || opts.gameModes || ['default'];
 
         var self = this;
 
         this.opts = opts;
-
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
         this.inviteManager = new InviteManager(this);
@@ -2052,10 +2074,10 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 
     Client.prototype.onLogin = function(user, userlist, rooms){
         console.log('client;', 'login', user, userlist, rooms);
-        this.emit('login', user);
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
+        this.emit('login', user);
     };
 
 

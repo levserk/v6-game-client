@@ -171,7 +171,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this._setActiveTab(this.currentActiveTabName);
 
                 $('body').append(this.el);
-                this._addAllMsgs(TEST_DATA.pub);
+                $('#v6Chat').append('<div class="spikeHover"></div>');
+                //this._addAllMsgs(TEST_DATA.pub);
 
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 //this._setLoadingState();

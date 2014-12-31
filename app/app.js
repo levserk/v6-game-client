@@ -4,7 +4,7 @@ require(['require-cnf'], function () {
             console.log('app start');
 
             // Test generate userId
-            document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
+            //document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
 
             window.client = new Client({
                 port: 8080,

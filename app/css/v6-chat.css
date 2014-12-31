@@ -157,6 +157,13 @@
     float: right;
     display: none;
     cursor: pointer;
+    width: 20px;
+    height: 20px;
+    background-image: url(../i/sprite.png);
+    background-repeat: no-repeat;
+    background-position: -180px -20px;
+    float: right;
+    cursor: pointer;
 }
 
 #v6Chat .chatMsg:hover .delete {
@@ -183,4 +190,8 @@
 
 #v6Chat .chatAdmin {
     visibility: hidden;
+}
+
+#v6Chat .dl {
+
 }

@@ -20,6 +20,7 @@ define(function() {
             client.gameManager.on('game_leave', _hideDialogs);
             client.gameManager.on('ask_draw', _askDraw);
             client.gameManager.on('cancel_draw', _cancelDraw);
+            client.on('login_error', _loginError);
         }
 
         function _newInvite(invite) {
@@ -168,6 +169,21 @@ define(function() {
                 });
             }, client.opts.resultDialogDelay);
 
+        }
+
+        function _loginError() {
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Ошибка авторизации. Обновите страницу').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Ок": function() {
+                        $(this).remove();
+                    }
+                }
+            });
         }
 
         function _hideDialogs() { //TODO: hide all dialogs and messages

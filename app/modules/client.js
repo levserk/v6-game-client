@@ -1,5 +1,5 @@
 define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'EE'],
-    function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
     'use strict';
     var Client = function(opts) {
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
@@ -72,6 +72,9 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
             case 'end_game':
                 this.userList.onGameEnd(message.data.room, message.data.players);
                 break;
+            case 'error':
+                this.onError(message.data);
+                break;
         }
     };
 
@@ -104,6 +107,14 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
             target:target,
             data:data
         });
+    };
+
+    Client.prototype.onError = function (error) {
+        console.error('client;', 'server error', error);
+        if (error == 'login_error') {
+            this.emit('login_error');
+            this.socket.ws.close();
+        }
     };
 
 

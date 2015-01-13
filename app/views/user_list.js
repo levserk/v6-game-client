@@ -13,6 +13,10 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             'click .disconnectButton': '_reconnect'
         },
         _reconnect: function() {
+            if (this.client.opts.reload) {
+                location.reload(false);
+                return;
+            }
             this.$list.html(this.$loadingTab);
             this.client.socket.init();
         },

@@ -10,6 +10,7 @@ require(['require-cnf'], function () {
                 port: 8080,
                 domain: 'localhost',
                 resultDialogDelay: 1000,
+                reload: true,
                 getUserParams: function(){return {gameType:'Main Mode'}},
                 generateInviteText: function(invite){
                     return 'Вас пригласил пользователь ' + invite.from.userName

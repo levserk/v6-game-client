@@ -4,9 +4,11 @@ define(['EE'], function(EE) {
     var Socket = function(opts){
         opts = opts || {};
         this.port = opts.port||'8080';
-        this.domain = opts.domain || 'localhost';
+        this.domain = opts.domain || document.domain;
         this.game = opts.game||"test";
         this.url = opts.url || this.game;
+        this.https = opts.https || false;
+        this.protocol = (this.https?'wss':'ws');
 
         this.isConnecting = true;
         this.isConnected = false;
@@ -23,7 +25,7 @@ define(['EE'], function(EE) {
 
         try{
 
-            this.ws = new WebSocket ('ws://'+this.domain+':'+this.port+'/'+this.url);
+            this.ws = new WebSocket (this.protocol+'://'+this.domain+':'+this.port+'/'+this.url);
 
             this.ws.onclose = function (code, message) {
                 console.log('socket;', 'ws closed', code, message);

@@ -4,9 +4,11 @@ define(['EE'], function(EE) {
     var Socket = function(opts){
         opts = opts || {};
         this.port = opts.port||'8080';
-        this.domain = opts.domain || 'localhost';
+        this.domain = opts.domain || document.domain;
         this.game = opts.game||"test";
         this.url = opts.url || this.game;
+        this.https = opts.https || false;
+        this.protocol = (this.https?'wss':'ws');
 
         this.isConnecting = true;
         this.isConnected = false;
@@ -18,10 +20,12 @@ define(['EE'], function(EE) {
 
     Socket.prototype.init = function(){
         var self = this;
+        self.isConnecting = true;
+        self.isConnected = false;
 
         try{
 
-            this.ws = new WebSocket ('ws://'+this.domain+':'+this.port+'/'+this.url);
+            this.ws = new WebSocket (this.protocol+'://'+this.domain+':'+this.port+'/'+this.url);
 
             this.ws.onclose = function (code, message) {
                 console.log('socket;', 'ws closed', code, message);
@@ -33,8 +37,12 @@ define(['EE'], function(EE) {
             };
 
             this.ws.onmessage = function (data, flags) {
-                console.log('socket;', 'ws message', data, flags);
 
+                if (data.data == 'ping') {
+                    self.ws.send('pong');
+                    return;
+                }
+                console.log('socket;', 'ws message', data, flags);
                 try{
                     data = JSON.parse(data.data)
                 } catch (e) {

@@ -12,6 +12,10 @@ define(['EE'], function(EE) {
         client.on('login', function(user){
             self.onUserLogin(user, true);
         });
+        client.on('disconnected', function(){
+            self.rooms = [];
+            self.users = [];
+        });
     };
 
     UserList.prototype  = new EE();
@@ -122,9 +126,13 @@ define(['EE'], function(EE) {
 
     function User(data, fIsPlayer){
         if (!data || !data.userId || !data.userName) throw new Error("wrong user data!");
-        this.userId = data.userId;
-        this.userName = data.userName;
+        for (var key in data){
+            if (data.hasOwnProperty(key)) this[key] = data[key];
+        }
         this.isPlayer = fIsPlayer || false;
+        this.getRank = function (mode) {
+            return this[mode].rank || '—';
+        }
     }
 
     return UserList;

@@ -1,24 +1,31 @@
-define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'EE'], function(GameManager, InviteManager, UserList, Socket, EE) {
+define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
     'use strict';
     var Client = function(opts) {
+        opts.resultDialogDelay = opts.resultDialogDelay || 0;
+        opts.modes = opts.modes || opts.gameModes || ['default'];
 
         var self = this;
 
+        this.opts = opts;
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
         this.inviteManager = new InviteManager(this);
+        this.viewsManager = new ViewsManager(this);
 
-        this.socket = new Socket();
+        this.socket = new Socket(opts);
         this.socket.on("connection", function () {
             console.log('client;', 'socket connected');
         });
 
         this.socket.on("disconnection", function() {
             console.log('client;', 'socket disconnected');
+            self.emit('disconnected');
         });
 
         this.socket.on("failed", function() {
             console.log('client;', 'socket connection failed');
+            self.emit('disconnected');
         });
 
         this.socket.on("message", function(message) {
@@ -33,6 +40,8 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 
     Client.prototype.init = function(){
         this.socket.init();
+        this.viewsManager.init();
+        return this;
     };
 
 
@@ -63,15 +72,18 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
             case 'end_game':
                 this.userList.onGameEnd(message.data.room, message.data.players);
                 break;
+            case 'error':
+                this.onError(message.data);
+                break;
         }
     };
 
     Client.prototype.onLogin = function(user, userlist, rooms){
         console.log('client;', 'login', user, userlist, rooms);
-        this.emit('login', user);
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
+        this.emit('login', user);
     };
 
 
@@ -95,6 +107,14 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
             target:target,
             data:data
         });
+    };
+
+    Client.prototype.onError = function (error) {
+        console.error('client;', 'server error', error);
+        if (error == 'login_error') {
+            this.emit('login_error');
+            this.socket.ws.close();
+        }
     };
 
 

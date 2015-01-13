@@ -1,0 +1,16 @@
+<li class="chatMsg" data-msgId="<%= msg.msgId %>">
+    <div class="msgRow1">
+        <div class="smallRight time"><%= msg.time %></div>
+        <div class="smallRight rate"><%= (user.rate || '—') %></div>
+
+        <div data-userId="<%= user.userId%>">
+            <span class="userName"><%= user.userName %></span>
+        </div>
+    </div>
+    <div class="msgRow2">
+        <div class="delete" title="Удалить сообщение"></div>
+        <div class="msgTextWrap">
+            <span class="v6-msgText"><%= _.escape(msg.msgText) %></span>
+        </div>
+    </div>
+</li>

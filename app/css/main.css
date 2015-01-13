@@ -8,3 +8,25 @@
     line-height: 20px;
     cursor: pointer;
 }
+
+#drawButton {
+    position: absolute;
+    right: 5px;
+    top: 25px;
+    color: blue;
+    text-align: center;
+    height: 20px;
+    line-height: 20px;
+    cursor: pointer;
+}
+
+#winButton {
+    position: absolute;
+    right: 5px;
+    top: 45px;
+    color: blue;
+    text-align: center;
+    height: 20px;
+    line-height: 20px;
+    cursor: pointer;
+}

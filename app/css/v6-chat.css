@@ -1,0 +1,206 @@
+#v6Chat {
+    /* потом убрать*/
+    margin-top: 20px;
+    position: relative;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    border: 1px solid #b5b5b5;
+    width: 255px!important;
+    padding: 5px;
+    background-color: #fff;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 10pt;
+}
+
+#v6Chat .tabs .activeTab {
+    background-color: rgba(100,142,163,.18);
+}
+
+#v6Chat .tabs {
+    width: 100%;
+    height: 20px;
+    color: #069;
+    cursor: pointer;
+    border-radius: 2px;
+    font-weight: 700;
+}
+
+#chat-select {
+    width: 150px;
+    margin-top:5px;
+    font-size:12px;
+}
+
+#v6Chat .tabs div {
+    width: 33%;
+    float: left;
+    text-align: center;
+    font-size: 95%;
+}
+
+#v6Chat .tabs div[data-type="public"] {
+    text-align: left;
+}
+
+#v6Chat .clear {
+    clear: both;
+}
+
+#v6Chat .messagesWrap {
+    height: 216px;
+    max-height: 216px;
+    overflow: auto;
+    border: 1px solid #ddd;
+    background: #fff;
+    box-shadow: 0 2px 2px rgba(0,0,0,.03);
+    color: #444;
+    margin-top: 5px;
+}
+
+#v6Chat .tabs .tab {
+    padding: 5px;
+}
+
+#v6Chat .placeHolderSpan {
+    color: #444;
+}
+
+#v6Chat .messagesWrap ul{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#v6Chat .messagesWrap .userName {
+    color: #404040;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+#v6Chat .messagesWrap ul li {
+    display: block;
+    padding: 5px;
+}
+
+#v6Chat .chatRules {
+    display: inline-block;
+    border-bottom: 1px solid #069;
+    cursor: pointer;
+    float: right;
+}
+
+#v6Chat .sendMsgBtn {
+    height: 28px;
+    line-height: 28px;
+    min-width: 64px;
+    color: grey;
+    margin-right: 9px;
+    padding: 0 8px;
+    border: 1px solid #b8b8b8;
+    box-shadow: 0 1px 0 rgba(0,0,0,.05);
+    background-color: #fff;
+    background-image: -webkit-linear-gradient(top,transparent,transparent);
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+#v6Chat .layer1, #v6Chat .layer2 {
+    margin-top: 10px;
+}
+
+#v6Chat .inputMsg {
+    margin-top: 8px;
+    overflow-y: auto;
+    height: inherit;
+    max-height: 64px;
+    min-height: 32px;
+
+    background-color: #fff;
+    border: 1px solid #ddd;
+    cursor: text;
+    padding: 4px;
+    word-wrap: break-word;
+    font-size: 10pt;
+}
+
+#v6Chat .spinner {
+    background: url("../i/spin.gif");
+    width: 30px;
+    height: 30px;
+    background-size: contain;
+    display: inline-block;
+}
+
+#v6Chat .chatMsg .userName {
+    font-size: 100%;
+}
+
+#v6Chat .chatMsg:hover {
+    background-color: #edf1f5!important;
+}
+
+#v6Chat .spinnerWrap {
+    text-align: center;
+    margin: 5px 0 10px 0;
+}
+
+#v6Chat .messagesWrap.disabled {
+    background: rgba(128, 128, 128, 0.1);
+}
+
+#v6Chat .delete {
+    float: right;
+    display: none;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    background-image: url(../i/sprite.png);
+    background-repeat: no-repeat;
+    background-position: -180px -20px;
+    float: right;
+    cursor: pointer;
+}
+
+#v6Chat .chatMsg:hover .delete {
+    display: block;
+}
+
+#v6Chat .chatMsg .smallRight {
+    float: right;
+    font-size: 85%;
+    color: #AAA;
+    margin: 0 5px;
+}
+
+#v6Chat .chatMsg .msgTextWrap {
+    max-width: 90%;
+}
+
+#v6Chat .chatMsg .v6-msgText {
+    word-wrap: break-word;
+}
+#v6Chat .msgRow1 {
+    margin-bottom: 1px;
+}
+
+#v6Chat .chatAdmin {
+    visibility: hidden;
+}
+
+#v6Chat .dl {
+
+}
+
+#v6Chat .spikeHover {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    position: absolute;
+    top: 0; left: 0;
+
+}

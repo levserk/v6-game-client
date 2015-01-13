@@ -1,12 +1,15 @@
-define(['jquery', 'jquery-ui'], function($) {
+define(function() {
     'use strict';
     var dialogs = (function() {
         var NOTIFICATION_CLASS = 'dialogNotification';
         var INVITE_CLASS = 'dialogInvite';
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
+        var client;
+        var dialogTimeout;
 
-        function _subscribe() {
+        function _subscribe(_client) {
+            client = _client;
             client.inviteManager.on('new_invite', _newInvite);
             client.inviteManager.on('reject_invite', _rejectInvite);
             client.inviteManager.on('cancel_invite', _cancelInvite);
@@ -15,14 +18,19 @@ define(['jquery', 'jquery-ui'], function($) {
             client.gameManager.on('game_start', _hideDialogs);
             client.gameManager.on('round_end', _roundEnd);
             client.gameManager.on('game_leave', _hideDialogs);
+            client.gameManager.on('ask_draw', _askDraw);
+            client.gameManager.on('cancel_draw', _cancelDraw);
+            client.on('login_error', _loginError);
         }
 
         function _newInvite(invite) {
             var div = $('<div>');
             div.addClass(INVITE_CLASS);
             div.attr('data-userId', invite.from.userId);
-
-            div.html('Вас пригласил в игру пользователь ' + invite.from.userName).dialog({
+            var text = 'Вас пригласил в игру пользователь ' + invite.from.userName;
+            if (typeof this.client.opts.generateInviteText == "function")
+                text = this.client.opts.generateInviteText(invite);
+            div.html(text).dialog({
                 resizable: true,
                 draggable: false,
                 modal: false,
@@ -89,7 +97,48 @@ define(['jquery', 'jquery-ui'], function($) {
         }
 
 
+        function _askDraw(user) {
+            console.log('ask draw', user);
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Пользователь ' + user.userName + ' предлагает ничью').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Принять": function() {
+                        client.gameManager.acceptDraw();
+                        $(this).remove();
+                    },
+                    "Отклонить": function() {
+                        client.gameManager.cancelDraw();
+                        $(this).remove();
+                    }
+                }
+            }).parent().draggable();
+        }
+
+
+        function _cancelDraw(user) {
+            console.log('cancel draw', user);
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Пользователь ' + user.userName + ' отклонил ваше предложение о ничье').dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Ок": function() {
+                        $(this).remove();
+                    }
+                }
+            });
+        }
+
+
         function _roundEnd(data) {
+            _hideDialogs();
+
             var div = $('<div>');
             div.addClass(ROUNDRESULT_CLASS);
 
@@ -101,18 +150,37 @@ define(['jquery', 'jquery-ui'], function($) {
                 default : result = 'игра окночена';
             }
             // TODO: get opponent name;
-            div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
+
+            dialogTimeout = setTimeout(function(){
+                div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
+                    resizable: false,
+                    modal: false,
+                    width: 350,
+                    buttons: {
+                        "Да, начать новую игру": function() {
+                            $(this).remove();
+                            client.gameManager.sendReady();
+                        },
+                        "Нет, выйти": function() {
+                            $(this).remove();
+                            client.gameManager.leaveGame();
+                        }
+                    }
+                });
+            }, client.opts.resultDialogDelay);
+
+        }
+
+        function _loginError() {
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+
+            div.html('Ошибка авторизации. Обновите страницу').dialog({
                 resizable: false,
                 modal: false,
-                width: 350,
                 buttons: {
-                    "Да, начать новую игру": function() {
+                    "Ок": function() {
                         $(this).remove();
-                        client.gameManager.sendReady();
-                    },
-                    "Нет, выйти": function() {
-                        $(this).remove();
-                        client.gameManager.leaveGame();
                     }
                 }
             });
@@ -121,6 +189,7 @@ define(['jquery', 'jquery-ui'], function($) {
         function _hideDialogs() { //TODO: hide all dialogs and messages
             $('.' + NOTIFICATION_CLASS).remove();
             $('.' + ROUNDRESULT_CLASS).remove();
+            clearTimeout(dialogTimeout);
         }
 
         return {

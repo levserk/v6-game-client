@@ -18,6 +18,13 @@ define(['EE'], function(EE) {
             self.invite = null;
             self.rejectAll();
         });
+        client.on('disconnected', function(){
+            self.invite = null;
+            for (var userId in self.invites)
+                if (self.invites.hasOwnProperty(userId)){
+                    self.removeInvite(userId);
+                }
+        });
     };
 
     InviteManager.prototype  = new EE();
@@ -37,7 +44,8 @@ define(['EE'], function(EE) {
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
         this.emit('new_invite', {
-            from: this.client.getUser(invite.from)
+            from: this.client.getUser(invite.from),
+            data: invite
         });
     };
 

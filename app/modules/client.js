@@ -4,6 +4,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
     var Client = function(opts) {
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
+        opts.reload = opts.reload || false;
 
         var self = this;
 

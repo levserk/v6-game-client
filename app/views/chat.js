@@ -85,11 +85,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$el.html(this.tplMain());
 
                 this.MAX_MSG_LENGTH = 128;
+                this.SCROLL_VAL = 40;
                 this.MAX_LENGTH_MSG = 'Сообщение слишком длинное (максимальная длина - 128 символов). Сократите его попробуйте снова';
 
                 this.CLASS_DISABLED = 'disabled';
                 this.CLASS_CHATADMIN = 'chatAdmin';
                 this.CLASS_DELETE_CHAT_MESSAGE = 'delete';
+                this.CLASS_NEW_MSG = 'newMsg';
+                this.CLASS_ADMIN_MSG = 'isAdmin';
                 this.ACTIVE_TAB_CLASS = 'activeTab';
 
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
@@ -107,7 +110,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 //this._setLoadingState();
-                if (true ||window.LogicGame && window.LogicGame.isSuperUser()) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
+                if (window.LogicGame && window.LogicGame.isSuperUser()) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
 
                 this.listenTo(this.client.chatManager, 'message', this._addOneMsg.bind(this));
             },
@@ -155,14 +158,19 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             _addOneMsg: function(msg) {
                 console.log('chat message', msg);
                 var $msg = this.tplMsg({msg:msg});
+                var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
                 this.$msgsList.append($msg);
+
                 $msg = this.$el.find('li[data-msgId="' + msg.time + '"]');
-                if (msg.admin) $msg.addClass('isAdmin');
-                //TODO: прокрутка вниз на новое
-                $msg.addClass('newMsg');
+                if (msg.admin) $msg.addClass(this.CLASS_ADMIN_MSG);
+
+                $msg.addClass(this.CLASS_NEW_MSG);
                 setTimeout(function(){
-                    this.$el.find('li[data-msgId="' + msg.time + '"]').removeClass('newMsg');
+                    this.$el.find('li[data-msgId="' + msg.time + '"]').removeClass(this.CLASS_NEW_MSG);
                 }.bind(this), 2500);
+
+                //scroll down
+                if (fScroll) this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight)
             },
             _setLoadingState: function() {
                 this.$msgsList.prepend(this.$spinnerWrap);
@@ -171,9 +179,6 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             _removeLoadingState: function(){
                 this.$spinnerWrap.remove();
                 this.$messagesWrap.removeClass(this.CLASS_DISABLED);
-            },
-            _removeNewMsg: function(){
-                this.$el.find('li.newMsg').removeClass('newMsg');
             }
         });
         return ChatView;

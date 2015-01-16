@@ -33,6 +33,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this._sendMsg(this.$inputMsg.text());
             },
+            scrollEvent: function() {
+                if (this.$messagesWrap.scrollTop()<5 && this.client.chatManager.loading){
+                    this._setLoadingState();
+                    this.client.chatManager.loadMessages();
+                }
+            },
             _sendMsg: function(text) {
                 if (text === '' || typeof text !== 'string') {
                     return;
@@ -46,11 +52,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$inputMsg.empty();
                 this.$inputMsg.focus();
             },
-            _onMsgAdded: function() {
-                this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight);
-                this.$inputMsg.empty();
-                this.$inputMsg.focus();
-            },
+
             blurInputMsg: function(e) {
                 var target = $(e.currentTarget);
 
@@ -113,6 +115,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 if (window.LogicGame && window.LogicGame.isSuperUser()) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
 
                 this.listenTo(this.client.chatManager, 'message', this._addOneMsg.bind(this));
+                this.listenTo(this.client.chatManager, 'load', this._preaddMsgs.bind(this));
+                this.$messagesWrap.scroll(this.scrollEvent.bind(this));
+                this._setLoadingState();
             },
             _setActiveTab: function(tabName) {
                 this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
@@ -171,6 +176,22 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 //scroll down
                 if (fScroll) this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight)
+            },
+            _preaddMsgs: function(msgs) {
+                console.log('pre chat message', msgs);
+                this._removeLoadingState();
+                var oldScrollTop =  this.$messagesWrap.scrollTop();
+                var oldScrollHeight = this.$messagesWrap[0].scrollHeight;
+                for (var i = 0; i < msgs.length; i++){
+                    var $msg = this.tplMsg({msg:msgs[i]});
+                    this.$msgsList.prepend($msg);
+
+                    $msg = this.$el.find('li[data-msgId="' + msgs[i].time + '"]');
+                    if (msgs[i].admin) $msg.addClass(this.CLASS_ADMIN_MSG);
+                }
+
+
+                this.$messagesWrap.scrollTop(oldScrollTop + this.$messagesWrap[0].scrollHeight - oldScrollHeight);
             },
             _setLoadingState: function() {
                 this.$msgsList.prepend(this.$spinnerWrap);

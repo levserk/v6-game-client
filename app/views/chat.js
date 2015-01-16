@@ -1,57 +1,6 @@
 define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs'],
     function(_, Backbone, tplMain, tplMsg) {
         'use strict';
-        var pub = [
-            {
-                user: {
-                    userId: 1,
-                    userName: 'viteck'
-                },
-                msg: {
-                    msgId: 1,
-                    msgText: 'Привет ребята!!',
-                    time: '5:45'
-                }
-            },
-            {
-                user: {
-                    userId: 55555555555,
-                    userName: '50 cent'
-                },
-                msg: {
-                    msgId: 52,
-                    msgText: '50 cent!',
-                    time: '15:40'
-                }
-            }
-        ];
-        var priv = [
-            {
-                user: {
-                    userId: 1,
-                    userName: 'viteck'
-                },
-                msg: {
-                    msgId: 1,
-                    msgText: 'Привет!',
-                    time: '5:46'
-                }
-            },
-            {
-                user: {
-                    userId: 55555555555,
-                    userName: '50 cent'
-                },
-                msg: {
-                    msgId: 52,
-                    msgText: '<div>hack you!</div>!'
-                }
-            }
-        ];
-        var TEST_DATA = {
-            pub: [],
-            priv: []
-        };
 
         var ChatView = Backbone.View.extend({
             tagName: 'div',
@@ -73,10 +22,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$inputMsg.text(textMsg);
             },
             sendMsgEvent: function(e) {
-                var msgText = '';
-                console.log("TEST FIRE", e.type);
                 // e используется здесь только если нажат enter
-
                 if (e.type === 'keyup' && e.keyCode !== 13) {
                     return;
                 }
@@ -85,33 +31,20 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     return;
                 }
 
-                msgText = this.$inputMsg.text();
-                this._sendMsg(msgText);
+                this._sendMsg(this.$inputMsg.text());
             },
             _sendMsg: function(text) {
                 if (text === '' || typeof text !== 'string') {
                     return;
                 }
 
-                console.log('now check');
                 if (text.length > this.MAX_MSG_LENGTH) {
                     alert(this.MAX_LENGTH_MSG);
                     return;
                 }
-
-                this._addOneMsg({
-                    user: {
-                        userName: this.client.getPlayer().userName,
-                        userId: 665
-                    },
-                    msg: {
-                        msgText: text,
-                        msgId: 3,
-                        time: _getTime()
-                    }
-                });
-
-                this._onMsgAdded();
+                this.client.chatManager.sendMessage(text, null, $('#chatIsAdmin')[0].checked);
+                this.$inputMsg.empty();
+                this.$inputMsg.focus();
             },
             _onMsgAdded: function() {
                 this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight);
@@ -171,13 +104,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this._setActiveTab(this.currentActiveTabName);
 
                 $('body').append(this.el);
-                $('#v6Chat').append('<div class="spikeHover"></div>');
-                //this._addAllMsgs(TEST_DATA.pub);
 
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 //this._setLoadingState();
-                if (window.LogicGame && window.LogicGame.isSuperUser()) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
-                window.view = this;
+                if (true ||window.LogicGame && window.LogicGame.isSuperUser()) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
+
+                this.listenTo(this.client.chatManager, 'message', this._addOneMsg.bind(this));
             },
             _setActiveTab: function(tabName) {
                 this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
@@ -221,27 +153,28 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 }, this);
             },
             _addOneMsg: function(msg) {
-                var $msg = this.tplMsg(msg);
+                console.log('chat message', msg);
+                var $msg = this.tplMsg({msg:msg});
                 this.$msgsList.append($msg);
+                $msg = this.$el.find('li[data-msgId="' + msg.time + '"]');
+                if (msg.admin) $msg.addClass('isAdmin');
+                //TODO: прокрутка вниз на новое
+                $msg.addClass('newMsg');
+                setTimeout(function(){
+                    this.$el.find('li[data-msgId="' + msg.time + '"]').removeClass('newMsg');
+                }.bind(this), 2500);
             },
             _setLoadingState: function() {
                 this.$msgsList.prepend(this.$spinnerWrap);
                 this.$messagesWrap.addClass(this.CLASS_DISABLED);
             },
-            _removeLoadingState: function() {
+            _removeLoadingState: function(){
                 this.$spinnerWrap.remove();
                 this.$messagesWrap.removeClass(this.CLASS_DISABLED);
+            },
+            _removeNewMsg: function(){
+                this.$el.find('li.newMsg').removeClass('newMsg');
             }
         });
         return ChatView;
-
-        //TODO use momentjs
-        function _getTime(){
-            var d = new Date();
-            var h = d.getHours();
-            var m = d.getMinutes();
-            if (h < 10) h = '0' + h;
-            if (m < 10) m = '0' + m;
-            return h + ':' + m;
-        }
     });

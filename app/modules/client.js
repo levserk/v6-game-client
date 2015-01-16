@@ -1,5 +1,5 @@
-define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'EE'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
+define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, EE) {
     'use strict';
     var Client = function(opts) {
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
@@ -12,6 +12,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
         this.inviteManager = new InviteManager(this);
+        this.chatManager = new ChatManager(this);
         this.viewsManager = new ViewsManager(this);
 
         this.socket = new Socket(opts);
@@ -51,6 +52,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, EE) {
             case 'server': this.onServerMessage(message); break;
             case 'invite_manager': this.inviteManager.onMessage(message); break;
             case 'game_manager': this.gameManager.onMessage(message); break;
+            case 'chat_manager':this.chatManager.onMessage(message); break;
         }
     };
 

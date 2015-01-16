@@ -138,10 +138,23 @@
 
 #v6Chat .chatMsg .userName {
     font-size: 100%;
+    cursor: pointer;
+}
+
+#v6Chat .chatMsg .userName:hover {
+    border-bottom: 1px solid #069;
 }
 
 #v6Chat .chatMsg:hover {
     background-color: #edf1f5!important;
+}
+
+#v6Chat .chatMsg.newMsg {
+    background-color: rgb(237, 241, 245);
+}
+
+#v6Chat .chatMsg.isAdmin .userName{
+    color: #ef4135;
 }
 
 #v6Chat .spinnerWrap {
@@ -193,14 +206,5 @@
 }
 
 #v6Chat .dl {
-
-}
-
-#v6Chat .spikeHover {
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    position: absolute;
-    top: 0; left: 0;
 
 }

@@ -37,6 +37,11 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.render();
         },
         invitePlayer: function(e) {
+            if (this.client.gameManager.currentRoom) {
+                console.log('you already in game!');
+                return;
+            }
+
             var target = $(e.currentTarget),
                 userId = target.attr('data-userId');
 

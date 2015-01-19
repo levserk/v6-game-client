@@ -1,5 +1,5 @@
-define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs'],
-    function(_, Backbone, tplMain, tplMsg) {
+define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs', 'text!tpls/v6-chatDay.ejs'],
+    function(_, Backbone, tplMain, tplMsg, tplDay) {
         'use strict';
 
         var ChatView = Backbone.View.extend({
@@ -7,6 +7,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             id: 'v6Chat',
             tplMain: _.template(tplMain),
             tplMsg: _.template(tplMsg),
+            tplDay: _.template(tplDay),
             events: {
                 'click .chatMsg': '_deleteMsg',
                 'click .tab': 'clickTab',
@@ -127,17 +128,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 return this;
             },
             _deleteMsg: function(e) {
-                // delete by id or as click .delete handler
                 var $msg, msgId;
-
                 if (!isNaN(+e) && typeof +e === 'number') {
                     msgId = e;
-                } else {
-                    //клик не по кнопке удалить
+                } else { //клик не по кнопке удалить
                     if (!$(e.target).hasClass(this.CLASS_DELETE_CHAT_MESSAGE)) {
                         return;
                     }
-
                     $msg = $(e.currentTarget);
                     msgId = $msg.attr('data-msgId')
                 }
@@ -154,16 +151,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 $msg.remove();
             },
-            _addAllMsgs: function(msgs) {
-                this.$msgsList.empty();
-                _.each(msgs, function(msg) {
-                    this._addOneMsg(msg);
-                }, this);
-            },
             _addOneMsg: function(msg) {
                 console.log('chat message', msg);
                 var $msg = this.tplMsg({msg:msg});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
+
+                if (this.client.chatManager.last.d != msg.d) this.$msgsList.append(this.tplDay(msg));
+
                 this.$msgsList.append($msg);
 
                 $msg = this.$el.find('li[data-msgId="' + msg.time + '"]');
@@ -177,20 +171,22 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 //scroll down
                 if (fScroll) this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight)
             },
-            _preaddMsgs: function(msgs) {
-                console.log('pre chat message', msgs);
+            _preaddMsgs: function(msg) {
+                console.log('pre chat message', msg);
                 this._removeLoadingState();
+                if (!msg) return;
                 var oldScrollTop =  this.$messagesWrap.scrollTop();
                 var oldScrollHeight = this.$messagesWrap[0].scrollHeight;
-                for (var i = 0; i < msgs.length; i++){
-                    var $msg = this.tplMsg({msg:msgs[i]});
-                    this.$msgsList.prepend($msg);
-
-                    $msg = this.$el.find('li[data-msgId="' + msgs[i].time + '"]');
-                    if (msgs[i].admin) $msg.addClass(this.CLASS_ADMIN_MSG);
-                }
-
-
+                var oldDay = this.$el.find('li[data-day-msgId="' + this.client.chatManager.first.time + '"]');
+                if (oldDay) oldDay.remove();
+                // add day previous msg
+                if (this.client.chatManager.first.d != msg.d) this.$msgsList.prepend(this.tplDay(this.client.chatManager.first));
+                var $msg = this.tplMsg({msg: msg});
+                this.$msgsList.prepend($msg);
+                // add day this, now firs message
+                this.$msgsList.prepend(this.tplDay(msg));
+                $msg = this.$el.find('li[data-msgId="' + msg.time + '"]');
+                if (msg.admin) $msg.addClass(this.CLASS_ADMIN_MSG);
                 this.$messagesWrap.scrollTop(oldScrollTop + this.$messagesWrap[0].scrollHeight - oldScrollHeight);
             },
             _setLoadingState: function() {

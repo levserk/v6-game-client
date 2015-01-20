@@ -9,6 +9,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var self = this;
 
         this.opts = opts;
+        this.game = opts.game || 'test';
         this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
         this.inviteManager = new InviteManager(this);
@@ -36,6 +37,13 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         });
 
         this.getUser = this.userList.getUser.bind(this.userList);
+
+        try{
+            this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
+        }catch (e){
+            this.isAdmin = false;
+            console.error(e);
+        }
     };
 
     Client.prototype  = new EE();

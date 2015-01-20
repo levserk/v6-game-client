@@ -4,11 +4,12 @@ require(['require-cnf'], function () {
             console.log('app start');
 
             // Test generate userId
-            //document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
-
+            document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
+            window.LogicGame = {isSuperUser:function(){return true;}};
             window.client = new Client({
                 port: 8080,
                 domain: 'localhost',
+                game:'test',
                 resultDialogDelay: 1000,
                 reload: true,
                 getUserParams: function(){return {gameType:'Main Mode'}},
@@ -17,6 +18,36 @@ require(['require-cnf'], function () {
                         + ' в игру ' + invite.data.gameType;
                 }
             }).init();
+
+
+            var client = window.client;
+            client.on('login', function(data){
+                console.log('main;', 'login', data.userId, data.userName);
+                var you =  client.getPlayer();
+            });
+
+            client.gameManager.on('game_start', function(data){
+                console.log('main;','game_start, room: ', data);
+            });
+
+            client.gameManager.on('round_start', function(data){
+                console.log('main;','round_start, room: ', data);
+            });
+
+
+            client.gameManager.on('turn', function(data){
+                console.log('main;','turn', data.turn, 'is your turn: ', data.user == client.getPlayer().userId);
+            });
+
+            client.gameManager.on('round_end', function(data){
+                console.log('main;','round_end', data, 'your win: ', data.winner == client.getPlayer().userId);
+            });
+
+            client.gameManager.on('game_leave', function(data){
+                console.log('main;','game_leave room:', data);
+            });
+
+
 
             _generateEndGameBtn();
 

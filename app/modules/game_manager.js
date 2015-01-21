@@ -3,6 +3,7 @@ define(['EE'], function(EE) {
 
     var GameManager = function(client){
         this.client = client;
+        this.turnTime = client.opts.turnTime * 1000;
         this.currentRoom = null;
         this.client.on('disconnected', function(){
             // TODO: save or close current room
@@ -33,6 +34,8 @@ define(['EE'], function(EE) {
                 break;
             case 'round_start':
                 console.log('game_manager;', 'emit round_start', data);
+                this.currentRoom.current = this.getPlayer(data.first);
+                this.currentRoom.userTime = this.turnTime;
                 this.emit('round_start', {
                     players: [
                         this.getPlayer(data.players[0]),
@@ -42,10 +45,25 @@ define(['EE'], function(EE) {
                     id: data.id,
                     inviteData: data.inviteData
                 });
+                this.emitTime();
                 break;
             case 'turn':
                 console.log('game_manager;', 'emit turn', data);
+                if (data.turn.nextPlayer) {
+                    data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
+                    delete data.turn.nextPlayer;
+                }
                 this.emit('turn', data);
+                if (data.nextPlayer){
+                    this.currentRoom.current = data.nextPlayer;
+                    this.emit('switch_player', this.currentRoom.current);
+                    this.emitTime();
+                    this.currentRoom.userTime = this.turnTime;
+                    if (!this.timeInterval){
+                        this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
+                    }
+                }
+
                 break;
             case 'event':
                 var user = this.getPlayer(data.user);
@@ -58,6 +76,9 @@ define(['EE'], function(EE) {
                 break;
             case 'round_end':
                 console.log('game_manager', 'emit round_end', data);
+                clearInterval(this.timeInterval);
+                this.timeInterval = null;
+                this.currentRoom.current = null;
                 if (data.winner){
                     if (data.winner == this.client.getPlayer().userId) { // win
                         console.log('game_manager;', 'win', data);
@@ -114,6 +135,15 @@ define(['EE'], function(EE) {
                         break;
                 }
                 break;
+            case 'timeout':
+                if (event.nextPlayer) {
+                    event.nextPlayer =  this.getPlayer(event.nextPlayer);
+                    event.user = this.getPlayer(event.user);
+                    this.emit('timeout', event);
+                    this.currentRoom.current = event.nextPlayer;
+                    this.emit('switch_player', this.currentRoom.current);
+                }
+                break;
         }
     };
 
@@ -138,7 +168,12 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendTurn = function(turn){
+        if (this.currentRoom.userTime < 1000) {
+            console.warn('game_manager;', 'your time is out!');
+            return;
+        }
         this.client.send('game_manager', 'turn', 'server', turn);
+
     };
 
 
@@ -167,6 +202,41 @@ define(['EE'], function(EE) {
             for (var i = 0; i < this.currentRoom.players.length; i++)
                 if (this.currentRoom.players[i].userId == id) return this.currentRoom.players[i];
         return null;
+    };
+
+
+    GameManager.prototype.onTimeTick = function(){
+        var time = Date.now();
+        if (!this.prevTime){
+            this.prevTime = time;
+            return;
+        }
+        var delta = time - this.prevTime;
+
+        if (delta > 333) {
+            this.currentRoom.userTime -= delta;
+            if (this.currentRoom.userTime  < 0) {
+                this.currentRoom.userTime = 0;
+                //console.warn('gameManager;', 'user time is out', this.current, this.currentRoom);
+            }
+            this.emitTime();
+            this.prevTime = time;
+        }
+    };
+
+
+    GameManager.prototype.emitTime = function(){
+        var minutes = Math.floor(this.currentRoom.userTime / 60000);
+        var seconds = Math.floor((this.currentRoom.userTime - minutes * 60000) / 1000);
+        if (minutes < 10) minutes = '0' + minutes;
+        if (seconds < 10) seconds = '0' + seconds;
+
+        this.emit('time',{
+            user:this.currentRoom.current,
+            userTimeMS: this.currentRoom.userTime,
+            userTimeS: Math.floor(this.currentRoom.userTime/ 1000),
+            userTimeFormat: minutes + ':' + seconds
+        });
     };
 
 

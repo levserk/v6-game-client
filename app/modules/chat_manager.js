@@ -1,6 +1,5 @@
 define(['EE'], function(EE) {
     'use strict';
-
     var ChatManager = function (client) {
         this.client = client;
         this.first = {};

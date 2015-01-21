@@ -9,6 +9,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         tplMain: _.template(tplMain),
         events: {
             'click .inviteBtn': 'invitePlayer',
+            'click .userName': 'userClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect'
         },
@@ -35,6 +36,11 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.currentActiveTabName = clickedTabName;
             this._setActiveTab(this.currentActiveTabName);
             this.render();
+        },
+        userClick: function(e) {
+            var target = $(e.currentTarget),
+                userId = target.attr('data-userId');
+            this.client.onShowProfile(userId);
         },
         invitePlayer: function(e) {
             if (this.client.gameManager.currentRoom) {

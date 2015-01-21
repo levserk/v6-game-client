@@ -5,6 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
+        opts.turnTime = opts.turnTime || 60;
 
         var self = this;
 
@@ -126,6 +127,16 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             this.emit('login_error');
             this.socket.ws.close();
         }
+    };
+
+
+    Client.prototype.onShowProfile = function(userId, userName){
+        if (!userName) {
+            var user = this.userList.getUser(userId);
+            if (!user) return;
+            userName = user.userName;
+        }
+        this.emit('show_profile', {userId:userId, userName:userName});
     };
 
 

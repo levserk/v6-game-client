@@ -56,10 +56,11 @@ define(['EE'], function(EE) {
                 this.emit('turn', data);
                 if (data.nextPlayer){
                     this.currentRoom.current = data.nextPlayer;
+                    this.currentRoom.userTime = this.turnTime;
                     this.emit('switch_player', this.currentRoom.current);
                     this.emitTime();
-                    this.currentRoom.userTime = this.turnTime;
                     if (!this.timeInterval){
+                        this.prevTime = null;
                         this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
                     }
                 }
@@ -78,6 +79,7 @@ define(['EE'], function(EE) {
                 console.log('game_manager', 'emit round_end', data);
                 clearInterval(this.timeInterval);
                 this.timeInterval = null;
+                this.prevTime = null;
                 this.currentRoom.current = null;
                 if (data.winner){
                     if (data.winner == this.client.getPlayer().userId) { // win

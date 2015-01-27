@@ -106,6 +106,7 @@ define(['EE'], function(EE) {
     ChatManager.prototype.loadMessages = function (count, time, target) {
         if (this.fullLoaded[this.current]){
             console.log('chat_manager;', 'all messages loaded!', count, time, this.first);
+            this.emit('load', null);
             return;
         }
         count = count || this.MSG_COUNT;

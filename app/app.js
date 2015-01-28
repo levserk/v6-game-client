@@ -8,7 +8,6 @@ require(['require-cnf'], function () {
             window.LogicGame = {isSuperUser:function(){return true;}};
             window.client = new Client({
                 port: 8080,
-                domain: 'localhost',
                 game:'test',
                 resultDialogDelay: 1000,
                 turnTime:10,

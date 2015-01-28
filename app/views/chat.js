@@ -16,10 +16,34 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 'click .sendMsgBtn': 'sendMsgEvent',
                 'keyup .inputMsg': 'sendMsgEvent',
                 'change #chat-select': 'changeChatSelect',
-                'click .userName': 'showMenu'
+                'click .chatMsg div[data-userid]': 'showMenu',
+                'click li[data-action]': 'clickDialogAction'
+            },
+            clickDialogAction: function(e) {
+                var actionObj = {
+                    action: $(e.currentTarget).attr('data-action'),
+                    userId: this.$menu.attr('data-userId')
+                };
+
+                console.log('chat dialog menu:', actionObj);
             },
             showMenu: function(e) {
+                // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
+                var coords = e.target.getBoundingClientRect(),
+                    OFFSET = 20; // отступ, чтобы не закрывало имя
 
+                setTimeout(function() {
+                    this.$menu.attr('data-userId', $(e.target).parent().attr('data-userid'));
+                    this.$menu.css({
+                        left: OFFSET, // фиксированный отступ слева
+                        top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
+                    }).show('fast');
+                }.bind(this), 0);
+
+            },
+            hideMenuElement: function() {
+                this.$menu.removeAttr('data-userId');
+                this.$menu.hide();
             },
 
             changeChatSelect: function(e) {
@@ -104,7 +128,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.CLASS_MENU_ELEMENT = 'menuElement';
 
                 this.$menu = this.$el.find('.' + this.CLASS_MENU_ELEMENT); // диалоговое меню при ЛКМ на имени игрока
-                console.log("TEST MENU", this.$menu);
+                if (!this.client.isAdmin) {
+                    this.$menu.find('li[data-action="ban"]').remove();
+                }
+                window.document.body.addEventListener('click', this.hideMenuElement.bind(this));
+
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
 
                 this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner"></div></li>');

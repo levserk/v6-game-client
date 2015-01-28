@@ -227,7 +227,7 @@
 
  /*диалоговое меню чата при ЛКМ на имени игрока*/
 #v6Chat .menuElement {
-    display: block;
+    display: none;
     position: absolute;
     width: 126px;
     margin: 0; padding: 0;

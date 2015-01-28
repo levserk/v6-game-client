@@ -1,5 +1,5 @@
-define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs', 'text!tpls/v6-chatDay.ejs'],
-    function(_, Backbone, tplMain, tplMsg, tplDay) {
+define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs', 'text!tpls/v6-chatDay.ejs', 'text!tpls/v6-chatRules.ejs'],
+    function(_, Backbone, tplMain, tplMsg, tplDay, tplRules) {
         'use strict';
 
         var ChatView = Backbone.View.extend({
@@ -8,6 +8,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             tplMain: _.template(tplMain),
             tplMsg: _.template(tplMsg),
             tplDay: _.template(tplDay),
+            tplRules: _.template(tplRules),
             events: {
                 'click .chatMsg': '_deleteMsg',
                 'click .tab': 'clickTab',
@@ -17,7 +18,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 'keyup .inputMsg': 'sendMsgEvent',
                 'change #chat-select': 'changeChatSelect',
                 'click .chatMsg div[data-userid]': 'showMenu',
-                'click li[data-action]': 'clickDialogAction'
+                'click li[data-action]': 'clickDialogAction',
+                'click .chatRules': 'showChatRules'
+            },
+            showChatRules: function() {
+                this.$rules.css({
+                    top: ($(window).height() / 2) - (this.$rules.outerHeight() / 2),
+                    left: ($(window).width() / 2) - (this.$rules.outerWidth() / 2)
+                }).show();
             },
             clickDialogAction: function(e) {
                 var actionObj = {
@@ -132,6 +140,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     this.$menu.find('li[data-action="ban"]').remove();
                 }
                 window.document.body.addEventListener('click', this.hideMenuElement.bind(this));
+
+                this.$rules = $(this.tplRules());
+                window.document.body.appendChild(this.$rules[0]);
+                this.$rules.find('img.closeIcon').on('click', function() {
+                    this.$rules.hide();
+                }.bind(this));
 
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
 

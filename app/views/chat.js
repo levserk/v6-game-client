@@ -37,7 +37,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     this.$menu.css({
                         left: OFFSET, // фиксированный отступ слева
                         top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
-                    }).show('fast');
+                    }).slideDown();
                 }.bind(this), 0);
 
             },

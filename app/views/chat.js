@@ -15,8 +15,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 'click .inputMsg': 'clickInputMsg',
                 'click .sendMsgBtn': 'sendMsgEvent',
                 'keyup .inputMsg': 'sendMsgEvent',
-                'change #chat-select': 'changeChatSelect'
+                'change #chat-select': 'changeChatSelect',
+                'click .userName': 'showMenu'
             },
+            showMenu: function(e) {
+
+            },
+
             changeChatSelect: function(e) {
                 var textMsg = e.target.options[e.target.selectedIndex].innerHTML;
                 this.$SELECTED_OPTION.attr('selected', true);
@@ -96,7 +101,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.CLASS_NEW_MSG = 'newMsg';
                 this.CLASS_ADMIN_MSG = 'isAdmin';
                 this.ACTIVE_TAB_CLASS = 'activeTab';
+                this.CLASS_MENU_ELEMENT = 'menuElement';
 
+                this.$menu = this.$el.find('.' + this.CLASS_MENU_ELEMENT); // диалоговое меню при ЛКМ на имени игрока
+                console.log("TEST MENU", this.$menu);
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
 
                 this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner"></div></li>');

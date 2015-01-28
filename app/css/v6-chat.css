@@ -1,3 +1,12 @@
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
 #v6Chat {
     /* потом убрать*/
     margin-top: 20px;
@@ -213,4 +222,45 @@
 
 #v6Chat .dl {
 
+}
+
+
+ /*диалоговое меню чата при ЛКМ на имени игрока*/
+#v6Chat .menuElement {
+    display: block;
+    position: absolute;
+    width: 126px;
+    margin: 0; padding: 0;
+    list-style: none;
+
+    background: #fff;
+    border: 1px solid #ccc;
+    border-bottom: 0;
+    font-size: 10px;
+}
+
+#v6Chat .menuElement li {
+    margin: 0; padding: 0;
+
+    width: auto;
+    white-space: nowrap;
+    border-bottom: 1px solid #ddd;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+#v6Chat .menuElement li span{
+    display: block;
+    padding: 4px 10px;
+    background: #f2f2f2;
+    color: #069;
+    font-weight: 400;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+#v6Chat .menuElement li span:hover{
+    background: #069;
+    color: #f2f2f2;
 }

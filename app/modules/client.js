@@ -7,6 +7,13 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.reload = opts.reload || false;
         opts.turnTime = opts.turnTime || 60;
 
+        try{
+            this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
+        }catch (e){
+            this.isAdmin = false;
+            console.error(e);
+        }
+
         var self = this;
 
         this.opts = opts;
@@ -38,13 +45,6 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         });
 
         this.getUser = this.userList.getUser.bind(this.userList);
-
-        try{
-            this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
-        }catch (e){
-            this.isAdmin = false;
-            console.error(e);
-        }
     };
 
     Client.prototype  = new EE();

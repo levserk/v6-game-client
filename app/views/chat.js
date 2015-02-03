@@ -167,7 +167,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 this._setLoadingState();
 
-                if (!this.client.isAdmin) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
+                if (this.client.isAdmin) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
 
                 this.listenTo(this.client.chatManager, 'message', this._addOneMsg.bind(this));
                 this.listenTo(this.client.chatManager, 'load', this._preaddMsgs.bind(this));

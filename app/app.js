@@ -8,14 +8,12 @@ require(['require-cnf'], function () {
             window.LogicGame = {isSuperUser:function(){return true;}};
             window.client = new Client({
                 port: 8080,
-                game:'test',
                 resultDialogDelay: 1000,
-                turnTime:10,
                 reload: true,
                 getUserParams: function(){return {gameType:'Main Mode'}},
                 generateInviteText: function(invite){
-                    return 'Вас пригласил пользователь ' + invite.from.userName
-                        + ' в игру ' + invite.data.gameType;
+                    return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
+                        + ' в игру ' + invite.data.gameType + ' в режим ' + invite.data.mode;
                 }
             }).init();
 

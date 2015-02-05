@@ -93,6 +93,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
+            this.listenTo(this.client, 'mode_switch', bindedRender);
             this.listenTo(this.client.userList, 'update', bindedRender);
             this.listenTo(this.client.userList, 'leave_user', bindedRender);
             this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));

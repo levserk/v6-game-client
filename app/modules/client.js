@@ -24,6 +24,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.chatManager = new ChatManager(this);
         this.viewsManager = new ViewsManager(this);
 
+        this.currentMode = null;
+
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
             console.log('client;', 'socket connected');
@@ -67,31 +69,38 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     Client.prototype.onServerMessage = function(message){
+        var data = message.data
         switch (message.type){
             case 'login':
-                this.onLogin(message.data.you, message.data.userlist, message.data.rooms);
+                this.onLogin(data.you, data.userlist, data.rooms, data.opts);
                 break;
             case 'user_login':
-                this.userList.onUserLogin(message.data);
+                this.userList.onUserLogin(data);
                 break;
             case 'user_leave':
-                this.userList.onUserLeave(message.data);
+                this.userList.onUserLeave(data);
                 break;
             case 'new_game':
-                this.userList.onGameStart(message.data.room, message.data.players);
+                this.userList.onGameStart(data.room, data.players);
                 this.gameManager.onMessage(message);
                 break;
             case 'end_game':
-                this.userList.onGameEnd(message.data.room, message.data.players);
+                this.userList.onGameEnd(data.room, data.players);
                 break;
             case 'error':
-                this.onError(message.data);
+                this.onError(data);
                 break;
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms){
-        console.log('client;', 'login', user, userlist, rooms);
+    Client.prototype.onLogin = function(user, userlist, rooms, opts){
+        console.log('client;', 'login', user, userlist, rooms, opts);
+
+        this.game = this.opts.game = opts.game;
+        this.turnTime = this.opts.turnTime = opts.turnTime;
+        this.modes = this.opts.modes = opts.modes;
+        this.currentMode = this.modes[0];
+
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
@@ -119,6 +128,20 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             target:target,
             data:data
         });
+    };
+
+    Client.prototype.setMode = function (mode){
+        if (this.modes[mode]) mode = this.modes[mode];
+        else {
+            for (var i = 0; i < this.modes.length; i++){
+                if (this.modes[i] == mode) {
+                    this.currentMode = mode;
+                    this.emit('mode_switch', this.currentMode);
+                    return;
+                }
+            }
+        }
+        console.error('wrong mode:', mode, 'client modes:',  this.modes)
     };
 
     Client.prototype.onError = function (error) {

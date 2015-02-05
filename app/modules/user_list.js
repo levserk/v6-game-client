@@ -16,6 +16,18 @@ define(['EE'], function(EE) {
             self.rooms = [];
             self.users = [];
         });
+        client.gameManager.on('round_end', function(data){
+            if (data.ratings && data.mode){
+                for (var userId in data.ratings){
+                    for (var i = 0; i < self.users.length; i++){
+                        if(self.users[i].userId == userId) {
+                            self.users[i][data.mode] = data.ratings[userId];
+                        }
+                    }
+                }
+                this.emit('update', data);
+            }
+        });
     };
 
     UserList.prototype  = new EE();

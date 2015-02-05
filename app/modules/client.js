@@ -18,8 +18,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
-        this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
+        this.userList = new UserList(this);
         this.inviteManager = new InviteManager(this);
         this.chatManager = new ChatManager(this);
         this.viewsManager = new ViewsManager(this);

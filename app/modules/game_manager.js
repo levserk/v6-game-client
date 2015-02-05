@@ -3,7 +3,6 @@ define(['EE'], function(EE) {
 
     var GameManager = function(client){
         this.client = client;
-        this.turnTime = client.opts.turnTime * 1000;
         this.currentRoom = null;
         this.client.on('disconnected', function(){
             // TODO: save or close current room
@@ -44,7 +43,7 @@ define(['EE'], function(EE) {
                 this.emit('turn', data);
                 if (data.nextPlayer){
                     this.currentRoom.current = data.nextPlayer;
-                    this.currentRoom.userTime = this.turnTime;
+                    this.currentRoom.userTime = this.client.opts.turnTime * 1000;
                     this.emit('switch_player', this.currentRoom.current);
                     this.emitTime();
                     if (!this.timeInterval){
@@ -86,7 +85,7 @@ define(['EE'], function(EE) {
     GameManager.prototype.onRoundStart = function (data){
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
-        this.currentRoom.userTime = this.turnTime;
+        this.currentRoom.userTime = this.client.opts.turnTime * 1000;
         this.emit('round_start', {
             players: [
                 this.getPlayer(data.players[0]),

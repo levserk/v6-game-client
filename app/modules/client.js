@@ -100,6 +100,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.turnTime = this.opts.turnTime = opts.turnTime;
         this.modes = this.opts.modes = opts.modes;
         this.currentMode = this.modes[0];
+        this.isLogin = true;
 
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
@@ -109,6 +110,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     Client.prototype.send = function (module, type, target, data) {
+        if (!client.socket.isConnected){
+            console.error('Client can not send message, socket is not connected!');
+            return;
+        }
         if (typeof module == "object" && module.module && module.type && module.data) {
             type = module.type;
             data = module.data;
@@ -131,7 +136,19 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     };
 
     Client.prototype.setMode = function (mode){
-        if (this.modes[mode]) mode = this.modes[mode];
+        if (!client.socket.isConnected || !client.isLogin){
+            console.error('Client can set mode, socket is not connected!');
+            return;
+        }
+        if (!this.modes|| this.modes.length<1){
+            console.error('Client can set mode, no modes!');
+            return;
+        }
+        if (this.modes[mode]) {
+            this.currentMode = this.modes[mode];
+            this.emit('mode_switch', this.currentMode);
+            return
+        }
         else {
             for (var i = 0; i < this.modes.length; i++){
                 if (this.modes[i] == mode) {

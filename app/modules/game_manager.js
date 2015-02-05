@@ -33,19 +33,7 @@ define(['EE'], function(EE) {
                 console.log('game_manager;', 'user_ready', data);
                 break;
             case 'round_start':
-                console.log('game_manager;', 'emit round_start', data);
-                this.currentRoom.current = this.getPlayer(data.first);
-                this.currentRoom.userTime = this.turnTime;
-                this.emit('round_start', {
-                    players: [
-                        this.getPlayer(data.players[0]),
-                        this.getPlayer(data.players[1])
-                    ],
-                    first: this.getPlayer(data.first),
-                    id: data.id,
-                    inviteData: data.inviteData
-                });
-                this.emitTime();
+                this.onRoundStart(data);
                 break;
             case 'turn':
                 console.log('game_manager;', 'emit turn', data);
@@ -76,27 +64,7 @@ define(['EE'], function(EE) {
                 this.onUserLeave(user);
                 break;
             case 'round_end':
-                console.log('game_manager', 'emit round_end', data);
-                clearInterval(this.timeInterval);
-                this.timeInterval = null;
-                this.prevTime = null;
-                this.currentRoom.current = null;
-                if (data.winner){
-                    if (data.winner == this.client.getPlayer().userId) { // win
-                        console.log('game_manager;', 'win', data);
-                        data.result = 'win'
-                    } else { // lose
-                        console.log('game_manager;', 'lose', data);
-                        data.result = 'lose'
-                    }
-                } else { // not save or draw
-                    if (data.winner == 'not_save') console.log('game_manager', 'not accepted', data);
-                    else {
-                        data.result = 'draw';
-                        console.log('game_manager;', 'draw', data);
-                    }
-                }
-                this.emit('round_end', data, this.client.getPlayer());
+                this.onRoundEnd(data);
                 break;
             case 'error':
                 console.log('game_manager;', 'error', data);
@@ -112,6 +80,49 @@ define(['EE'], function(EE) {
         this.currentRoom = room;
         this.emit('game_start', room);
         this.sendReady();
+    };
+
+
+    GameManager.prototype.onRoundStart = function (data){
+        console.log('game_manager;', 'emit round_start', data);
+        this.currentRoom.current = this.getPlayer(data.first);
+        this.currentRoom.userTime = this.turnTime;
+        this.emit('round_start', {
+            players: [
+                this.getPlayer(data.players[0]),
+                this.getPlayer(data.players[1])
+            ],
+            first: this.getPlayer(data.first),
+            id: data.id,
+            inviteData: data.inviteData
+        });
+        this.emitTime();
+    };
+
+
+    GameManager.prototype.onRoundEnd = function(data){
+        console.log('game_manager', 'emit round_end', data, this.currentRoom);
+        clearInterval(this.timeInterval);
+        data.mode = this.currentRoom.data.mode;
+        this.timeInterval = null;
+        this.prevTime = null;
+        this.currentRoom.current = null;
+        if (data.winner){
+            if (data.winner == this.client.getPlayer().userId) { // win
+                console.log('game_manager;', 'win', data);
+                data.result = 'win'
+            } else { // lose
+                console.log('game_manager;', 'lose', data);
+                data.result = 'lose'
+            }
+        } else { // not save or draw
+            if (data.winner == 'not_save') console.log('game_manager', 'not accepted', data);
+            else {
+                data.result = 'draw';
+                console.log('game_manager;', 'draw', data);
+            }
+        }
+        this.emit('round_end', data, this.client.getPlayer());
     };
 
 

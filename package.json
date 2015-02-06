@@ -5,7 +5,9 @@
         "grunt": "*",
         "grunt-requirejs": "*",
         "grunt-contrib-cssmin": "*",
-        "grunt-contrib-uglify":"*"
+        "grunt-contrib-uglify":"*",
+        "grunt-contrib-copy":"*",
+        "grunt-contrib-clean":"*"
     },
     "description": "V6 game client",
     "author": {

@@ -442,7 +442,6 @@ define('modules/game_manager',['EE'], function(EE) {
 
     var GameManager = function(client){
         this.client = client;
-        this.turnTime = client.opts.turnTime * 1000;
         this.currentRoom = null;
         this.client.on('disconnected', function(){
             // TODO: save or close current room
@@ -472,19 +471,7 @@ define('modules/game_manager',['EE'], function(EE) {
                 console.log('game_manager;', 'user_ready', data);
                 break;
             case 'round_start':
-                console.log('game_manager;', 'emit round_start', data);
-                this.currentRoom.current = this.getPlayer(data.first);
-                this.currentRoom.userTime = this.turnTime;
-                this.emit('round_start', {
-                    players: [
-                        this.getPlayer(data.players[0]),
-                        this.getPlayer(data.players[1])
-                    ],
-                    first: this.getPlayer(data.first),
-                    id: data.id,
-                    inviteData: data.inviteData
-                });
-                this.emitTime();
+                this.onRoundStart(data);
                 break;
             case 'turn':
                 console.log('game_manager;', 'emit turn', data);
@@ -495,7 +482,7 @@ define('modules/game_manager',['EE'], function(EE) {
                 this.emit('turn', data);
                 if (data.nextPlayer){
                     this.currentRoom.current = data.nextPlayer;
-                    this.currentRoom.userTime = this.turnTime;
+                    this.currentRoom.userTime = this.client.opts.turnTime * 1000;
                     this.emit('switch_player', this.currentRoom.current);
                     this.emitTime();
                     if (!this.timeInterval){
@@ -515,27 +502,7 @@ define('modules/game_manager',['EE'], function(EE) {
                 this.onUserLeave(user);
                 break;
             case 'round_end':
-                console.log('game_manager', 'emit round_end', data);
-                clearInterval(this.timeInterval);
-                this.timeInterval = null;
-                this.prevTime = null;
-                this.currentRoom.current = null;
-                if (data.winner){
-                    if (data.winner == this.client.getPlayer().userId) { // win
-                        console.log('game_manager;', 'win', data);
-                        data.result = 'win'
-                    } else { // lose
-                        console.log('game_manager;', 'lose', data);
-                        data.result = 'lose'
-                    }
-                } else { // not save or draw
-                    if (data.winner == 'not_save') console.log('game_manager', 'not accepted', data);
-                    else {
-                        data.result = 'draw';
-                        console.log('game_manager;', 'draw', data);
-                    }
-                }
-                this.emit('round_end', data, this.client.getPlayer());
+                this.onRoundEnd(data);
                 break;
             case 'error':
                 console.log('game_manager;', 'error', data);
@@ -551,6 +518,49 @@ define('modules/game_manager',['EE'], function(EE) {
         this.currentRoom = room;
         this.emit('game_start', room);
         this.sendReady();
+    };
+
+
+    GameManager.prototype.onRoundStart = function (data){
+        console.log('game_manager;', 'emit round_start', data);
+        this.currentRoom.current = this.getPlayer(data.first);
+        this.currentRoom.userTime = this.client.opts.turnTime * 1000;
+        this.emit('round_start', {
+            players: [
+                this.getPlayer(data.players[0]),
+                this.getPlayer(data.players[1])
+            ],
+            first: this.getPlayer(data.first),
+            id: data.id,
+            inviteData: data.inviteData
+        });
+        this.emitTime();
+    };
+
+
+    GameManager.prototype.onRoundEnd = function(data){
+        console.log('game_manager', 'emit round_end', data, this.currentRoom);
+        clearInterval(this.timeInterval);
+        data.mode = this.currentRoom.data.mode;
+        this.timeInterval = null;
+        this.prevTime = null;
+        this.currentRoom.current = null;
+        if (data.winner){
+            if (data.winner == this.client.getPlayer().userId) { // win
+                console.log('game_manager;', 'win', data);
+                data.result = 'win'
+            } else { // lose
+                console.log('game_manager;', 'lose', data);
+                data.result = 'lose'
+            }
+        } else { // not save or draw
+            if (data.winner == 'not_save') console.log('game_manager', 'not accepted', data);
+            else {
+                data.result = 'draw';
+                console.log('game_manager;', 'draw', data);
+            }
+        }
+        this.emit('round_end', data, this.client.getPlayer());
     };
 
 
@@ -772,6 +782,11 @@ define('modules/invite_manager',['EE'], function(EE) {
             this.cancel();
         }
         params = params || {};
+        if (params.mode){
+            console.error('invite param mode is reserved!');
+            return;
+        }
+        params.mode = client.currentMode;
         params.target = userId;
         this.invite = params;
         this.client.send('invite_manager', 'invite', userId, this.invite);
@@ -842,6 +857,18 @@ define('modules/user_list',['EE'], function(EE) {
             self.rooms = [];
             self.users = [];
         });
+        client.gameManager.on('round_end', function(data){
+            if (data.ratings && data.mode){
+                for (var userId in data.ratings){
+                    for (var i = 0; i < self.users.length; i++){
+                        if(self.users[i].userId == userId) {
+                            self.users[i][data.mode] = data.ratings[userId];
+                        }
+                    }
+                }
+                this.emit('update', data);
+            }
+        });
     };
 
     UserList.prototype  = new EE();
@@ -855,7 +882,7 @@ define('modules/user_list',['EE'], function(EE) {
 
 
     UserList.prototype.onUserLogin = function(data, fIsPlayer){
-        var user = new User(data, fIsPlayer);
+        var user = new User(data, fIsPlayer, this.client);
         if (fIsPlayer) this.player = user;
         for (var i = 0; i < this.users.length; i++){
             if(this.users[i].userId == user.userId) {
@@ -950,15 +977,16 @@ define('modules/user_list',['EE'], function(EE) {
     };
 
 
-    function User(data, fIsPlayer){
+    function User(data, fIsPlayer, client){
         if (!data || !data.userId || !data.userName) throw new Error("wrong user data!");
         for (var key in data){
             if (data.hasOwnProperty(key)) this[key] = data[key];
         }
         this.isPlayer = fIsPlayer || false;
         this.getRank = function (mode) {
-            return this[mode].rank || '—';
-        }
+            return this[mode||this._client.currentMode].rank || '—';
+        };
+        this._client = client;
     }
 
     return UserList;
@@ -1469,13 +1497,13 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\n<tr>\n    <td class="userName" data-userId="<%= user.userId %>"><%= user.userName %></td>\n    <td class="userRank"><%= user.getRank(\'default\') %></td>\n    <% if (user.isPlayer) { %>\n    <td></td>\n    <% } else if (user.isInvited) { %>\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\n    <% } else { %>\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\n    <% } %>\n\n</tr>\n\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName" data-userId="<%= user.userId %>"><%= user.userName %></td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\n<tr>\n    <td class="userName"><%= room.players[0].userName %></td>\n    <td class="userName"><%= room.players[1].userName %></td>\n</tr>\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\n    <div data-type="free">Свободны <span></span></div>\n    <div data-type="inGame">Играют <span></span></div>\n</div>\n<div id="userListSearch">\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\n</div>\n<div class="tableWrap">\n    <table class="playerList"></table>\n</div>\n\n<div class="btn">\n    <span>Играть с любым</span>\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn">\r\n    <span>Играть с любым</span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -1558,11 +1586,12 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
                 '<span class="disconnectButton">Переподключиться</span>' +
                 '</div></td></tr>');
             this.$loadingTab = $('<tr><td>Загрузка..</td></tr>');
-            /*
-             tabType: {'free', 'inGame'}
-             */
             this.$el.html(this.tplMain());
-            $('body').append(this.el);
+            // append user list
+            if (_client.opts.blocks.userListId)
+                $('#'+_client.opts.blocks.userListId).append(this.el);
+            else
+                $('body').append(this.el);
 
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
@@ -1572,6 +1601,8 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
+            this.listenTo(this.client, 'mode_switch', bindedRender);
+            this.listenTo(this.client.userList, 'update', bindedRender);
             this.listenTo(this.client.userList, 'leave_user', bindedRender);
             this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
             this.listenTo(this.client.userList, 'new_room', bindedRender);
@@ -1621,7 +1652,6 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
-            console.log('render');
             this._showPlayerListByTabName();
             this._setCounters();
             return this;
@@ -1727,7 +1757,6 @@ define('views/dialogs',[],function() {
             });
         }
 
-
         function _askDraw(user) {
             console.log('ask draw', user);
             var div = $('<div>');
@@ -1749,7 +1778,6 @@ define('views/dialogs',[],function() {
             }).parent().draggable();
         }
 
-
         function _cancelDraw(user) {
             console.log('cancel draw', user);
             var div = $('<div>');
@@ -1765,7 +1793,6 @@ define('views/dialogs',[],function() {
                 }
             });
         }
-
 
         function _roundEnd(data) {
             _hideDialogs();
@@ -1832,16 +1859,19 @@ define('views/dialogs',[],function() {
 });
 
 
-define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\n    <div class="tab" data-type="public">Общий чат</div>\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\n</div>\n<div class="clear"></div>\n<div class="messagesWrap"><ul></ul></div>\n<div class="inputMsg" contenteditable="true"></div>\n<div class="layer1">\n    <div class="sendMsgBtn">Отправить</div>\n    <select id="chat-select">\n        <option selected>Готовые сообщения</option>\n        <option>Привет!</option>\n        <option>Молодец!</option>\n        <option>Здесь кто-нибудь умеет играть?</option>\n        <option>Кто со мной?</option>\n        <option>Спасибо!</option>\n        <option>Спасибо! Интересная игра!</option>\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\n        <option>Отличная партия. Спасибо!</option>\n        <option>Ты мог выиграть</option>\n        <option>Ты могла выиграть</option>\n        <option>Ходи!</option>\n        <option>Дай ссылку на твою страницу вконтакте</option>\n        <option>Снимаю шляпу!</option>\n        <option>Красиво!</option>\n        <option>Я восхищен!</option>\n        <option>Где вы так научились играть?</option>\n        <option>Еще увидимся!</option>\n        <option>Ухожу после этой партии. Спасибо!</option>\n        <option>Минуточку</option>\n    </select>\n</div>\n<div class="layer2">\n    <span class="chatAdmin">\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\n    </span>\n\n    <span class="chatRules">Правила чата</span>\n</div>';});
+define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
 
 
-define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\n    <div class="msgRow1">\n        <div class="smallRight time"><%= msg.t %></div>\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\n\n        <div data-userId="<%= msg.userId%>">\n            <span class="userName"><%= msg.userName %></span>\n        </div>\n    </div>\n    <div class="msgRow2">\n        <div class="delete" title="Удалить сообщение"></div>\n        <div class="msgTextWrap">\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\n        </div>\n    </div>\n</li>';});
+define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n\r\n        <div data-userId="<%= msg.userId%>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
 
 
-define('text!tpls/v6-chatDay.ejs',[],function () { return '<li class="chatDay" data-day-msgId="<%= time %>">\n    <div>\n        <%= d %>\n    </div>\n</li>';});
+define('text!tpls/v6-chatDay.ejs',[],function () { return '<li class="chatDay" data-day-msgId="<%= time %>">\r\n    <div>\r\n        <%= d %>\r\n    </div>\r\n</li>';});
 
-define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs', 'text!tpls/v6-chatDay.ejs'],
-    function(_, Backbone, tplMain, tplMsg, tplDay) {
+
+define('text!tpls/v6-chatRules.ejs',[],function () { return '<div id="chat-rules" class="aboutPanel">\r\n    <img class="closeIcon" src="i/close.png">\r\n\r\n    <div style="padding: 10px 12px 15px 25px;">\r\n        <h2>Правила чата</h2>\r\n        <p style="line-height: 16px;">В чате запрещено:<br>\r\n            <span style="margin-left:5px;">1. использование ненормативной лексики и оскорбительных выражений</span><br>\r\n            <span style="margin-left:5px;">2. хамское и некорректное общение с другими участниками</span><br>\r\n            <span style="margin-left:5px;">3. многократная публикация бессмысленных, несодержательных или одинаковых сообщений.</span>\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Баны</span> выносятся: на 1 день, на 3 дня, на 7 дней,на\r\n            месяц или навсегда, в зависимости от степени тяжести нарушения.\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Бан</span> снимается автоматически по истечении срока.\r\n        </p>\r\n\r\n    </div>\r\n</div>';});
+
+define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs', 'text!tpls/v6-chatDay.ejs', 'text!tpls/v6-chatRules.ejs'],
+    function(_, Backbone, tplMain, tplMsg, tplDay, tplRules) {
         
 
         var ChatView = Backbone.View.extend({
@@ -1850,6 +1880,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             tplMain: _.template(tplMain),
             tplMsg: _.template(tplMsg),
             tplDay: _.template(tplDay),
+            tplRules: _.template(tplRules),
             events: {
                 'click .chatMsg': '_deleteMsg',
                 'click .tab': 'clickTab',
@@ -1857,13 +1888,54 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 'click .inputMsg': 'clickInputMsg',
                 'click .sendMsgBtn': 'sendMsgEvent',
                 'keyup .inputMsg': 'sendMsgEvent',
-                'change #chat-select': 'changeChatSelect'
+                'change #chat-select': 'changeChatSelect',
+                'click .chatMsg div[data-userid]': 'showMenu',
+                'click li[data-action]': 'clickDialogAction',
+                'click .chatRules': 'showChatRules'
             },
+
+            showChatRules: function() {
+                this.$rules.css({
+                    top: ($(window).height() / 2) - (this.$rules.outerHeight() / 2),
+                    left: ($(window).width() / 2) - (this.$rules.outerWidth() / 2)
+                }).show();
+            },
+
+            clickDialogAction: function(e) {
+                var actionObj = {
+                    action: $(e.currentTarget).attr('data-action'),
+                    userId: this.$menu.attr('data-userId')
+                };
+
+                console.log('chat dialog menu:', actionObj);
+            },
+
+            showMenu: function(e) {
+                // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
+                var coords = e.target.getBoundingClientRect(),
+                    OFFSET = 20; // отступ, чтобы не закрывало имя
+
+                setTimeout(function() {
+                    this.$menu.attr('data-userId', $(e.target).parent().attr('data-userid'));
+                    this.$menu.css({
+                        left: OFFSET, // фиксированный отступ слева
+                        top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
+                    }).slideDown();
+                }.bind(this), 0);
+
+            },
+
+            hideMenuElement: function() {
+                this.$menu.removeAttr('data-userId');
+                this.$menu.hide();
+            },
+
             changeChatSelect: function(e) {
                 var textMsg = e.target.options[e.target.selectedIndex].innerHTML;
                 this.$SELECTED_OPTION.attr('selected', true);
                 this.$inputMsg.text(textMsg);
             },
+
             sendMsgEvent: function(e) {
                 // e используется здесь только если нажат enter
                 if (e.type === 'keyup' && e.keyCode !== 13) {
@@ -1876,12 +1948,14 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 this._sendMsg(this.$inputMsg.text());
             },
+
             scrollEvent: function() {
                 if (this.$messagesWrap.scrollTop()<5 && !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
                     this._setLoadingState();
                     this.client.chatManager.loadMessages();
                 }
             },
+
             _sendMsg: function(text) {
                 if (text === '' || typeof text !== 'string') {
                     return;
@@ -1903,6 +1977,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     target.empty().append(this.$placeHolderSpan); // empty на всякий случай
                 }
             },
+
             clickInputMsg: function(e) {
                 var target = $(e.currentTarget);
 
@@ -1910,6 +1985,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     target.empty();
                 }
             },
+
             clickTab: function(e) {
                 var $target = $(e.target),
                     tabName = $target.attr('data-type');
@@ -1922,8 +1998,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this._setActiveTab(this.currentActiveTabName);
                 this.client.chatManager.loadCachedMessages(this.tabs[tabName].target);
             },
-            invitePlayer: function(e) {
-            },
+
             initialize: function(_client) {
                 this.client = _client;
                 this.$el.html(this.tplMain());
@@ -1938,6 +2013,19 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.CLASS_NEW_MSG = 'newMsg';
                 this.CLASS_ADMIN_MSG = 'isAdmin';
                 this.ACTIVE_TAB_CLASS = 'activeTab';
+                this.CLASS_MENU_ELEMENT = 'menuElement';
+
+                this.$menu = this.$el.find('.' + this.CLASS_MENU_ELEMENT); // диалоговое меню при ЛКМ на имени игрока
+                if (!this.client.isAdmin) {
+                    this.$menu.find('li[data-action="ban"]').remove();
+                }
+                window.document.body.addEventListener('click', this.hideMenuElement.bind(this));
+
+                this.$rules = $(this.tplRules());
+                window.document.body.appendChild(this.$rules[0]);
+                this.$rules.find('img.closeIcon').on('click', function() {
+                    this.$rules.hide();
+                }.bind(this));
 
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
 
@@ -1955,11 +2043,16 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 };
 
                 this._setActiveTab(this.currentActiveTabName);
-                $('body').append(this.el);
+                //append element
+                if (_client.opts.blocks.chatId)
+                    $('#'+_client.opts.blocks.chatId).append(this.el);
+                else
+                    $('body').append(this.el);
+
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 this._setLoadingState();
 
-                if (!this.client.isAdmin) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
+                if (this.client.isAdmin) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
 
                 this.listenTo(this.client.chatManager, 'message', this._addOneMsg.bind(this));
                 this.listenTo(this.client.chatManager, 'load', this._preaddMsgs.bind(this));
@@ -1967,6 +2060,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.listenTo(this.client.chatManager, 'close_dialog', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
             },
+
             _setActiveTab: function(tabName) {
                 var $tab = this.$el.find('.tabs div[data-type="' + tabName + '"]');
                 this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
@@ -1979,9 +2073,11 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.currentActiveTabTitle = this.tabs[tabName].target;
 
             },
+
             render: function() {
                 return this;
             },
+
             _openDialog: function(dialog){
                 if (dialog.userId) {
                     this.tabs['private'] = {target: dialog.userId, title: dialog.userName};
@@ -1989,11 +2085,13 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.currentActiveTabName = 'private';
                 this._setActiveTab('private');
             },
+
             _closeDialog: function(target){
                 this.currentActiveTabName = 'public';
                 this._setActiveTab('public');
                 this.$el.find('.tabs div[data-type="' + 'private' + '"]').hide();
             },
+
             _deleteMsg: function(e) {
                 var $msg, msgId;
                 if (!isNaN(+e) && typeof +e === 'number') {
@@ -2018,6 +2116,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 $msg.remove();
             },
+
             _addOneMsg: function(msg) {
                 console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle) return;
@@ -2039,6 +2138,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 //scroll down
                 if (fScroll) this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight)
             },
+
             _preaddMsgs: function(msg) {
                 console.log('pre chat message', msg);
                 if (msg && msg.target != this.currentActiveTabTitle) return;
@@ -2058,10 +2158,12 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 if (msg.admin) $msg.addClass(this.CLASS_ADMIN_MSG);
                 this.$messagesWrap.scrollTop(oldScrollTop + this.$messagesWrap[0].scrollHeight - oldScrollHeight);
             },
+
             _setLoadingState: function() {
                 this.$msgsList.prepend(this.$spinnerWrap);
                 this.$messagesWrap.addClass(this.CLASS_DISABLED);
             },
+
             _removeLoadingState: function(){
                 this.$spinnerWrap.remove();
                 this.$messagesWrap.removeClass(this.CLASS_DISABLED);
@@ -2253,16 +2355,26 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
         opts.turnTime = opts.turnTime || 60;
+        opts.blocks = opts.blocks || {};
+
+        try{
+            this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
+        }catch (e){
+            this.isAdmin = false;
+            console.error(e);
+        }
 
         var self = this;
 
         this.opts = opts;
         this.game = opts.game || 'test';
-        this.userList = new UserList(this);
         this.gameManager = new GameManager(this);
+        this.userList = new UserList(this);
         this.inviteManager = new InviteManager(this);
         this.chatManager = new ChatManager(this);
         this.viewsManager = new ViewsManager(this);
+
+        this.currentMode = null;
 
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
@@ -2285,13 +2397,6 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         });
 
         this.getUser = this.userList.getUser.bind(this.userList);
-
-        try{
-            this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
-        }catch (e){
-            this.isAdmin = false;
-            console.error(e);
-        }
     };
 
     Client.prototype  = new EE();
@@ -2314,31 +2419,39 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     Client.prototype.onServerMessage = function(message){
+        var data = message.data;
         switch (message.type){
             case 'login':
-                this.onLogin(message.data.you, message.data.userlist, message.data.rooms);
+                this.onLogin(data.you, data.userlist, data.rooms, data.opts);
                 break;
             case 'user_login':
-                this.userList.onUserLogin(message.data);
+                this.userList.onUserLogin(data);
                 break;
             case 'user_leave':
-                this.userList.onUserLeave(message.data);
+                this.userList.onUserLeave(data);
                 break;
             case 'new_game':
-                this.userList.onGameStart(message.data.room, message.data.players);
+                this.userList.onGameStart(data.room, data.players);
                 this.gameManager.onMessage(message);
                 break;
             case 'end_game':
-                this.userList.onGameEnd(message.data.room, message.data.players);
+                this.userList.onGameEnd(data.room, data.players);
                 break;
             case 'error':
-                this.onError(message.data);
+                this.onError(data);
                 break;
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms){
-        console.log('client;', 'login', user, userlist, rooms);
+    Client.prototype.onLogin = function(user, userlist, rooms, opts){
+        console.log('client;', 'login', user, userlist, rooms, opts);
+
+        this.game = this.opts.game = opts.game;
+        this.turnTime = this.opts.turnTime = opts.turnTime;
+        this.modes = this.opts.modes = opts.modes;
+        this.currentMode = this.modes[0];
+        this.isLogin = true;
+
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
@@ -2347,6 +2460,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     Client.prototype.send = function (module, type, target, data) {
+        if (!client.socket.isConnected){
+            console.error('Client can not send message, socket is not connected!');
+            return;
+        }
         if (typeof module == "object" && module.module && module.type && module.data) {
             type = module.type;
             data = module.data;
@@ -2366,6 +2483,32 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             target:target,
             data:data
         });
+    };
+
+    Client.prototype.setMode = function (mode){
+        if (!client.socket.isConnected || !client.isLogin){
+            console.error('Client can set mode, socket is not connected!');
+            return;
+        }
+        if (!this.modes|| this.modes.length<1){
+            console.error('Client can set mode, no modes!');
+            return;
+        }
+        if (this.modes[mode]) {
+            this.currentMode = this.modes[mode];
+            this.emit('mode_switch', this.currentMode);
+            return
+        }
+        else {
+            for (var i = 0; i < this.modes.length; i++){
+                if (this.modes[i] == mode) {
+                    this.currentMode = mode;
+                    this.emit('mode_switch', this.currentMode);
+                    return;
+                }
+            }
+        }
+        console.error('wrong mode:', mode, 'client modes:',  this.modes)
     };
 
     Client.prototype.onError = function (error) {

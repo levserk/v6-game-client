@@ -1,11 +1,13 @@
 {
     "name": "v6-game-client",
-    "version": "0.3.0",
+    "version": "0.5.5",
     "dependencies": {
         "grunt": "*",
         "grunt-requirejs": "*",
         "grunt-contrib-cssmin": "*",
-        "grunt-contrib-uglify":"*"
+        "grunt-contrib-uglify":"*",
+        "grunt-contrib-copy":"*",
+        "grunt-contrib-clean":"*"
     },
     "description": "V6 game client",
     "author": {

@@ -9,6 +9,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         tplMain: _.template(tplMain),
         events: {
             'click .inviteBtn': 'invitePlayer',
+            'click .userName': 'userClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect'
         },
@@ -36,7 +37,17 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this._setActiveTab(this.currentActiveTabName);
             this.render();
         },
+        userClick: function(e) {
+            var target = $(e.currentTarget),
+                userId = target.attr('data-userId');
+            this.client.onShowProfile(userId);
+        },
         invitePlayer: function(e) {
+            if (this.client.gameManager.currentRoom) {
+                console.log('you already in game!');
+                return;
+            }
+
             var target = $(e.currentTarget),
                 userId = target.attr('data-userId');
 
@@ -68,11 +79,12 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 '<span class="disconnectButton">Переподключиться</span>' +
                 '</div></td></tr>');
             this.$loadingTab = $('<tr><td>Загрузка..</td></tr>');
-            /*
-             tabType: {'free', 'inGame'}
-             */
             this.$el.html(this.tplMain());
-            $('body').append(this.el);
+            // append user list
+            if (_client.opts.blocks.userListId)
+                $('#'+_client.opts.blocks.userListId).append(this.el);
+            else
+                $('body').append(this.el);
 
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
@@ -82,6 +94,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
+            this.listenTo(this.client, 'mode_switch', bindedRender);
+            this.listenTo(this.client.userList, 'update', bindedRender);
             this.listenTo(this.client.userList, 'leave_user', bindedRender);
             this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
             this.listenTo(this.client.userList, 'new_room', bindedRender);
@@ -131,7 +145,6 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
-            console.log('render');
             this._showPlayerListByTabName();
             this._setCounters();
             return this;

@@ -95,7 +95,13 @@
 
 #userList .userName {
     text-align: left;
+    cursor: pointer;
 }
+
+#userList .userName:hover {
+    background-color: #edf1f5;
+}
+
 #userList .userRank {
     color: #AAA;
     font-size: 9px;

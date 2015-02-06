@@ -16,6 +16,18 @@ define(['EE'], function(EE) {
             self.rooms = [];
             self.users = [];
         });
+        client.gameManager.on('round_end', function(data){
+            if (data.ratings && data.mode){
+                for (var userId in data.ratings){
+                    for (var i = 0; i < self.users.length; i++){
+                        if(self.users[i].userId == userId) {
+                            self.users[i][data.mode] = data.ratings[userId];
+                        }
+                    }
+                }
+                this.emit('update', data);
+            }
+        });
     };
 
     UserList.prototype  = new EE();
@@ -29,7 +41,7 @@ define(['EE'], function(EE) {
 
 
     UserList.prototype.onUserLogin = function(data, fIsPlayer){
-        var user = new User(data, fIsPlayer);
+        var user = new User(data, fIsPlayer, this.client);
         if (fIsPlayer) this.player = user;
         for (var i = 0; i < this.users.length; i++){
             if(this.users[i].userId == user.userId) {
@@ -124,15 +136,16 @@ define(['EE'], function(EE) {
     };
 
 
-    function User(data, fIsPlayer){
+    function User(data, fIsPlayer, client){
         if (!data || !data.userId || !data.userName) throw new Error("wrong user data!");
         for (var key in data){
             if (data.hasOwnProperty(key)) this[key] = data[key];
         }
         this.isPlayer = fIsPlayer || false;
         this.getRank = function (mode) {
-            return this[mode].rank || '—';
-        }
+            return this[mode||this._client.currentMode].rank || '—';
+        };
+        this._client = client;
     }
 
     return UserList;

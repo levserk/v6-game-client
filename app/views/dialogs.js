@@ -96,7 +96,6 @@ define(function() {
             });
         }
 
-
         function _askDraw(user) {
             console.log('ask draw', user);
             var div = $('<div>');
@@ -118,7 +117,6 @@ define(function() {
             }).parent().draggable();
         }
 
-
         function _cancelDraw(user) {
             console.log('cancel draw', user);
             var div = $('<div>');
@@ -134,7 +132,6 @@ define(function() {
                 }
             });
         }
-
 
         function _roundEnd(data) {
             _hideDialogs();

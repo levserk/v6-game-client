@@ -6,6 +6,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
         opts.turnTime = opts.turnTime || 60;
+        opts.blocks = opts.blocks || {};
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -69,7 +70,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     Client.prototype.onServerMessage = function(message){
-        var data = message.data
+        var data = message.data;
         switch (message.type){
             case 'login':
                 this.onLogin(data.you, data.userlist, data.rooms, data.opts);

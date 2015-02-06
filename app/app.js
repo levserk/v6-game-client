@@ -14,9 +14,14 @@ require(['require-cnf'], function () {
                 generateInviteText: function(invite){
                     return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
                         + ' в игру ' + invite.data.gameType + ' в режим ' + invite.data.mode;
+                },
+                blocks:{
+                    userListId:'userListDiv',
+                    chatId:'chatDiv',
+                    ratingId:'ratingDiv',
+                    historyId:'historyDiv'
                 }
             }).init();
-
 
             var client = window.client;
             client.on('login', function(data){
@@ -61,8 +66,7 @@ require(['require-cnf'], function () {
             });
 
 
-
-
+            // send events buttons example
             _generateEndGameBtn();
 
             function _generateEndGameBtn() {
@@ -89,7 +93,6 @@ require(['require-cnf'], function () {
                     window.client.gameManager.sendTurn({result:1});
                 });
                 $('body').append(div);
-
             }
         });
     });

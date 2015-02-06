@@ -79,11 +79,12 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 '<span class="disconnectButton">Переподключиться</span>' +
                 '</div></td></tr>');
             this.$loadingTab = $('<tr><td>Загрузка..</td></tr>');
-            /*
-             tabType: {'free', 'inGame'}
-             */
             this.$el.html(this.tplMain());
-            $('body').append(this.el);
+            // append user list
+            if (_client.opts.blocks.userListId)
+                $('#'+_client.opts.blocks.userListId).append(this.el);
+            else
+                $('body').append(this.el);
 
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
@@ -144,7 +145,6 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
-            console.log('render');
             this._showPlayerListByTabName();
             this._setCounters();
             return this;

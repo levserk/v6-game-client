@@ -21,12 +21,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 'click li[data-action]': 'clickDialogAction',
                 'click .chatRules': 'showChatRules'
             },
+
             showChatRules: function() {
                 this.$rules.css({
                     top: ($(window).height() / 2) - (this.$rules.outerHeight() / 2),
                     left: ($(window).width() / 2) - (this.$rules.outerWidth() / 2)
                 }).show();
             },
+
             clickDialogAction: function(e) {
                 var actionObj = {
                     action: $(e.currentTarget).attr('data-action'),
@@ -35,6 +37,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 console.log('chat dialog menu:', actionObj);
             },
+
             showMenu: function(e) {
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
@@ -49,6 +52,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 }.bind(this), 0);
 
             },
+
             hideMenuElement: function() {
                 this.$menu.removeAttr('data-userId');
                 this.$menu.hide();
@@ -59,6 +63,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$SELECTED_OPTION.attr('selected', true);
                 this.$inputMsg.text(textMsg);
             },
+
             sendMsgEvent: function(e) {
                 // e используется здесь только если нажат enter
                 if (e.type === 'keyup' && e.keyCode !== 13) {
@@ -71,12 +76,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this._sendMsg(this.$inputMsg.text());
             },
+
             scrollEvent: function() {
                 if (this.$messagesWrap.scrollTop()<5 && !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
                     this._setLoadingState();
                     this.client.chatManager.loadMessages();
                 }
             },
+
             _sendMsg: function(text) {
                 if (text === '' || typeof text !== 'string') {
                     return;
@@ -98,6 +105,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     target.empty().append(this.$placeHolderSpan); // empty на всякий случай
                 }
             },
+
             clickInputMsg: function(e) {
                 var target = $(e.currentTarget);
 
@@ -105,6 +113,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     target.empty();
                 }
             },
+
             clickTab: function(e) {
                 var $target = $(e.target),
                     tabName = $target.attr('data-type');
@@ -117,8 +126,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this._setActiveTab(this.currentActiveTabName);
                 this.client.chatManager.loadCachedMessages(this.tabs[tabName].target);
             },
-            invitePlayer: function(e) {
-            },
+
             initialize: function(_client) {
                 this.client = _client;
                 this.$el.html(this.tplMain());
@@ -163,7 +171,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 };
 
                 this._setActiveTab(this.currentActiveTabName);
-                $('body').append(this.el);
+                //append element
+                if (_client.opts.blocks.chatId)
+                    $('#'+_client.opts.blocks.chatId).append(this.el);
+                else
+                    $('body').append(this.el);
+
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 this._setLoadingState();
 
@@ -175,6 +188,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.listenTo(this.client.chatManager, 'close_dialog', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
             },
+
             _setActiveTab: function(tabName) {
                 var $tab = this.$el.find('.tabs div[data-type="' + tabName + '"]');
                 this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
@@ -187,9 +201,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.currentActiveTabTitle = this.tabs[tabName].target;
 
             },
+
             render: function() {
                 return this;
             },
+
             _openDialog: function(dialog){
                 if (dialog.userId) {
                     this.tabs['private'] = {target: dialog.userId, title: dialog.userName};
@@ -197,11 +213,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.currentActiveTabName = 'private';
                 this._setActiveTab('private');
             },
+
             _closeDialog: function(target){
                 this.currentActiveTabName = 'public';
                 this._setActiveTab('public');
                 this.$el.find('.tabs div[data-type="' + 'private' + '"]').hide();
             },
+
             _deleteMsg: function(e) {
                 var $msg, msgId;
                 if (!isNaN(+e) && typeof +e === 'number') {
@@ -226,6 +244,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 $msg.remove();
             },
+
             _addOneMsg: function(msg) {
                 console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle) return;
@@ -247,6 +266,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 //scroll down
                 if (fScroll) this.$messagesWrap.scrollTop(this.$messagesWrap[0].scrollHeight)
             },
+
             _preaddMsgs: function(msg) {
                 console.log('pre chat message', msg);
                 if (msg && msg.target != this.currentActiveTabTitle) return;
@@ -266,10 +286,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 if (msg.admin) $msg.addClass(this.CLASS_ADMIN_MSG);
                 this.$messagesWrap.scrollTop(oldScrollTop + this.$messagesWrap[0].scrollHeight - oldScrollHeight);
             },
+
             _setLoadingState: function() {
                 this.$msgsList.prepend(this.$spinnerWrap);
                 this.$messagesWrap.addClass(this.CLASS_DISABLED);
             },
+
             _removeLoadingState: function(){
                 this.$spinnerWrap.remove();
                 this.$messagesWrap.removeClass(this.CLASS_DISABLED);

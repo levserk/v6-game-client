@@ -1,5 +1,5 @@
-define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager', 'EE'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, EE) {
+define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager','modules/history_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, EE) {
     'use strict';
     var Client = function(opts) {
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
@@ -24,6 +24,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.inviteManager = new InviteManager(this);
         this.chatManager = new ChatManager(this);
         this.viewsManager = new ViewsManager(this);
+        this.historyManager = new HistoryManager(this);
 
         this.currentMode = null;
 
@@ -64,7 +65,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             case 'server': this.onServerMessage(message); break;
             case 'invite_manager': this.inviteManager.onMessage(message); break;
             case 'game_manager': this.gameManager.onMessage(message); break;
-            case 'chat_manager':this.chatManager.onMessage(message); break;
+            case 'chat_manager': this.chatManager.onMessage(message); break;
+            case 'history_manager': this.historyManager.onMessage(message); break;
         }
     };
 

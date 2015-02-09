@@ -19,9 +19,8 @@ define(['EE'], function(EE) {
 
 
     HistoryManager.prototype.getHistory = function(mode){
-        client.send('history_manager', 'history', 'server', {mode:mode||this.client.modes[0]});
+        client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode});
     };
-
 
 
     return HistoryManager;

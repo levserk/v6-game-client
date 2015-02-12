@@ -65,6 +65,7 @@
 
 #userList .playerList {
     width: 100%;
+    table-layout: fixed;
 }
 
 #userList .btn {
@@ -96,6 +97,9 @@
 #userList .userName {
     text-align: left;
     cursor: pointer;
+    width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #userList .userName:hover {

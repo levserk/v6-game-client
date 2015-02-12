@@ -41,7 +41,9 @@
 }
 
 #v6Chat .tabs div {
-    width: 33%;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     float: left;
     text-align: center;
     font-size: 95%;
@@ -66,6 +68,17 @@
     margin-top: 5px;
 }
 
+#v6Chat .messagesWrap .userName {
+    color: #404040;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
 #v6Chat .tabs .tab {
     padding: 5px;
 }
@@ -78,12 +91,6 @@
     list-style: none;
     margin: 0;
     padding: 0;
-}
-
-#v6Chat .messagesWrap .userName {
-    color: #404040;
-    font-size: 13px;
-    font-weight: 700;
 }
 
 #v6Chat .messagesWrap ul li {
@@ -143,11 +150,6 @@
     height: 30px;
     background-size: contain;
     display: inline-block;
-}
-
-#v6Chat .chatMsg .userName {
-    font-size: 100%;
-    cursor: pointer;
 }
 
 #v6Chat .chatMsg .userName:hover {

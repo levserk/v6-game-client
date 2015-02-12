@@ -55,7 +55,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     this.$tabs.append(this.tplTab(this.tabs[i]));
                     this.setActiveTab(this.tabs[0].id);
                 }
-                if (this.subTabs.length>0) {
+                if (this.subTabs.length>1) {
                     this.$tabs.append('<br>');
                     for (var i in this.subTabs){
                         this.$tabs.append(this.tplTab(this.subTabs[i]));

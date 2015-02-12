@@ -106,7 +106,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.modes = this.opts.modes = opts.modes;
         this.currentMode = this.modes[0];
         this.isLogin = true;
-
+        this.ratingManager.init();
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);

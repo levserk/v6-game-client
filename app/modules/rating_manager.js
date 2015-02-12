@@ -4,14 +4,12 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     var RatingManager = function (client) {
         this.client = client;
         this.currentRoom = null;
-        var conf = {
+        this.conf = {
             tabs:[
                 {id: 'all_players', title: 'все игроки'},
                 {id: 'online_players', title: 'сейчас на сайте'}
             ],
             subTabs:[
-                {id: 'mode1', title: 'mode1'},
-                {id: 'mode2', title: 'mode2'}
             ],
             columns:[
                 {  id:'Rank',     source:'rank',        title:'Место' },
@@ -23,11 +21,17 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             ]
         };
 
-        this.ratingView = new RatingView(conf);
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
     };
 
     RatingManager.prototype = new EE();
+
+
+    RatingManager.prototype.init = function(conf){
+        for (var i = 0 ; i < client.modes.length; i++) this.conf.subTabs.push({id:client.modes[i], title:client.modes[i]});
+
+        this.ratingView = new RatingView(this.conf);
+    };
 
 
     RatingManager.prototype.onMessage = function (message) {

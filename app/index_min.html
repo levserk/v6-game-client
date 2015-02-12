@@ -14,7 +14,7 @@
 <body>
 <div id="userListDiv"></div>
 <div id="chatDiv"></div>
-<div id="ratingDiv"></div>
+<div id="ratingDiv" style="width: 700px; background: white; margin: 10px;"></div>
 <div id="historyDiv"></div>
 
 <script>
@@ -106,6 +106,14 @@
         div.html('<span>Победный ход</span>');
         div.on('click', function () {
             window.client.gameManager.sendTurn({result:1});
+        });
+        $('body').append(div);
+
+        div = $('<div>');
+        div.attr('id', 'ratingButton');
+        div.html('<span>Показать рейтинг</span>');
+        div.on('click', function () {
+            window.client.ratingManager.getRatings();
         });
         $('body').append(div);
     }

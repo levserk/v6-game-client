@@ -2347,8 +2347,340 @@ define('modules/chat_manager',['EE'], function(EE) {
 
     return ChatManager;
 });
-define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager', 'EE'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, EE) {
+define('modules/history_manager',['EE'], function(EE) {
+    
+
+    var HistoryManager = function (client) {
+        this.client = client;
+        this.currentRoom = null;
+    };
+
+    HistoryManager.prototype = new EE();
+
+
+    HistoryManager.prototype.onMessage = function (message) {
+        var data = message.data, i;
+        console.log('history_manager;', 'message', message);
+        switch (message.type) {
+            case 'history': break;
+        }
+    };
+
+
+    HistoryManager.prototype.getHistory = function(mode){
+        client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode});
+    };
+
+
+    return HistoryManager;
+});
+
+define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="i/close.png" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <div class="loading"><img src="i/spin.gif"></div>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
+
+
+define('text!tpls/v6-ratingTD.ejs',[],function () { return '<td data-idcol="<%= id %>" class="rating<%= id %>"><%= value %><sup class="greenSup"><%= sup %></sup></td>';});
+
+
+define('text!tpls/v6-ratingTH.ejs',[],function () { return '<th data-idcol="<%= id %>" class="ratingTH<%= id %>" title="<%= title %>"><%= value %></th>';});
+
+
+define('text!tpls/v6-ratingTR.ejs',[],function () { return '<tr class="<%= trclass %>" data-userId="<%= userId %>" data-userName="<%= userName %>"><%= value %></tr>';});
+
+
+define('text!tpls/v6-ratingTab.ejs',[],function () { return '<span class="unactiveLink"  data-idtab="<%= id %>"><%= title %></span>&nbsp;&nbsp;';});
+
+
+define('text!tpls/v6-ratingSearch.ejs',[],function () { return '<div style="padding-bottom:2px;">\r\n    <div style="float:left;margin-top:4px;">Поиск:</div>\r\n    <input type="text" placeholder="Поиск по имени" id="ratingAutoComplete" value="">\r\n</div>';});
+
+
+define('text!tpls/v6-ratingPhoto.ejs',[],function () { return '<div style="float:right;margin-top:2px;">\r\n    <a href="<%= photo %>" rel="lightbox" data-lightbox="<%= photo %>"><img src="i/camera.png"></a>\r\n</div>';});
+
+define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-ratingTD.ejs', 'text!tpls/v6-ratingTH.ejs', 'text!tpls/v6-ratingTR.ejs', 'text!tpls/v6-ratingTab.ejs', 'text!tpls/v6-ratingSearch.ejs', 'text!tpls/v6-ratingPhoto.ejs'],
+    function(_, Backbone, tplMain, tplTD, tplTH, tplTR, tplTab, tplSearch, tplPhoto) {
+        
+
+        var RatingView = Backbone.View.extend({
+            tagName: 'div',
+            id: 'v6Rating',
+            tplMain: _.template(tplMain),
+            tplTD: _.template(tplTD),
+            tplTH: _.template(tplTH),
+            tplTR: _.template(tplTR),
+            tplTab: _.template(tplTab),
+            tplSearch: _.template(tplSearch),
+            tplPhoto: _.template(tplPhoto),
+            events: {
+                'click .closeIcon': 'close',
+                'click #closeRatingBtn': 'close'
+            },
+            initialize: function(_conf) {
+                this.conf = _conf;
+                this.tabs = _conf.tabs;
+                this.subTabs = _conf.subTabs;
+                this.columns = _conf.columns;
+                this.$el.html(this.tplMain());
+
+                this.$tabs = $(this.$el.find('.filterPanel').children()[0]);
+                this.$titles = this.$el.find('.headTitles');
+                this.$icons = this.$el.find('.headIcons');
+                this.$head = this.$icons.parent();
+                this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
+
+                this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
+                this.IMG_BOTH = '<img src="i/sort-both.png">';
+                this.IMG_ASC= '<img src="i/sort-asc.png">';
+                this.IMG_DESC = '<img src="i/sort-desc.png">';
+                this.ACTIVE_TAB = 'activeLink';
+                this.UNACTIVE_TAB = 'unactiveLink';
+                this.SORT = 'sorted';
+                this.YOU = 'Вы:';
+                this.HEAD_USER_CLASS = 'headUser';
+                this.ACTIVE_CLASS = 'active';
+                this.ONLINE_CLASS = 'online';
+                this.USER_CLASS = 'user';
+
+                this.renderTabs();
+                this.renderHead();
+            },
+
+            close: function () {
+                this.$el.hide();
+            },
+
+            renderTabs: function() {
+                for (var i in this.tabs){
+                    this.$tabs.append(this.tplTab(this.tabs[i]));
+                    this.setActiveTab(this.tabs[0].id);
+                }
+                if (this.subTabs.length>0) {
+                    this.$tabs.append('<br>');
+                    for (var i in this.subTabs){
+                        this.$tabs.append(this.tplTab(this.subTabs[i]));
+                    }
+                    this.setActiveSubTab(this.subTabs[0].id);
+                }
+            },
+
+            renderHead:function() {
+                var col, th;
+                for (var i in this.columns) {
+                    col = this.columns[i];
+                    if (col.canOrder) {
+                        if (col.id == 'Elo') col.order = 1;
+                        else col.order = 0;
+                    }
+                    th = {
+                        id: col.id,
+                        title: col.topTitle||'',
+                        value: col.title
+                    };
+                    this.$titles.append(this.tplTH(th));
+                    th.value = this.IMG_BOTH;
+                    if (col.id == 'Rank') th.value= "";
+                    if (col.id == 'UserName') th.value = this.tplSearch();
+                    this.$icons.append(this.tplTH(th));
+                }
+                this.setColumnOrder('Elo');
+            },
+
+            renderRatings: function (ratings) {
+                var row;
+                if (ratings.infoUser) {
+                    row = ratings.infoUser;
+                    this.$head.append(this.tplTR({
+                        trclass: this.HEAD_USER_CLASS,
+                        userId: row.userId,
+                        userName: row.userName,
+                        value: this.renderRow(row, true)
+                    }));
+                }
+                if (!ratings.allUsers) return;
+                for (var i = 0; i < ratings.allUsers.length; i++) {
+                    row = ratings.allUsers[i];
+                    var trclass = '';
+                    if (row.user) trclass += this.USER_CLASS + ' ';
+                    if (row.active) trclass += this.ACTIVE_CLASS;
+                    this.$tbody.append(this.tplTR({
+                        trclass: trclass,
+                        userId: row.userId,
+                        userName: row.userName,
+                        value: this.renderRow(row)
+                    }));
+                }
+            },
+
+            renderRow: function(row, isUser){
+                var columns = ""; var col;
+                for (var i = 0; i < this.columns.length; i++){
+                    col = {
+                        id: this.columns[i].id,
+                        value: row[this.columns[i].source],
+                        sup: ''
+                    };
+                    if (isUser){
+                        if (col.id == 'Rank') col.value = this.YOU;
+                        if (col.id == 'UserName') col.value += '('+row.rank+' место)';
+                    }
+                    if (col.id == 'UserName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
+                    columns += this.tplTD(col);
+                }
+                return columns;
+            },
+
+            setActiveTab: function(id){
+                for (var i = 0; i < this.tabs.length; i++){
+                    this.tabs[i].active = false;
+                    if (this.tabs[i].id != id)
+                        this.$tabs.find('span[data-idtab='+this.tabs[i].id+']').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                    else {
+                        this.$tabs.find('span[data-idtab='+this.tabs[i].id+']').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.currentTab = this.tabs[i];
+                    }
+                }
+            },
+
+            setActiveSubTab: function(id){
+                for (var i = 0; i < this.subTabs.length; i++){
+                    this.subTabs[i].active = false;
+                    if (this.subTabs[i].id != id)
+                        this.$tabs.find('span[data-idtab='+this.subTabs[i].id+']').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                    else {
+                        this.$tabs.find('span[data-idtab='+this.subTabs[i].id+']').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.currentSubTab = this.subTabs[i];
+                    }
+                }
+            },
+
+            setColumnOrder: function (id){
+                for (var i = 2; i < this.columns.length; i++){
+                    if (this.columns[i].id != id) {
+                        this.columns[i].order = 0;
+                        this.$titles.find('th[data-idcol='+this.columns[i].id+']').removeClass(this.SORT);
+                        this.$icons.find('th[data-idcol='+this.columns[i].id+']').removeClass(this.SORT).html(this.IMG_BOTH);
+                    } else {
+                        this.currentCollumn = this.columns[i];
+                        if (this.columns[i].order < 1) this.columns[i].order = 1;
+                        else this.columns[i].order = -1;
+                        this.$titles.find('th[data-idcol=' + this.columns[i].id + ']').addClass(this.SORT);
+                        this.$icons.find('th[data-idcol=' + this.columns[i].id + ']').addClass(this.SORT).html(this.columns[i].order>0?this.IMG_ASC:this.IMG_DESC);
+                    }
+                }
+            },
+
+            render: function(ratings) {
+                this.$head.find('.'+this.HEAD_USER_CLASS).remove();
+                this.$tbody.children().remove();
+                this.$el.show();
+                if (!ratings) {
+                    this.$el.find('.loading').show();
+                }
+                else {
+                    this.$el.find('.loading').hide();
+                    console.log('render ratings', ratings);
+                    this.renderRatings(ratings);
+                }
+
+                return this;
+            }
+
+
+        });
+        return RatingView;
+    });
+define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView) {
+    
+
+    var RatingManager = function (client) {
+        this.client = client;
+        this.currentRoom = null;
+        var conf = {
+            tabs:[
+                {id: 'all_players', title: 'все игроки'},
+                {id: 'online_players', title: 'сейчас на сайте'}
+            ],
+            subTabs:[
+                {id: 'mode1', title: 'mode1'},
+                {id: 'mode2', title: 'mode2'}
+            ],
+            columns:[
+                {  id:'Rank',     source:'rank',        title:'Место' },
+                {  id:'UserName', source:'userName',    title:'Имя' },
+                {  id:'Elo',      source:'ratingElo',   title:'Рейтинг <br> эло',           canOrder:true },
+                {  id:'Victory',  source:'win',         title:'Выйграл <br> у соперников',  canOrder:true },
+                {  id:'Percent',  source:'percent',     title:' % ',                        canOrder:true },
+                {  id:'Date',     source:'dateCreate',  title:'Дата <br> Регистрации',      canOrder:true }
+            ]
+        };
+
+        this.ratingView = new RatingView(conf);
+        this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
+    };
+
+    RatingManager.prototype = new EE();
+
+
+    RatingManager.prototype.onMessage = function (message) {
+        var data = message.data, i;
+        console.log('rating_manager;', 'message', message);
+        switch (message.type) {
+            case 'ratings': this.onRatingsLoad(data.mode, data.ratings); break;
+        }
+    };
+
+
+    RatingManager.prototype.onRatingsLoad = function (mode, ratings){
+        if (ratings.infoUser) {
+            ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser);
+        }
+        for (var i = 0; i < ratings.allUsers.length; i++) ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i]);
+        setTimeout(function(){this.$container.append(this.ratingView.render(ratings).$el); }.bind(this),500);
+    };
+
+
+    RatingManager.prototype.formatRatingsRow = function(mode, info){
+        var row = {
+            userId: info.userId,
+            userName: info.userName,
+            photo: undefined
+        };
+        for (var i in info[mode]){
+            row[i] = info[mode][i];
+        }
+        if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
+        if (this.client.userList.getUser(info.userId)) row.active = true;
+        row.percent = Math.floor(row.win/row.games*100);
+        if (Date.now() - info.dateCreate < 172800000) row.dateCreate = this.ratingView.NOVICE;
+        else row.dateCreate = formatDate(info.dateCreate);
+        return row;
+    };
+
+
+    RatingManager.prototype.getRatings = function(mode){
+        this.$container.append(this.ratingView.render(false).$el);
+        client.send('rating_manager', 'ratings', 'server', {mode:mode||this.client.currentMode});
+    };
+
+    function formatDate(time) {
+        var date = new Date(time);
+        var day = date.getDate();
+        var month = date.getMonth() + 1;
+        var year = ("" + date.getFullYear()).substr(2, 2);
+        return ext(day, 2, "0") + "." + ext(month, 2, "0") + "."  + year;
+        function ext(str, len, char) {
+            //char = typeof (char) == "undefined" ? "&nbsp;" : char;
+            str = "" + str;
+            while (str.length < len) {
+                str = char + str;
+            }
+            return str;
+        }
+    }
+
+    RatingManager.prototype.testRatings = {"allUsers":[{"userId":"95514","userName":"us_95514","dateCreate":1423486149906,"mode1":{"win":2,"lose":0,"draw":0,"games":2,"rank":1,"ratingElo":1627},"mode2":{"win":1,"lose":0,"draw":0,"games":1,"rank":1,"ratingElo":1615}},{"userId":"93361","userName":"us_93361","dateCreate":1423486098554,"mode1":{"win":1,"lose":0,"draw":0,"games":1,"rank":2,"ratingElo":1615},"mode2":{"win":0,"lose":0,"draw":0,"games":0,"rank":0,"ratingElo":1600}},{"userId":"99937","userName":"us_99937","dateCreate":1423486099570,"mode1":{"win":0,"lose":3,"draw":0,"games":3,"rank":3,"ratingElo":1561},"mode2":{"win":0,"lose":1,"draw":0,"games":1,"rank":2,"ratingElo":1586}}],"infoUser":{"userId":"99937","userName":"us_99937","dateCreate":1423486099570,"mode1":{"win":0,"lose":3,"draw":0,"games":3,"rank":3,"ratingElo":1561},"mode2":{"win":0,"lose":1,"draw":0,"games":1,"rank":2,"ratingElo":1586}}};
+    return RatingManager;
+});
+define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
@@ -2373,6 +2705,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.inviteManager = new InviteManager(this);
         this.chatManager = new ChatManager(this);
         this.viewsManager = new ViewsManager(this);
+        this.historyManager = new HistoryManager(this);
+        this.ratingManager = new RatingManager(this);
 
         this.currentMode = null;
 
@@ -2413,7 +2747,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             case 'server': this.onServerMessage(message); break;
             case 'invite_manager': this.inviteManager.onMessage(message); break;
             case 'game_manager': this.gameManager.onMessage(message); break;
-            case 'chat_manager':this.chatManager.onMessage(message); break;
+            case 'chat_manager': this.chatManager.onMessage(message); break;
+            case 'history_manager': this.historyManager.onMessage(message); break;
+            case 'rating_manager': this.ratingManager.onMessage(message); break;
         }
     };
 

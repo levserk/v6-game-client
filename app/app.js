@@ -4,7 +4,7 @@ require(['require-cnf'], function () {
             console.log('app start');
 
             // Test generate userId
-            document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
+            //document.cookie = 'userId='+(Math.floor(Math.random()*100000))+"; path=/;";
             window.LogicGame = {isSuperUser:function(){return true;}};
             window.client = new Client({
                 port: 8080,
@@ -91,6 +91,14 @@ require(['require-cnf'], function () {
                 div.html('<span>Победный ход</span>');
                 div.on('click', function () {
                     window.client.gameManager.sendTurn({result:1});
+                });
+                $('body').append(div);
+
+                div = $('<div>');
+                div.attr('id', 'ratingButton');
+                div.html('<span>Показать рейтинг</span>');
+                div.on('click', function () {
+                    window.client.ratingManager.getRatings();
                 });
                 $('body').append(div);
             }

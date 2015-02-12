@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css"/>
+    <link rel="stylesheet" href="css/_jquery-ui.css" />
+    <link rel="stylesheet" href="css/userList.css"/>
+    <link rel="stylesheet" href="css/dialogInvite.css"/>
+    <link rel="stylesheet" href="css/dialog.css"/>
+    <link rel="stylesheet" href="css/v6-chat.css"/>
+    <link rel="stylesheet" href="css/v6-rating.css"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>StepByStep</title>
+
+</head>
+<body>
+
+<div id="ratingDivP" style="width: 700px; background: white; border: 1px solid #000000; margin: 10px;">
+    <div id="v6-rating">
+        <img class="closeIcon" src="i/close.png" title="Закрыть окно рейтинга">
+
+        <div>
+            <!-- rating filter panel -->
+            <div class="filterPanel">
+                <div style="margin-left: 8px;">
+                    <span class="activeLink"  data-idtab="all_players">все игроки</span>&nbsp;&nbsp;
+                    <span class="unactiveLink"  tabid="online_players">сейчас на сайте</span>&nbsp;&nbsp;
+                    <br>
+                    <span class="activeLink"  tabid="tab1">tab1</span>&nbsp;&nbsp;
+                    <span class="unactiveLink" tabid="tab2">tab2</span>&nbsp;&nbsp;
+                    <span class="unactiveLink"  tabid="tab3">tab3</span>
+                </div>
+            </div>
+            <!-- rating table -->
+            <table class="ratingTable" cellspacing="0">
+                <thead>
+                <tr class="headTitles">
+                    <th data-idcol="" class="" title="">Место</th>
+                    <th data-idcol="" class="" title="" >Имя </th>
+                    <th class="sorted" title="" id=""> Рейтинг <br> эло</th>
+                    <th class="" title="" > Выйграл <br> у соперников</th>
+                    <th class="" title="" >  % </th>
+                    <th class="" title="" > Дата <br> Регистрации</th>
+                </tr>
+                <tr class="headIcons">
+                    <th data-idcol="" class="" > </th>
+                    <th data-idcol="" class="ratingProfile">
+                        <div style="padding-bottom:2px;">
+                            <div style="float:left;margin-top:4px;">Поиск:</div>
+                            <input type="text" placeholder="Поиск по имени" id="ratingAutoComplete" value="">
+                        </div>
+                    </th>
+                    <th data-idcol="" class="sorted" title="Сортировать по Рейтингу Эло"><img src="i/sort-desc.png"></th>
+                    <th data-idcol="" class="" title="Выйграл <br> у соперников"><img src="i/sort-both.png"></th>
+                    <th data-idcol="" class="" title="%"><img src="i/sort-both.png"></th>
+                    <th data-idcol="" class="" title="Дата Регистрации"><img src="i/sort-both.png"></th>
+                </tr>
+                <tr class="headUser" data-userId="448039" data-userName="levserk">
+                    <td data-idcol="" class="ratingRank">Вы:<sup class="greenSup"></sup></td>
+                    <td data-idcol="" class="ratingProfile">levserk (8 место)<sup class="greenSup"></sup></td>
+                    <td data-idcol="" class="ratingElo">1721<sup class="greenSup"></sup></td>
+                    <td data-idcol="" class="ratingVictory">43<sup class="greenSup">+1</sup></td>
+                    <td data-idcol="" class="ratingPercent">55<sup class="greenSup"></sup></td>
+                    <td data-idcol="" class="ratingDate">04.04.14<sup class="greenSup"></sup></td>
+                </tr>
+                </thead>
+                <tbody>
+
+                <tr userid="2583344" class="">
+                    <td class="rating_rank" idcol="rank">
+                        6
+                    </td>
+                    <td class="rating_username" data-rating-userid="2583344" idcol="username">
+                        Димасик Акперов
+
+                    </td>
+                    <td class="rating_rating_elo" idcol="rating_elo">
+                        1731
+                    </td>
+                    <td class="rating_victory" idcol="victory">
+                            44<sup class="greenSup">+5</sup>
+                    </td>
+                    <td class="rating_percent" idcol="percent">
+                        62
+                    </td>
+                    <td class="rating_date_first" idcol="date_first">
+                        30.04.14
+                    </td>
+
+                </tr>
+                <tr userid="2778110" class="">
+                    <td class="rating_rank" idcol="rank">
+                        5
+                    </td>
+                    <td class="rating_username" data-rating-userid="2778110" idcol="username">
+                        <div style="float:left;">
+                            <span class="rating-profile" userid="2778110" username="Гость 2082622">Гость 2082622</span>
+                        </div>
+
+                    </td>
+                    <td class="rating_rating_elo" idcol="rating_elo">
+                        1740
+                    </td>
+                    <td class="rating_victory" idcol="victory">
+                        <div>
+                            <div style="display:inline-block;"><span>16<sup class="greenSup"></sup></span></div>
+                        </div>
+                    </td>
+                    <td class="rating_percent" idcol="percent">
+                        84
+                    </td>
+                    <td class="rating_date_first" idcol="date_first">
+                        <span style="color: #C42E21 !important;">новичок</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <!-- div show more -->
+            <div class="chat-button chat-post" id="ratingShowMore">
+                <span>Ещё 500 игроков</span>
+            </div>
+
+            <!-- div bottom buttons -->
+            <div class="footButtons">
+                <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>
+                <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="ratingDiv" style="width: 700px; background: white; border: 1px solid #000000; margin: 10px;"></div>
+<div id="userListDiv"></div>
+<div id="chatDiv"></div>
+<div id="historyDiv"></div>
+<script src="lib/require.js" data-main="app"></script>
+</body>
+</html>

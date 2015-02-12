@@ -30,3 +30,14 @@
     line-height: 20px;
     cursor: pointer;
 }
+
+#ratingButton {
+    position: absolute;
+    right: 5px;
+    top: 65px;
+    color: blue;
+    text-align: center;
+    height: 20px;
+    line-height: 20px;
+    cursor: pointer;
+}

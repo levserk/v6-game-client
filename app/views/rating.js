@@ -136,9 +136,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 for (var i = 0; i < this.tabs.length; i++){
                     this.tabs[i].active = false;
                     if (this.tabs[i].id != id)
-                        this.$tabs.find('span[data-idtab='+this.tabs[i].id+']').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
                     else {
-                        this.$tabs.find('span[data-idtab='+this.tabs[i].id+']').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
                         this.currentTab = this.tabs[i];
                     }
                 }

@@ -2363,8 +2363,11 @@ define('text!tpls/v6-historyTH.ejs',[],function () { return '<th colspan="<%= co
 
 define('text!tpls/v6-historyTR.ejs',[],function () { return '<tr title="<%= title %>" class="<%= trclass %>" data-id="<%= id %>" ><%= value %></tr>';});
 
-define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-historyHeaderTD.ejs', 'text!tpls/v6-historyTH.ejs', 'text!tpls/v6-historyTR.ejs'],
-    function(_, Backbone, tplMain, tplTD, tplTH, tplTR) {
+
+define('text!tpls/v6-ratingTab.ejs',[],function () { return '<span class="unactiveLink"  data-idtab="<%= id %>"><%= title %></span>&nbsp;&nbsp;';});
+
+define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-historyHeaderTD.ejs', 'text!tpls/v6-historyTH.ejs', 'text!tpls/v6-historyTR.ejs', 'text!tpls/v6-ratingTab.ejs'],
+    function(_, Backbone, tplMain, tplTD, tplTH, tplTR, tplTab) {
         
 
         var HistoryView = Backbone.View.extend({
@@ -2375,6 +2378,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs'
             tplTD: function(value){return '<td>'+value+'</td>'},
             tplTH: _.template(tplTH),
             tplTR: _.template(tplTR),
+            tplTab: _.template(tplTab),
             events: {
                 'click .closeIcon': 'close'
             },
@@ -2384,14 +2388,19 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs'
                 this.columns = _conf.columns;
                 this.$el.html(this.tplMain());
 
+                this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
                 this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
 
-                this.renderTabs();
-                this.renderHead();
+                this.ACTIVE_TAB = 'activeLink';
+                this.UNACTIVE_TAB = 'unactiveLink';
                 this.WIN_CLASS = 'historyWin';
                 this.LOSE_CLASS = 'historyLose';
                 this.DRAW_CLASS = 'historyDraw';
+
+                this.renderTabs();
+                this.renderHead();
+
                 this.isClosed = false;
             },
 
@@ -2401,7 +2410,10 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs'
             },
 
             renderTabs: function() {
-
+                for (var i in this.tabs){
+                    this.$head.append(this.tplTab(this.tabs[i]));
+                    this.setActiveTab(this.tabs[0].id);
+                }
             },
 
             renderHead:function() {
@@ -2456,7 +2468,6 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs'
                 return columns;
             },
 
-
             render: function(mode, history) {
                 this.$tbody.children().remove();
                 this.$el.show();
@@ -2471,6 +2482,18 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs'
                 }
 
                 return this;
+            },
+
+            setActiveTab: function(id){
+                for (var i = 0; i < this.tabs.length; i++){
+                    this.tabs[i].active = false;
+                    if (this.tabs[i].id != id)
+                        this.$head.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                    else {
+                        this.$head.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.currentTab = this.tabs[i];
+                    }
+                }
             }
 
 
@@ -2502,8 +2525,9 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
 
 
     HistoryManager.prototype.init = function(conf){
-        for (var i = 0 ; i < this.client.modes.length; i++) this.conf.subTabs.push({id:this.client.modes[i], title:this.client.modes[i]});
-
+        if (this.client.modes.length > 1)
+            for (var i = 0 ; i < this.client.modes.length; i++)
+                this.conf.tabs.push({id:this.client.modes[i], title:this.client.modes[i]});
         this.historyView = new HistoryView(this.conf);
     };
 
@@ -2625,9 +2649,6 @@ define('text!tpls/v6-ratingTH.ejs',[],function () { return '<th data-idcol="<%= 
 define('text!tpls/v6-ratingTR.ejs',[],function () { return '<tr class="<%= trclass %>" data-userId="<%= userId %>" data-userName="<%= userName %>"><%= value %></tr>';});
 
 
-define('text!tpls/v6-ratingTab.ejs',[],function () { return '<span class="unactiveLink"  data-idtab="<%= id %>"><%= title %></span>&nbsp;&nbsp;';});
-
-
 define('text!tpls/v6-ratingSearch.ejs',[],function () { return '<div style="padding-bottom:2px;">\r\n    <div style="float:left;margin-top:4px;">Поиск:</div>\r\n    <input type="text" placeholder="Поиск по имени" id="ratingAutoComplete" value="">\r\n</div>';});
 
 
@@ -2696,8 +2717,8 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                     this.$tabs.append('<br>');
                     for (var i in this.subTabs){
                         this.$tabs.append(this.tplTab(this.subTabs[i]));
+                        this.setActiveSubTab(this.subTabs[0].id);
                     }
-                    this.setActiveSubTab(this.subTabs[0].id);
                 }
             },
 
@@ -2771,9 +2792,9 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 for (var i = 0; i < this.tabs.length; i++){
                     this.tabs[i].active = false;
                     if (this.tabs[i].id != id)
-                        this.$tabs.find('span[data-idtab='+this.tabs[i].id+']').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
                     else {
-                        this.$tabs.find('span[data-idtab='+this.tabs[i].id+']').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
                         this.currentTab = this.tabs[i];
                     }
                 }
@@ -2783,9 +2804,9 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 for (var i = 0; i < this.subTabs.length; i++){
                     this.subTabs[i].active = false;
                     if (this.subTabs[i].id != id)
-                        this.$tabs.find('span[data-idtab='+this.subTabs[i].id+']').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.subTabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
                     else {
-                        this.$tabs.find('span[data-idtab='+this.subTabs[i].id+']').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.subTabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
                         this.currentSubTab = this.subTabs[i];
                     }
                 }
@@ -2795,14 +2816,14 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 for (var i = 2; i < this.columns.length; i++){
                     if (this.columns[i].id != id) {
                         this.columns[i].order = 0;
-                        this.$titles.find('th[data-idcol='+this.columns[i].id+']').removeClass(this.SORT);
-                        this.$icons.find('th[data-idcol='+this.columns[i].id+']').removeClass(this.SORT).html(this.IMG_BOTH);
+                        this.$titles.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT);
+                        this.$icons.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT).html(this.IMG_BOTH);
                     } else {
                         this.currentCollumn = this.columns[i];
                         if (this.columns[i].order < 1) this.columns[i].order = 1;
                         else this.columns[i].order = -1;
-                        this.$titles.find('th[data-idcol=' + this.columns[i].id + ']').addClass(this.SORT);
-                        this.$icons.find('th[data-idcol=' + this.columns[i].id + ']').addClass(this.SORT).html(this.columns[i].order>0?this.IMG_ASC:this.IMG_DESC);
+                        this.$titles.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT);
+                        this.$icons.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT).html(this.columns[i].order>0?this.IMG_ASC:this.IMG_DESC);
                     }
                 }
             },

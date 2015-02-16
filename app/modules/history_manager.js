@@ -26,8 +26,6 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         for (var i = 0 ; i < this.client.modes.length; i++) this.conf.subTabs.push({id:this.client.modes[i], title:this.client.modes[i]});
 
         this.historyView = new HistoryView(this.conf);
-        //this.$container.append(this.historyView.render(this.testHistory).$el);
-        //this.onHistoryLoad('default', this.testHistory);
     };
 
 
@@ -43,12 +41,14 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     HistoryManager.prototype.onHistoryLoad = function (mode, history){
         console.log('history_manager;', 'history load', history);
         setTimeout(function(){
-        var histTable = [];
-        for (var i = history.length-1; i > -1; i--){
-            this.formatHistoryRow(history[i], histTable, mode, history.length - i);
-        }
-        this.$container.append(this.historyView.render(mode, histTable).$el);
-        }.bind(this),500);
+            if (!this.historyView.isClosed){
+                var histTable = [];
+                for (var i = history.length-1; i > -1; i--){
+                    this.formatHistoryRow(history[i], histTable, mode, history.length - i);
+                }
+                this.$container.append(this.historyView.render(mode, histTable).$el);
+            }
+        }.bind(this),200);
     };
 
 
@@ -105,6 +105,10 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     HistoryManager.prototype.getHistory = function(mode){
         this.$container.append(this.historyView.render(false).$el);
         this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode});
+    };
+
+    HistoryManager.prototype.close = function(){
+      this.historyView.close();
     };
 
     function formatDate(time) {

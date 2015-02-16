@@ -27,10 +27,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
                 this.WIN_CLASS = 'historyWin';
                 this.LOSE_CLASS = 'historyLose';
                 this.DRAW_CLASS = 'historyDraw';
+                this.isClosed = false;
             },
 
             close: function () {
                 this.$el.hide();
+                this.isClosed = true;
             },
 
             renderTabs: function() {
@@ -94,6 +96,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
                 this.$tbody.children().remove();
                 this.$el.show();
                 if (!history) {
+                    this.isClosed = false;
                     this.$el.find('.loading').show();
                 }
                 else {

@@ -44,11 +44,14 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
 
 
     RatingManager.prototype.onRatingsLoad = function (mode, ratings){
+        if (this.ratingView.isClosed) return;
         if (ratings.infoUser) {
             ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i]);
-        setTimeout(function(){this.$container.append(this.ratingView.render(ratings).$el); }.bind(this),500);
+        setTimeout(function(){
+            this.$container.append(this.ratingView.render(ratings).$el);
+        }.bind(this),200);
     };
 
 
@@ -73,6 +76,10 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     RatingManager.prototype.getRatings = function(mode){
         this.$container.append(this.ratingView.render(false).$el);
         this.client.send('rating_manager', 'ratings', 'server', {mode:mode||this.client.currentMode});
+    };
+
+    RatingManager.prototype.close = function(){
+        this.ratingView.close();
     };
 
     function formatDate(time) {

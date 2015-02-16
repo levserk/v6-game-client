@@ -44,10 +44,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
 
                 this.renderTabs();
                 this.renderHead();
+                this.isClosed = false;
             },
 
             close: function () {
                 this.$el.hide();
+                this.isClosed = true;
             },
 
             renderTabs: function() {
@@ -175,6 +177,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.$tbody.children().remove();
                 this.$el.show();
                 if (!ratings) {
+                    this.isClosed = false;
                     this.$el.find('.loading').show();
                 }
                 else {

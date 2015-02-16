@@ -2185,9 +2185,13 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         this.v6ChatView = new v6ChatView(this.client);
     };
 
+    ViewsManager.prototype.closeAll = function(){
+        this.client.ratingManager.close();
+        this.client.historyManager.close();
+    };
+
     return ViewsManager;
 });
-
 define('modules/chat_manager',['EE'], function(EE) {
     
     var ChatManager = function (client) {
@@ -2388,10 +2392,12 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs'
                 this.WIN_CLASS = 'historyWin';
                 this.LOSE_CLASS = 'historyLose';
                 this.DRAW_CLASS = 'historyDraw';
+                this.isClosed = false;
             },
 
             close: function () {
                 this.$el.hide();
+                this.isClosed = true;
             },
 
             renderTabs: function() {
@@ -2455,6 +2461,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs'
                 this.$tbody.children().remove();
                 this.$el.show();
                 if (!history) {
+                    this.isClosed = false;
                     this.$el.find('.loading').show();
                 }
                 else {
@@ -2498,8 +2505,6 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         for (var i = 0 ; i < this.client.modes.length; i++) this.conf.subTabs.push({id:this.client.modes[i], title:this.client.modes[i]});
 
         this.historyView = new HistoryView(this.conf);
-        //this.$container.append(this.historyView.render(this.testHistory).$el);
-        //this.onHistoryLoad('default', this.testHistory);
     };
 
 
@@ -2515,12 +2520,14 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     HistoryManager.prototype.onHistoryLoad = function (mode, history){
         console.log('history_manager;', 'history load', history);
         setTimeout(function(){
-        var histTable = [];
-        for (var i = history.length-1; i > -1; i--){
-            this.formatHistoryRow(history[i], histTable, mode, history.length - i);
-        }
-        this.$container.append(this.historyView.render(mode, histTable).$el);
-        }.bind(this),500);
+            if (!this.historyView.isClosed){
+                var histTable = [];
+                for (var i = history.length-1; i > -1; i--){
+                    this.formatHistoryRow(history[i], histTable, mode, history.length - i);
+                }
+                this.$container.append(this.historyView.render(mode, histTable).$el);
+            }
+        }.bind(this),200);
     };
 
 
@@ -2577,6 +2584,10 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     HistoryManager.prototype.getHistory = function(mode){
         this.$container.append(this.historyView.render(false).$el);
         this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode});
+    };
+
+    HistoryManager.prototype.close = function(){
+      this.historyView.close();
     };
 
     function formatDate(time) {
@@ -2668,10 +2679,12 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
 
                 this.renderTabs();
                 this.renderHead();
+                this.isClosed = false;
             },
 
             close: function () {
                 this.$el.hide();
+                this.isClosed = true;
             },
 
             renderTabs: function() {
@@ -2799,6 +2812,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 this.$tbody.children().remove();
                 this.$el.show();
                 if (!ratings) {
+                    this.isClosed = false;
                     this.$el.find('.loading').show();
                 }
                 else {
@@ -2860,11 +2874,14 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
 
 
     RatingManager.prototype.onRatingsLoad = function (mode, ratings){
+        if (this.ratingView.isClosed) return;
         if (ratings.infoUser) {
             ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i]);
-        setTimeout(function(){this.$container.append(this.ratingView.render(ratings).$el); }.bind(this),500);
+        setTimeout(function(){
+            this.$container.append(this.ratingView.render(ratings).$el);
+        }.bind(this),200);
     };
 
 
@@ -2889,6 +2906,10 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
     RatingManager.prototype.getRatings = function(mode){
         this.$container.append(this.ratingView.render(false).$el);
         this.client.send('rating_manager', 'ratings', 'server', {mode:mode||this.client.currentMode});
+    };
+
+    RatingManager.prototype.close = function(){
+        this.ratingView.close();
     };
 
     function formatDate(time) {

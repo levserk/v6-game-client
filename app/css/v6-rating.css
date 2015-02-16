@@ -105,6 +105,16 @@
     text-decoration: underline
 }
 
+.ratingTable .userName {
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.ratingTable .userName:hover{
+    text-decoration: underline;
+}
+
 .ratingTable .greenSup {
     color: green;
 }

@@ -1,5 +1,7 @@
-define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-ratingTD.ejs', 'text!tpls/v6-ratingTH.ejs', 'text!tpls/v6-ratingTR.ejs', 'text!tpls/v6-ratingTab.ejs', 'text!tpls/v6-ratingSearch.ejs', 'text!tpls/v6-ratingPhoto.ejs'],
-    function(_, Backbone, tplMain, tplTD, tplTH, tplTR, tplTab, tplSearch, tplPhoto) {
+define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-ratingTD.ejs', 'text!tpls/v6-ratingTH.ejs',
+        'text!tpls/v6-ratingTR.ejs', 'text!tpls/v6-ratingTab.ejs', 'text!tpls/v6-ratingSearch.ejs',
+        'text!tpls/v6-ratingPhoto.ejs', 'text!tpls/v6-ratingUser.ejs'],
+    function(_, Backbone, tplMain, tplTD, tplTH, tplTR, tplTab, tplSearch, tplPhoto, tplUser) {
         'use strict';
 
         var RatingView = Backbone.View.extend({
@@ -11,6 +13,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             tplTR: _.template(tplTR),
             tplTab: _.template(tplTab),
             tplSearch: _.template(tplSearch),
+            tplUser: _.template(tplUser),
             tplPhoto: _.template(tplPhoto),
             events: {
                 'click .closeIcon': 'close',
@@ -122,9 +125,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                         value: row[this.columns[i].source],
                         sup: ''
                     };
+                    if (col.id == 'UserName') col.value = this.tplUser({
+                        userName: row.userName,
+                        userId: row.userId
+                    });
                     if (isUser){
                         if (col.id == 'Rank') col.value = this.YOU;
-                        if (col.id == 'UserName') col.value += '('+row.rank+' место)';
+                        if (col.id == 'UserName') col.value += '('+row.rank>0?row.rank:'-'+' место)';
                     }
                     if (col.id == 'UserName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
                     columns += this.tplTD(col);

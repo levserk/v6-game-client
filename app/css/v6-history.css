@@ -1,0 +1,104 @@
+#v6-history {
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 12px;
+    padding: 5px;
+    background-color: white;
+}
+
+#v6-history .historyHeader {
+    height: 30px;
+}
+
+#v6-history .closeIcon {
+    float: right;
+    cursor: pointer;
+}
+
+#v6-history .historyWrapper {
+    border-spacing: 10px 0px;
+}
+
+#v6-history .historyTable {
+    font-size: 8pt;
+    text-align: center;
+    border-collapse: collapse;
+    border: 1px solid #dcdcdc;
+    width: 100%;
+    color: #444;
+}
+
+#v6-history .loading{
+    margin: 0 auto;
+    width: 32px;
+}
+
+.historyTable thead{
+    background-color: #EEE;
+}
+
+.historyTable thead tr{
+    border-bottom: 1px solid #dcdcdc;
+}
+
+.historyTable tr{
+    height: 24px;
+}
+
+.historyTable th {
+    height: 26px;
+    font-weight: 400;
+    color: #444;
+    border-right: 1px solid #dcdcdc;
+    border-left: 1px solid #dcdcdc;
+}
+
+.historyTable td {
+    padding: 4px;
+    border-bottom: 1px solid #dcdcdc;
+    border-right: 1px solid #dcdcdc;
+}
+
+.historyTable tr.historyLose td:not(.sessionHeader) {
+    background-color: #FFE0EE;
+}
+.historyTable tr.historyWin td:not(.sessionHeader) {
+    background-color: #FFFFE0;
+}
+.historyTable tr.historyDraw td:not(.sessionHeader) {
+    background-color: #7bbcff;
+}
+.historyTable tr td:not(.sessionHeader) {
+    cursor: pointer;
+}
+
+.historyTable .userRank {
+    color: gray;
+    margin-left: 2px;
+}
+
+.historyTable .userScore {
+    float: right;
+    font-weight: bold;
+}
+
+.historyTable .userName {
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.historyTable .userName:hover{
+    text-decoration: underline;
+}
+
+.historyTable .eloDiff {
+    font-size: 80%;
+}
+
+.historyTable .diffPositive {
+    color: green;
+}
+
+.historyTable .diffNegative {
+    color: red;
+}

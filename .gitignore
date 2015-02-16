@@ -46,4 +46,3 @@ Temporary Items
 .idea/*
 js/lib/Promise.js
 node_modules/*
-build/*

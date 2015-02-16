@@ -28,7 +28,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
 
 
     RatingManager.prototype.init = function(conf){
-        for (var i = 0 ; i < client.modes.length; i++) this.conf.subTabs.push({id:client.modes[i], title:client.modes[i]});
+        for (var i = 0 ; i < this.client.modes.length; i++) this.conf.subTabs.push({id:this.client.modes[i], title:this.client.modes[i]});
 
         this.ratingView = new RatingView(this.conf);
     };
@@ -72,7 +72,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
 
     RatingManager.prototype.getRatings = function(mode){
         this.$container.append(this.ratingView.render(false).$el);
-        client.send('rating_manager', 'ratings', 'server', {mode:mode||this.client.currentMode});
+        this.client.send('rating_manager', 'ratings', 'server', {mode:mode||this.client.currentMode});
     };
 
     function formatDate(time) {

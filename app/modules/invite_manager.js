@@ -82,7 +82,7 @@ define(['EE'], function(EE) {
             console.error('invite param mode is reserved!');
             return;
         }
-        params.mode = client.currentMode;
+        params.mode = this.client.currentMode;
         params.target = userId;
         this.invite = params;
         this.client.send('invite_manager', 'invite', userId, this.invite);

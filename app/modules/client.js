@@ -105,17 +105,18 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.turnTime = this.opts.turnTime = opts.turnTime;
         this.modes = this.opts.modes = opts.modes;
         this.currentMode = this.modes[0];
-        this.isLogin = true;
-        this.ratingManager.init();
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
         this.emit('login', user);
+        this.isLogin = true;
+        this.ratingManager.init();
+        this.historyManager.init();
     };
 
 
     Client.prototype.send = function (module, type, target, data) {
-        if (!client.socket.isConnected){
+        if (!this.socket.isConnected){
             console.error('Client can not send message, socket is not connected!');
             return;
         }

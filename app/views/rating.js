@@ -61,8 +61,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     this.$tabs.append('<br>');
                     for (var i in this.subTabs){
                         this.$tabs.append(this.tplTab(this.subTabs[i]));
+                        this.setActiveSubTab(this.subTabs[0].id);
                     }
-                    this.setActiveSubTab(this.subTabs[0].id);
                 }
             },
 
@@ -148,9 +148,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 for (var i = 0; i < this.subTabs.length; i++){
                     this.subTabs[i].active = false;
                     if (this.subTabs[i].id != id)
-                        this.$tabs.find('span[data-idtab='+this.subTabs[i].id+']').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.subTabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
                     else {
-                        this.$tabs.find('span[data-idtab='+this.subTabs[i].id+']').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.$tabs.find('span[data-idtab="'+this.subTabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
                         this.currentSubTab = this.subTabs[i];
                     }
                 }
@@ -160,14 +160,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 for (var i = 2; i < this.columns.length; i++){
                     if (this.columns[i].id != id) {
                         this.columns[i].order = 0;
-                        this.$titles.find('th[data-idcol='+this.columns[i].id+']').removeClass(this.SORT);
-                        this.$icons.find('th[data-idcol='+this.columns[i].id+']').removeClass(this.SORT).html(this.IMG_BOTH);
+                        this.$titles.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT);
+                        this.$icons.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT).html(this.IMG_BOTH);
                     } else {
                         this.currentCollumn = this.columns[i];
                         if (this.columns[i].order < 1) this.columns[i].order = 1;
                         else this.columns[i].order = -1;
-                        this.$titles.find('th[data-idcol=' + this.columns[i].id + ']').addClass(this.SORT);
-                        this.$icons.find('th[data-idcol=' + this.columns[i].id + ']').addClass(this.SORT).html(this.columns[i].order>0?this.IMG_ASC:this.IMG_DESC);
+                        this.$titles.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT);
+                        this.$icons.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT).html(this.columns[i].order>0?this.IMG_ASC:this.IMG_DESC);
                     }
                 }
             },

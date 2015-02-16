@@ -1,5 +1,5 @@
-define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-historyHeaderTD.ejs', 'text!tpls/v6-historyTH.ejs', 'text!tpls/v6-historyTR.ejs'],
-    function(_, Backbone, tplMain, tplTD, tplTH, tplTR) {
+define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-historyHeaderTD.ejs', 'text!tpls/v6-historyTH.ejs', 'text!tpls/v6-historyTR.ejs', 'text!tpls/v6-ratingTab.ejs'],
+    function(_, Backbone, tplMain, tplTD, tplTH, tplTR, tplTab) {
         'use strict';
 
         var HistoryView = Backbone.View.extend({
@@ -10,6 +10,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
             tplTD: function(value){return '<td>'+value+'</td>'},
             tplTH: _.template(tplTH),
             tplTR: _.template(tplTR),
+            tplTab: _.template(tplTab),
             events: {
                 'click .closeIcon': 'close'
             },
@@ -19,14 +20,19 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
                 this.columns = _conf.columns;
                 this.$el.html(this.tplMain());
 
+                this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
                 this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
 
-                this.renderTabs();
-                this.renderHead();
+                this.ACTIVE_TAB = 'activeLink';
+                this.UNACTIVE_TAB = 'unactiveLink';
                 this.WIN_CLASS = 'historyWin';
                 this.LOSE_CLASS = 'historyLose';
                 this.DRAW_CLASS = 'historyDraw';
+
+                this.renderTabs();
+                this.renderHead();
+
                 this.isClosed = false;
             },
 
@@ -36,7 +42,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
             },
 
             renderTabs: function() {
-
+                for (var i in this.tabs){
+                    this.$head.append(this.tplTab(this.tabs[i]));
+                    this.setActiveTab(this.tabs[0].id);
+                }
             },
 
             renderHead:function() {
@@ -91,7 +100,6 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
                 return columns;
             },
 
-
             render: function(mode, history) {
                 this.$tbody.children().remove();
                 this.$el.show();
@@ -106,6 +114,18 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
                 }
 
                 return this;
+            },
+
+            setActiveTab: function(id){
+                for (var i = 0; i < this.tabs.length; i++){
+                    this.tabs[i].active = false;
+                    if (this.tabs[i].id != id)
+                        this.$head.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                    else {
+                        this.$head.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.currentTab = this.tabs[i];
+                    }
+                }
             }
 
 

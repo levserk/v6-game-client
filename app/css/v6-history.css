@@ -28,6 +28,21 @@
     color: #444;
 }
 
+#v6-history .activeLink {
+    text-decoration: none;
+    color: #069;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#v6-history .unactiveLink {
+    cursor: pointer;
+    text-decoration: none;
+    color: #069;
+    font-size: 12px;
+    border-bottom: 1px solid #069;
+}
+
 #v6-history .loading{
     margin: 0 auto;
     width: 32px;

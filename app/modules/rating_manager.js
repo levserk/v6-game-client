@@ -66,7 +66,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         }
         if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
         if (this.client.userList.getUser(info.userId)) row.active = true;
-        row.percent = Math.floor(row.win/row.games*100);
+        row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);
         if (Date.now() - info.dateCreate < 172800000) row.dateCreate = this.ratingView.NOVICE;
         else row.dateCreate = formatDate(info.dateCreate);
         return row;

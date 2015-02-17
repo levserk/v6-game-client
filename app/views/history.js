@@ -12,10 +12,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
             tplTR: _.template(tplTR),
             tplTab: _.template(tplTab),
             events: {
-                'click .closeIcon': 'close'
+                'click .closeIcon': 'close',
+                'click .historyTable tr': 'trClicked'
             },
-            initialize: function(_conf) {
+            initialize: function(_conf, manager) {
                 this.conf = _conf;
+                this._manager = manager;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
                 this.$el.html(this.tplMain());
@@ -34,6 +36,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-HistoryMain.ejs', 'text!tpls/v6-
                 this.renderHead();
 
                 this.isClosed = false;
+            },
+
+            trClicked: function(e){
+                console.log(this, e);
+                if ($(e.currentTarget).hasClass('sessionHeader')) return;
+                var id  = $(e.currentTarget).attr('data-id');
+                //TODO save player userId history
+                this._manager.getGame(id);
             },
 
             close: function () {

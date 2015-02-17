@@ -17,6 +17,9 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         };
 
         this.$container = (client.opts.blocks.historyId?$('#'+client.opts.blocks.historyId):$('body'));
+        this.isCancel = false;
+        this.userId = false;
+        this.currentMode = false;
     };
 
     HistoryManager.prototype = new EE();
@@ -26,7 +29,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         if (this.client.modes.length > 1)
             for (var i = 0 ; i < this.client.modes.length; i++)
                 this.conf.tabs.push({id:this.client.modes[i], title:this.client.modes[i]});
-        this.historyView = new HistoryView(this.conf);
+        this.historyView = new HistoryView(this.conf, this);
     };
 
 
@@ -34,18 +37,21 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         var data = message.data;
         console.log('history_manager;', 'message', message);
         switch (message.type) {
-            case 'history': this.onHistoryLoad(data.mode, data.history); break;
+            case 'history': this.onHistoryLoad(data.mode, data.history, data.userId); break;
+            case 'game': this.onGameLoad(data.mode, data.game); break;
         }
     };
 
 
-    HistoryManager.prototype.onHistoryLoad = function (mode, history){
-        console.log('history_manager;', 'history load', history);
+    HistoryManager.prototype.onHistoryLoad = function (mode, history, userId){
+        console.log('history_manager;', 'history load', userId, history);
         setTimeout(function(){
             if (!this.historyView.isClosed){
                 var histTable = [];
+                this.userId = userId;
+                this.currentMode = mode;
                 for (var i = history.length-1; i > -1; i--){
-                    this.formatHistoryRow(history[i], histTable, mode, history.length - i);
+                    this.formatHistoryRow(history[i], histTable, mode, history.length - i, userId);
                 }
                 this.$container.append(this.historyView.render(mode, histTable).$el);
             }
@@ -53,8 +59,17 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     };
 
 
-    HistoryManager.prototype.formatHistoryRow = function(hrow, history, mode, number){
-        var rows, row = {win:0, lose:0, id:hrow.timeEnd, number:number}, prev, player = this.client.getPlayer(), userData = JSON.parse(hrow.userData), opponentId;
+    HistoryManager.prototype.onGameLoad = function (mode, game){
+        console.log('history_manager;', 'game load', game);
+        //TODO initGame, gameManager
+        setTimeout(function(){
+            if (!this.isCancel) this.emit('game_load', game);
+        }.bind(this),200);
+    };
+
+
+    HistoryManager.prototype.formatHistoryRow = function(hrow, history, mode, number, userId){
+        var rows, row = {win:0, lose:0, id:hrow.timeEnd, number:number}, prev, userData = JSON.parse(hrow.userData), opponentId;
         //previous game
         if (history.length == 0) {
             rows = [];
@@ -63,14 +78,14 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             rows = history[0];
             prev = rows[0];
         }
-        opponentId =  player.userId == hrow.players[0]? hrow.players[1] : hrow.players[0];
+        opponentId =  userId == hrow.players[0]? hrow.players[1] : hrow.players[0];
         row.opponent = userData[opponentId];
         row.date = formatDate(hrow.timeStart);
         row.time = formatTime(hrow.timeStart);
         // compute game score
         if (!hrow.winner) row.result = 'draw';
         else {
-            if (hrow.winner == player.userId) {
+            if (hrow.winner == userId) {
                 row.result = 'win';
                 row.win++;
             } else {
@@ -85,7 +100,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         row.score = row.win + ':' + row.lose;
         //compute elo
         row.elo = {
-            value:userData[player.userId][mode]['ratingElo']
+            value:userData[userId][mode]['ratingElo']
         };
         //TODO: dynamic columns
         row.elo.dynamic = prev ? row.elo.value - prev.elo.value : row.elo.value - 1600;
@@ -103,10 +118,19 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     };
 
 
-    HistoryManager.prototype.getHistory = function(mode){
+    HistoryManager.prototype.getHistory = function(mode, userId){
         this.$container.append(this.historyView.render(false).$el);
-        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode});
+        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:userId||false});
     };
+
+
+    HistoryManager.prototype.getGame = function (id, userId, mode) {
+        userId = userId || this.userId || this.client.getPlayer().userId;
+        mode = mode || this.currentMode || this.client.currentMode;
+        this.isCancel = false;
+        this.client.send('history_manager', 'game', 'server', {mode:mode, id:id, userId: userId});
+    };
+
 
     HistoryManager.prototype.close = function(){
       this.historyView.close();

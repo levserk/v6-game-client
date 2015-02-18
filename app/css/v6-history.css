@@ -81,7 +81,7 @@
     background-color: #FFFFE0;
 }
 .historyTable tr.historyDraw td:not(.sessionHeader) {
-    background-color: #7bbcff;
+    background-color: #b3d1e0;
 }
 .historyTable tr td:not(.sessionHeader) {
     cursor: pointer;

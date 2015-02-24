@@ -142,7 +142,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     };
 
     Client.prototype.setMode = function (mode){
-        if (!client.socket.isConnected || !client.isLogin){
+        if (!this.socket.isConnected || !this.isLogin){
             console.error('Client can set mode, socket is not connected!');
             return;
         }

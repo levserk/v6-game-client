@@ -129,9 +129,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                         userName: row.userName,
                         userId: row.userId
                     });
-                    if (isUser){
+                    if (isUser){ // Render user rating row (infoUser)
                         if (col.id == 'Rank') col.value = this.YOU;
-                        if (col.id == 'UserName') col.value += '('+row.rank>0?row.rank:'-'+' место)';
+                        if (col.id == 'UserName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + ' место)';
                     }
                     if (col.id == 'UserName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
                     columns += this.tplTD(col);

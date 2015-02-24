@@ -85,7 +85,7 @@ define(['EE'], function(EE) {
                 message = ChatManager.initMessage(data[0], player);
                 if (!this.messages[message.target]) this.messages[message.target] = [];
                 cache = this.messages[message.target];
-                for (i = data.length-1; i >= 0; i--){
+                for (i = 0; i < data.length; i++){
                    this.onMessageLoad(ChatManager.initMessage(data[i], player), cache);
                 }
                 break;
@@ -113,7 +113,7 @@ define(['EE'], function(EE) {
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
         console.log('chat_manager;', 'loading messages', count, time, this.first);
-        setTimeout(function() { this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target}); }.bind(this), 500);
+        setTimeout(function() { this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target}); }.bind(this), 200);
     };
 
 

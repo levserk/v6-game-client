@@ -69,7 +69,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
 
 
     HistoryManager.prototype.formatHistoryRow = function(hrow, history, mode, number, userId){
-        var rows, row = {win:0, lose:0, id:hrow.timeEnd, number:number}, prev, userData = JSON.parse(hrow.userData), opponentId;
+        var rows, row = {win:0, lose:0, id:hrow['_id'], number:number}, prev, userData = JSON.parse(hrow.userData), opponentId;
         //previous game
         if (history.length == 0) {
             rows = [];

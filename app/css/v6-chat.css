@@ -73,6 +73,14 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
+}
+
+#v6Chat .chatMsg .userName:hover {
+    border-bottom: 1px solid #069;
+    text-decoration: underline;
+}
+
+#v6Chat .messagesWrap .chatUserName {
     max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -150,10 +158,6 @@
     height: 30px;
     background-size: contain;
     display: inline-block;
-}
-
-#v6Chat .chatMsg .userName:hover {
-    border-bottom: 1px solid #069;
 }
 
 #v6Chat .chatMsg:hover {

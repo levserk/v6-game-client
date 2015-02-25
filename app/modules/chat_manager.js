@@ -113,7 +113,7 @@ define(['EE'], function(EE) {
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
         console.log('chat_manager;', 'loading messages', count, time, this.first);
-        setTimeout(function() { this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target}); }.bind(this), 200);
+       this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target});
     };
 
 
@@ -130,8 +130,6 @@ define(['EE'], function(EE) {
         this.current = userId;
         this.emit('open_dialog', {userId: userId, userName:userName});
         this.loadCachedMessages(userId);
-        if (this.messages[userId] && this.messages[userId].length > 0 && this.messages[userId].length < this.MSG_COUNT) this.loadMessages(this.MSG_COUNT, this.messages[userId][0], userId);
-        else this.loadMessages(this.MSG_COUNT, null, userId);
     };
 
 

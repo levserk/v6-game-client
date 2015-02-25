@@ -2,8 +2,7 @@
     <div class="msgRow1">
         <div class="smallRight time"><%= msg.t %></div>
         <div class="smallRight rate"><%= (msg.rank || '—') %></div>
-
-        <div data-userId="<%= msg.userId%>">
+        <div class="chatUserName" data-userId="<%= msg.userId%>">
             <span class="userName"><%= msg.userName %></span>
         </div>
     </div>

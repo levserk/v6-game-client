@@ -62,6 +62,18 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     HistoryManager.prototype.onGameLoad = function (mode, game){
         console.log('history_manager;', 'game load', game);
         //TODO initGame, gameManager
+        game.history = '['+game.history+']';
+        game.history = game.history.replace(new RegExp('@', 'g'),',');
+        game.history = JSON.parse(game.history);
+        game.initData = JSON.parse(game.initData);
+        game.userData = JSON.parse(game.userData);
+        var players = [];
+        for (var i = 0; i < game.players.length; i++){
+            players.push(game.userData[game.players[i]]);
+        }
+        if (players.length != players.length) throw new Error('UserData and players are different!');
+        game.players = players;
+        console.log('history_manager;', 'game parsed', game);
         setTimeout(function(){
             if (!this.isCancel) this.emit('game_load', game);
         }.bind(this),200);

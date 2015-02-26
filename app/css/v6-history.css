@@ -48,6 +48,15 @@
     width: 32px;
 }
 
+#v6-history .noHistory{
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #dcdcdc;
+    border-left: 1px solid #dcdcdc;
+    border-right: 1px solid #dcdcdc;
+    padding: 4px;
+}
+
 .historyTable thead{
     background-color: #EEE;
 }

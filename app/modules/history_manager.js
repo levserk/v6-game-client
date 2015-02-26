@@ -130,9 +130,18 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     };
 
 
-    HistoryManager.prototype.getHistory = function(mode, userId){
-        this.$container.append(this.historyView.render(false).$el);
-        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:userId||false});
+    HistoryManager.prototype.getHistory = function(mode, isUpdate, hideClose){
+        if (!isUpdate) this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
+        this.$container.append(this.historyView.render(mode, false, hideClose).$el);
+        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:(isUpdate?this.userId:false)});
+    };
+
+    HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
+        if (blockId) this.$container = $('#'+blockId);
+        if (!this.$container) throw new Error('wrong history container id! ' + blockId);
+        this.$container.append(this.historyView.render(mode, false, true).$el);
+        this.userId = userId;
+        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:userId});
     };
 
 

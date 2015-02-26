@@ -2,7 +2,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.5.13";
+        this.version = "0.5.14";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -181,7 +181,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.onShowProfile = function(userId, userName){
         if (!userName) {
             var user = this.userList.getUser(userId);
-            if (!user) return;
+            if (!user) {
+                console.log('err;', 'user', userId, ' is not online!, can not get his name');
+                return;
+            }
             userName = user.userName;
         }
         this.emit('show_profile', {userId:userId, userName:userName});

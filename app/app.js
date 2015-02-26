@@ -4,7 +4,7 @@ require(['require-cnf'], function () {
             console.log('app start');
 
             // Test generate userId
-            document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
+            //document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
             window.LogicGame = {isSuperUser:function(){return true;}};
             window._client = new Client({
                 port: 8080,
@@ -106,7 +106,7 @@ require(['require-cnf'], function () {
                 div.attr('id', 'historyButton');
                 div.html('<span>Показать историю</span>');
                 div.on('click', function () {
-                    window._client.historyManager.getHistory();
+                    window._client.historyManager.getHistory(false, false, false);
                 });
                 $('body').append(div);
             }

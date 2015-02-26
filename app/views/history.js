@@ -13,7 +13,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             tplTab: _.template(tplTab),
             events: {
                 'click .closeIcon': 'close',
-                'click .historyTable tr': 'trClicked'
+                'click .historyTable tr': 'trClicked',
+                'click .historyTable .userName': 'userClicked',
+                'click .historyHeader span': 'tabClicked'
             },
             initialize: function(_conf, manager) {
                 this.conf = _conf;
@@ -25,6 +27,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
                 this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
+                this.$noHistory = $(this.$el.find('.noHistory'));
 
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
@@ -39,11 +42,22 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             },
 
             trClicked: function(e){
-                console.log(this, e);
-                if ($(e.currentTarget).hasClass('sessionHeader')) return;
+                if ($(e.target).hasClass('sessionHeader') || $(e.target).hasClass('userName')) return;
                 var id  = $(e.currentTarget).attr('data-id');
                 //TODO save player userId history
                 this._manager.getGame(id);
+            },
+
+            userClicked: function (e){
+                var userId  = $(e.currentTarget).attr('data-userid');
+                var userName = $(e.currentTarget).html();
+                this._manager.client.onShowProfile(userId, userName);
+            },
+
+            tabClicked: function(e){
+                var id  = $(e.currentTarget).attr('data-idtab');
+                this.setActiveTab(id);
+                this._manager.getHistory(id, true);
             },
 
             close: function () {
@@ -110,14 +124,20 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 return columns;
             },
 
-            render: function(mode, history) {
+            render: function(mode, history, hideClose) {
                 this.$tbody.children().remove();
                 this.$el.show();
+
+                if (hideClose === true) this.$el.find('.closeIcon').hide();
+                if (hideClose === false) this.$el.find('.closeIcon').show();
+
                 if (!history) {
                     this.isClosed = false;
                     this.$el.find('.loading').show();
+                    this.$noHistory.hide();
                 }
                 else {
+                    if (history.length == 0) this.$noHistory.show();
                     this.$el.find('.loading').hide();
                     console.log('render history', history);
                     this.renderHistory(mode, history);

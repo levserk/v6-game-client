@@ -38,24 +38,28 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         var data = message.data, i;
         console.log('rating_manager;', 'message', message);
         switch (message.type) {
-            case 'ratings': this.onRatingsLoad(data.mode, data.ratings); break;
+            case 'ratings': this.onRatingsLoad(data.mode, data.ratings, data.column, data.order); break;
         }
     };
 
 
-    RatingManager.prototype.onRatingsLoad = function (mode, ratings){
+    RatingManager.prototype.onRatingsLoad = function (mode, ratings, column, order){
+        var rank = false;
         if (this.ratingView.isClosed) return;
         if (ratings.infoUser) {
-            ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser);
+            ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, rank);
         }
-        for (var i = 0; i < ratings.allUsers.length; i++) ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i]);
+        for (var i = 0; i < ratings.allUsers.length; i++) {
+            if (column == 'ratingElo' && order == 'desc') rank = i+1; // set rank on order by rating
+            ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
+        }
         setTimeout(function(){
             this.$container.append(this.ratingView.render(ratings).$el);
         }.bind(this),200);
     };
 
 
-    RatingManager.prototype.formatRatingsRow = function(mode, info){
+    RatingManager.prototype.formatRatingsRow = function(mode, info, rank){
         var row = {
             userId: info.userId,
             userName: info.userName,
@@ -64,6 +68,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         for (var i in info[mode]){
             row[i] = info[mode][i];
         }
+        if (rank !== false) row.rank = rank; // set rank on order
         if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
         if (this.client.userList.getUser(info.userId)) row.active = true;
         row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);
@@ -73,9 +78,13 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     };
 
 
-    RatingManager.prototype.getRatings = function(mode){
+    RatingManager.prototype.getRatings = function(mode, column, order){
         this.$container.append(this.ratingView.render(false).$el);
-        this.client.send('rating_manager', 'ratings', 'server', {mode:mode||this.client.currentMode});
+        this.client.send('rating_manager', 'ratings', 'server', {
+            mode:mode||this.client.currentMode,
+            column : column,
+            order : order
+        });
     };
 
     RatingManager.prototype.close = function(){

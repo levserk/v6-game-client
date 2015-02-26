@@ -115,7 +115,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 for (var i = 2; i < this.columns.length; i++){
                     col = row[this.columns[i].source];
                     if (this.columns[i].dynamic){
-                        columns += this.tplTD((col['dynamic']>-1?'+':'')+ col['dynamic']);
+                        columns += this.tplTD((col['dynamic']>-1&&col['dynamic']!==''?'+':'')+ col['dynamic']);
                         columns += this.tplTD(col['value']);
                     } else
                     columns += this.tplTD(col);

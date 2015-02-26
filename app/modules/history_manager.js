@@ -115,10 +115,10 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             value:userData[userId][mode]['ratingElo']
         };
         //TODO: dynamic columns
-        row.elo.dynamic = prev ? row.elo.value - prev.elo.value : row.elo.value - 1600;
+        row.elo.dynamic = prev ? row.elo.value - prev.elo.value : '';
 
         if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){
-            row.elo.diff = row.elo.dynamic;
+            row.elo.diff = row.elo.dynamic||0;
             rows = [];
             rows.unshift(row);
             history.unshift([]);

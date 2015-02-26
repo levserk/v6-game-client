@@ -127,7 +127,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             render: function(mode, history, hideClose) {
                 this.$tbody.children().remove();
                 this.$el.show();
-
+                this.setActiveTab(mode);
                 if (hideClose === true) this.$el.find('.closeIcon').hide();
                 if (hideClose === false) this.$el.find('.closeIcon').show();
 
@@ -147,6 +147,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             },
 
             setActiveTab: function(id){
+                if (!id || !this.tabs || this.tabs.length < 2) return;
                 for (var i = 0; i < this.tabs.length; i++){
                     this.tabs[i].active = false;
                     if (this.tabs[i].id != id)

@@ -132,7 +132,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
 
     HistoryManager.prototype.getHistory = function(mode, isUpdate, hideClose){
         if (!isUpdate) this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
-        this.$container.append(this.historyView.render(mode, false, hideClose).$el);
+        this.$container.append(this.historyView.render(mode||this.client.currentMode, false, hideClose).$el);
         this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:(isUpdate?this.userId:false)});
     };
 

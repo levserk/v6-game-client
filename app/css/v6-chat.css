@@ -44,6 +44,7 @@
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     float: left;
     text-align: center;
     font-size: 95%;
@@ -84,6 +85,7 @@
     max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     display: block;
 }
 

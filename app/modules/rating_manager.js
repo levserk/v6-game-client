@@ -12,12 +12,12 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             subTabs:[
             ],
             columns:[
-                {  id:'Rank',     source:'rank',        title:'Место' },
-                {  id:'UserName', source:'userName',    title:'Имя' },
-                {  id:'Elo',      source:'ratingElo',   title:'Рейтинг <br> эло',           canOrder:true },
-                {  id:'Victory',  source:'win',         title:'Выйграл <br> у соперников',  canOrder:true },
-                {  id:'Percent',  source:'percent',     title:' % ',                        canOrder:true },
-                {  id:'Date',     source:'dateCreate',  title:'Дата <br> Регистрации',      canOrder:true }
+                {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
+                {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
+                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> эло',         canOrder:true },
+                {  id:'win',            source:'win',         title:'Выйграл <br> у соперников',canOrder:true },
+                {  id:'percent',        source:'percent',     title:' % ',                      canOrder:false },
+                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> Регистрации',    canOrder:true }
             ]
         };
 
@@ -30,7 +30,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     RatingManager.prototype.init = function(conf){
         for (var i = 0 ; i < this.client.modes.length; i++) this.conf.subTabs.push({id:this.client.modes[i], title:this.client.modes[i]});
 
-        this.ratingView = new RatingView(this.conf);
+        this.ratingView = new RatingView(this.conf, this);
     };
 
 
@@ -47,14 +47,14 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         var rank = false;
         if (this.ratingView.isClosed) return;
         if (ratings.infoUser) {
-            ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, rank);
+            ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, ratings.infoUser[mode].rank);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) {
             if (column == 'ratingElo' && order == 'desc') rank = i+1; // set rank on order by rating
             ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
         }
         setTimeout(function(){
-            this.$container.append(this.ratingView.render(ratings).$el);
+            this.$container.append(this.ratingView.render(ratings, mode, column, order).$el);
         }.bind(this),200);
     };
 
@@ -69,6 +69,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             row[i] = info[mode][i];
         }
         if (rank !== false) row.rank = rank; // set rank on order
+        else row.rank = '';
         if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
         if (this.client.userList.getUser(info.userId)) row.active = true;
         row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);

@@ -17,10 +17,38 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             tplPhoto: _.template(tplPhoto),
             events: {
                 'click .closeIcon': 'close',
-                'click #closeRatingBtn': 'close'
+                'click #closeRatingBtn': 'close',
+                'click .headTitles th': 'thClicked',
+                'click .headIcons th': 'thClicked',
+                'click .filterPanel span': 'tabClicked'
             },
-            initialize: function(_conf) {
+
+            thClicked: function(e){
+                var id = $(e.currentTarget).attr('data-idcol');
+                for (var i = 0; i < this.columns.length; i++){
+                    if (this.columns[i].id == id && this.columns[i].canOrder){
+                        this.setColumnOrder(id);
+                        console.log('log; rating col clicked',this.columns[i]);
+                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        break;
+                    }
+                }
+            },
+
+            tabClicked: function (e){
+                var id = $(e.currentTarget).attr('data-idtab');
+                for (var i = 0; i < this.subTabs.length; i++){
+                    if (this.subTabs[i].id == id){
+                        this.setActiveSubTab(id);
+                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        return;
+                    }
+                }
+            },
+
+            initialize: function(_conf, _manager) {
                 this.conf = _conf;
+                this.manager = _manager;
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;
                 this.columns = _conf.columns;
@@ -74,7 +102,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 for (var i in this.columns) {
                     col = this.columns[i];
                     if (col.canOrder) {
-                        if (col.id == 'Elo') col.order = 1;
+                        if (col.id == 'ratingElo') col.order = 1;
                         else col.order = 0;
                     }
                     th = {
@@ -83,12 +111,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                         value: col.title
                     };
                     this.$titles.append(this.tplTH(th));
-                    th.value = this.IMG_BOTH;
+                    th.value = col.canOrder?this.IMG_BOTH:'';
                     if (col.id == 'Rank') th.value= "";
                     if (col.id == 'UserName') th.value = this.tplSearch();
                     this.$icons.append(this.tplTH(th));
                 }
-                this.setColumnOrder('Elo');
+                this.setColumnOrder('ratingElo');
             },
 
             renderRatings: function (ratings) {
@@ -163,26 +191,33 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 }
             },
 
-            setColumnOrder: function (id){
+            setColumnOrder: function (id, order){
                 for (var i = 2; i < this.columns.length; i++){
                     if (this.columns[i].id != id) {
                         this.columns[i].order = 0;
                         this.$titles.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT);
-                        this.$icons.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT).html(this.IMG_BOTH);
+                        this.$icons.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT).html(this.columns[i].canOrder?this.IMG_BOTH:'');
                     } else {
                         this.currentCollumn = this.columns[i];
-                        if (this.columns[i].order < 1) this.columns[i].order = 1;
-                        else this.columns[i].order = -1;
+                        if (!order) {
+                            if (this.columns[i].order < 1) this.columns[i].order = 1;
+                            else this.columns[i].order = -1;
+                        } else {
+                            this.columns[i].order = order == 'desc' ? -1 : 1;
+                        }
+
                         this.$titles.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT);
                         this.$icons.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT).html(this.columns[i].order>0?this.IMG_ASC:this.IMG_DESC);
                     }
                 }
             },
 
-            render: function(ratings) {
+            render: function(ratings, mode, column, order) {
                 this.$head.find('.'+this.HEAD_USER_CLASS).remove();
                 this.$tbody.children().remove();
                 this.$el.show();
+                this.setColumnOrder(column, order);
+                if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {
                     this.isClosed = false;
                     this.$el.find('.loading').show();

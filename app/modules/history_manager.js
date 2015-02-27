@@ -28,7 +28,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     HistoryManager.prototype.init = function(conf){
         if (this.client.modes.length > 1)
             for (var i = 0 ; i < this.client.modes.length; i++)
-                this.conf.tabs.push({id:this.client.modes[i], title:this.client.modes[i]});
+                this.conf.tabs.push({id:this.client.modes[i], title: this.client.getModeAlias(this.client.modes[i])});
         this.historyView = new HistoryView(this.conf, this);
     };
 

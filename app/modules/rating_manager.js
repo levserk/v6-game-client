@@ -28,7 +28,8 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
 
 
     RatingManager.prototype.init = function(conf){
-        for (var i = 0 ; i < this.client.modes.length; i++) this.conf.subTabs.push({id:this.client.modes[i], title:this.client.modes[i]});
+        for (var i = 0 ; i < this.client.modes.length; i++)
+            this.conf.subTabs.push({id:this.client.modes[i], title:this.client.getModeAlias(this.client.modes[i])});
 
         this.ratingView = new RatingView(this.conf, this);
     };

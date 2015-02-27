@@ -2,7 +2,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.5.16";
+        this.version = "0.5.17";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -20,6 +20,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
+        this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
         this.inviteManager = new InviteManager(this);
@@ -106,6 +107,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.game = this.opts.game = opts.game;
         this.turnTime = this.opts.turnTime = opts.turnTime;
         this.modes = this.opts.modes = opts.modes;
+        this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
+
         this.currentMode = this.modes[0];
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
@@ -193,6 +196,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.getPlayer = function(){
         return this.userList.player;
+    };
+
+
+    Client.prototype.getModeAlias = function(mode){
+        if (this.modesAlias[mode]) return this.modesAlias[mode];
+        else return mode;
     };
 
     return Client;

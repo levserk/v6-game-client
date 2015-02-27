@@ -13,7 +13,7 @@ require(['require-cnf'], function () {
                 getUserParams: function(){return {gameType:'Main Mode'}},
                 generateInviteText: function(invite){
                     return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
-                        + ' в игру ' + invite.data.gameType + ' в режим ' + invite.data.mode;
+                        + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);
                 },
                 blocks:{
                     userListId:'userListDiv',

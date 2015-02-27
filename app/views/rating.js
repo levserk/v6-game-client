@@ -20,7 +20,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 'click #closeRatingBtn': 'close',
                 'click .headTitles th': 'thClicked',
                 'click .headIcons th': 'thClicked',
-                'click .filterPanel span': 'tabClicked'
+                'click .filterPanel span': 'tabClicked',
+                'click .ratingTable .userName': 'userClicked'
             },
 
             thClicked: function(e){
@@ -44,6 +45,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                         return;
                     }
                 }
+            },
+
+            userClicked: function (e){
+                var userId = $(e.currentTarget).attr('data-userid');
+                var userName = $(e.currentTarget).html();
+                this.manager.client.onShowProfile(userId, userName);
             },
 
             initialize: function(_conf, _manager) {
@@ -153,15 +160,15 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                         value: row[this.columns[i].source],
                         sup: ''
                     };
-                    if (col.id == 'UserName') col.value = this.tplUser({
+                    if (col.id == 'userName') col.value = this.tplUser({
                         userName: row.userName,
                         userId: row.userId
                     });
                     if (isUser){ // Render user rating row (infoUser)
-                        if (col.id == 'Rank') col.value = this.YOU;
-                        if (col.id == 'UserName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + ' место)';
+                        if (col.id == 'rank') col.value = this.YOU;
+                        if (col.id == 'userName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + ' место)';
                     }
-                    if (col.id == 'UserName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
+                    if (col.id == 'userName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
                     columns += this.tplTD(col);
                 }
                 return columns;

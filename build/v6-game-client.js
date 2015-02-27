@@ -786,7 +786,7 @@ define('modules/invite_manager',['EE'], function(EE) {
             console.error('invite param mode is reserved!');
             return;
         }
-        params.mode = client.currentMode;
+        params.mode = this.client.currentMode;
         params.target = userId;
         this.invite = params;
         this.client.send('invite_manager', 'invite', userId, this.invite);
@@ -1862,7 +1862,7 @@ define('views/dialogs',[],function() {
 define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
 
 
-define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n\r\n        <div data-userId="<%= msg.userId%>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
+define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
 
 
 define('text!tpls/v6-chatDay.ejs',[],function () { return '<li class="chatDay" data-day-msgId="<%= time %>">\r\n    <div>\r\n        <%= d %>\r\n    </div>\r\n</li>';});
@@ -1950,7 +1950,9 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             },
 
             scrollEvent: function() {
-                if (this.$messagesWrap.scrollTop()<5 && !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
+                if (this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() != 0 &&
+                this.$messagesWrap.scrollTop()<5 &&
+                !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
                     this._setLoadingState();
                     this.client.chatManager.loadMessages();
                 }
@@ -2118,7 +2120,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             },
 
             _addOneMsg: function(msg) {
-                console.log('chat message', msg);
+                //console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle) return;
                 var $msg = this.tplMsg({msg:msg});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
@@ -2140,7 +2142,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             },
 
             _preaddMsgs: function(msg) {
-                console.log('pre chat message', msg);
+                //console.log('pre chat message', msg);
                 if (msg && msg.target != this.currentActiveTabTitle) return;
                 this._removeLoadingState();
                 if (!msg) return;
@@ -2185,9 +2187,13 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         this.v6ChatView = new v6ChatView(this.client);
     };
 
+    ViewsManager.prototype.closeAll = function(){
+        this.client.ratingManager.close();
+        this.client.historyManager.close();
+    };
+
     return ViewsManager;
 });
-
 define('modules/chat_manager',['EE'], function(EE) {
     
     var ChatManager = function (client) {
@@ -2275,7 +2281,7 @@ define('modules/chat_manager',['EE'], function(EE) {
                 message = ChatManager.initMessage(data[0], player);
                 if (!this.messages[message.target]) this.messages[message.target] = [];
                 cache = this.messages[message.target];
-                for (i = data.length-1; i >= 0; i--){
+                for (i = 0; i < data.length; i++){
                    this.onMessageLoad(ChatManager.initMessage(data[i], player), cache);
                 }
                 break;
@@ -2303,7 +2309,7 @@ define('modules/chat_manager',['EE'], function(EE) {
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
         console.log('chat_manager;', 'loading messages', count, time, this.first);
-        setTimeout(function() { this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target}); }.bind(this), 500);
+       this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target});
     };
 
 
@@ -2320,8 +2326,6 @@ define('modules/chat_manager',['EE'], function(EE) {
         this.current = userId;
         this.emit('open_dialog', {userId: userId, userName:userName});
         this.loadCachedMessages(userId);
-        if (this.messages[userId] && this.messages[userId].length > 0 && this.messages[userId].length < this.MSG_COUNT) this.loadMessages(this.MSG_COUNT, this.messages[userId][0], userId);
-        else this.loadMessages(this.MSG_COUNT, null, userId);
     };
 
 
@@ -2347,10 +2351,751 @@ define('modules/chat_manager',['EE'], function(EE) {
 
     return ChatManager;
 });
-define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager', 'EE'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, EE) {
+
+define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader"><img class="closeIcon" src="i/close.png" title="Закрыть окно истории"></div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n            <tr>\r\n                <th>Дата</th>\r\n                <th title="Имя противника">Противник</th>\r\n                <th>Время</th>\r\n                <th>№</th>\r\n                <th colspan="2">Рейтинг</th>\r\n            </tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="i/spin.gif"></div>\r\n    </div>\r\n</div>';});
+
+
+define('text!tpls/v6-historyHeaderTD.ejs',[],function () { return '<td class="sessionHeader historyDate" rowspan="<%= rows %>"> <%= date %> </td>\r\n<td class="sessionHeader historyName" rowspan="<%= rows %>">\r\n    <span class="userName" data-userid="<%= userId %>"><%= userName %></span>\r\n    <span class="userRank">(<%= rank %>)</span>\r\n    <span class="userScore"><%= score %></span>\r\n    <div class="eloDiff <%= (eloDiff>-1?\'diffPositive\':\'diffNegative\')%>"><%= eloDiff ===\'\'?\'\':(eloDiff>-1?\'+\'+eloDiff:eloDiff)%></div>\r\n</td>';});
+
+
+define('text!tpls/v6-historyTH.ejs',[],function () { return '<th colspan="<%= colspan %>" title="<%= title %>"><%= value %></th>';});
+
+
+define('text!tpls/v6-historyTR.ejs',[],function () { return '<tr title="<%= title %>" class="<%= trclass %>" data-id="<%= id %>" ><%= value %></tr>';});
+
+
+define('text!tpls/v6-ratingTab.ejs',[],function () { return '<span class="unactiveLink"  data-idtab="<%= id %>"><%= title %></span>&nbsp;&nbsp;';});
+
+define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-historyHeaderTD.ejs', 'text!tpls/v6-historyTH.ejs', 'text!tpls/v6-historyTR.ejs', 'text!tpls/v6-ratingTab.ejs'],
+    function(_, Backbone, tplMain, tplTD, tplTH, tplTR, tplTab) {
+        
+
+        var HistoryView = Backbone.View.extend({
+            tagName: 'div',
+            id: 'v6History',
+            tplMain: _.template(tplMain),
+            tplHeadTD: _.template(tplTD),
+            tplTD: function(value){return '<td>'+value+'</td>'},
+            tplTH: _.template(tplTH),
+            tplTR: _.template(tplTR),
+            tplTab: _.template(tplTab),
+            events: {
+                'click .closeIcon': 'close',
+                'click .historyTable tr': 'trClicked',
+                'click .historyTable .userName': 'userClicked',
+                'click .historyHeader span': 'tabClicked'
+            },
+            initialize: function(_conf, manager) {
+                this.conf = _conf;
+                this._manager = manager;
+                this.tabs = _conf.tabs;
+                this.columns = _conf.columns;
+                this.$el.html(this.tplMain());
+
+                this.$head = this.$el.find('.historyHeader');
+                this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
+                this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
+                this.$noHistory = $(this.$el.find('.noHistory'));
+
+                this.ACTIVE_TAB = 'activeLink';
+                this.UNACTIVE_TAB = 'unactiveLink';
+                this.WIN_CLASS = 'historyWin';
+                this.LOSE_CLASS = 'historyLose';
+                this.DRAW_CLASS = 'historyDraw';
+
+                this.renderTabs();
+                this.renderHead();
+
+                this.isClosed = false;
+            },
+
+            trClicked: function(e){
+                if ($(e.target).hasClass('sessionHeader') || $(e.target).hasClass('userName')) return;
+                var id  = $(e.currentTarget).attr('data-id');
+                //TODO save player userId history
+                this._manager.getGame(id);
+            },
+
+            userClicked: function (e){
+                var userId  = $(e.currentTarget).attr('data-userid');
+                var userName = $(e.currentTarget).html();
+                this._manager.client.onShowProfile(userId, userName);
+            },
+
+            tabClicked: function(e){
+                var id  = $(e.currentTarget).attr('data-idtab');
+                this.setActiveTab(id);
+                this._manager.getHistory(id, true);
+            },
+
+            close: function () {
+                this.$el.hide();
+                this.isClosed = true;
+            },
+
+            renderTabs: function() {
+                for (var i in this.tabs){
+                    this.$head.append(this.tplTab(this.tabs[i]));
+                    this.setActiveTab(this.tabs[0].id);
+                }
+            },
+
+            renderHead:function() {
+
+            },
+
+            renderHistory: function (mode, history) {
+                for (var i = 0; i < history.length; i++) {
+                    this.renderSession(mode, history[i]);
+                }
+            },
+
+            renderSession:function(mode, session){
+                var row, trclass;
+                for (var i = 0; i < session.length; i++){
+                    row = this.renderRow(mode, session[i], i==0, session.length);
+                    if (session[i].result == 'draw') trclass = this.DRAW_CLASS;
+                    else if (session[i].result == 'win') trclass = this.WIN_CLASS;
+                         else trclass = this.LOSE_CLASS;
+
+                    this.$tbody.append(this.tplTR({
+                        title:session[i].result,
+                        trclass:trclass,
+                        id:session[i].id,
+                        value:row
+                    }));
+                }
+            },
+
+            renderRow: function(mode, row, isFirst, count){
+                var columns = "", col;
+                if (isFirst){
+                    columns = this.tplHeadTD({
+                        rows:count,
+                        date:row.date,
+                        userId: row.opponent.userId,
+                        userName: row.opponent.userName,
+                        rank: row.opponent[mode]['rank'],
+                        eloDiff: count>1?row.elo.diff:'',
+                        score: row.score
+                    });
+                }
+                for (var i = 2; i < this.columns.length; i++){
+                    col = row[this.columns[i].source];
+                    if (this.columns[i].dynamic){
+                        columns += this.tplTD((col['dynamic']>-1&&col['dynamic']!==''?'+':'')+ col['dynamic']);
+                        columns += this.tplTD(col['value']);
+                    } else
+                    columns += this.tplTD(col);
+                }
+
+                return columns;
+            },
+
+            render: function(mode, history, hideClose) {
+                this.$tbody.children().remove();
+                this.$el.show();
+                this.setActiveTab(mode);
+                if (hideClose === true) this.$el.find('.closeIcon').hide();
+                if (hideClose === false) this.$el.find('.closeIcon').show();
+
+                if (!history) {
+                    this.isClosed = false;
+                    this.$el.find('.loading').show();
+                    this.$noHistory.hide();
+                }
+                else {
+                    if (history.length == 0) this.$noHistory.show();
+                    this.$el.find('.loading').hide();
+                    console.log('render history', history);
+                    this.renderHistory(mode, history);
+                }
+
+                return this;
+            },
+
+            setActiveTab: function(id){
+                if (!id || !this.tabs || this.tabs.length < 2) return;
+                for (var i = 0; i < this.tabs.length; i++){
+                    this.tabs[i].active = false;
+                    if (this.tabs[i].id != id)
+                        this.$head.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                    else {
+                        this.$head.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.currentTab = this.tabs[i];
+                    }
+                }
+            }
+
+
+        });
+        return HistoryView;
+    });
+define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryView) {
+    
+
+    var HistoryManager = function (client) {
+        this.client = client;
+        this.currentRoom = null;
+        this.conf = {
+            tabs:[],
+            subTabs:[],
+            columns:[
+                {  id:'Date',       source:'date',      title:'Дата' },
+                {  id:'Opponent',   source:'opponent',  title:'Противник' },
+                {  id:'Time',       source:'time',      title:'Время'     },
+                {  id:'Number',     source:'number',    title:'#' },
+                {  id:'Elo',        source:'elo',       title:'Рейтинг', dynamic:true, startValue:1600 }
+            ]
+        };
+
+        this.$container = (client.opts.blocks.historyId?$('#'+client.opts.blocks.historyId):$('body'));
+        this.isCancel = false;
+        this.userId = false;
+        this.currentMode = false;
+    };
+
+    HistoryManager.prototype = new EE();
+
+
+    HistoryManager.prototype.init = function(conf){
+        if (this.client.modes.length > 1)
+            for (var i = 0 ; i < this.client.modes.length; i++)
+                this.conf.tabs.push({id:this.client.modes[i], title: this.client.getModeAlias(this.client.modes[i])});
+        this.historyView = new HistoryView(this.conf, this);
+    };
+
+
+    HistoryManager.prototype.onMessage = function (message) {
+        var data = message.data;
+        console.log('history_manager;', 'message', message);
+        switch (message.type) {
+            case 'history': this.onHistoryLoad(data.mode, data.history, data.userId); break;
+            case 'game': this.onGameLoad(data.mode, data.game); break;
+        }
+    };
+
+
+    HistoryManager.prototype.onHistoryLoad = function (mode, history, userId){
+        console.log('history_manager;', 'history load', userId, history);
+        setTimeout(function(){
+            if (!this.historyView.isClosed){
+                var histTable = [];
+                this.userId = userId;
+                this.currentMode = mode;
+                for (var i = history.length-1; i > -1; i--){
+                    this.formatHistoryRow(history[i], histTable, mode, history.length - i, userId);
+                }
+                this.$container.append(this.historyView.render(mode, histTable).$el);
+            }
+        }.bind(this),200);
+    };
+
+
+    HistoryManager.prototype.onGameLoad = function (mode, game){
+        console.log('history_manager;', 'game load', game);
+        //TODO initGame, gameManager
+        game.history = '['+game.history+']';
+        game.history = game.history.replace(new RegExp('@', 'g'),',');
+        game.history = JSON.parse(game.history);
+        game.initData = JSON.parse(game.initData);
+        game.userData = JSON.parse(game.userData);
+        var players = [];
+        for (var i = 0; i < game.players.length; i++){
+            players.push(game.userData[game.players[i]]);
+        }
+        if (players.length != players.length) throw new Error('UserData and players are different!');
+        game.players = players;
+        console.log('history_manager;', 'game parsed', game);
+        setTimeout(function(){
+            if (!this.isCancel) this.emit('game_load', game);
+        }.bind(this),200);
+    };
+
+
+    HistoryManager.prototype.formatHistoryRow = function(hrow, history, mode, number, userId){
+        var rows, row = {win:0, lose:0, id:hrow['_id'], number:number}, prev, userData = JSON.parse(hrow.userData), opponentId;
+        //previous game
+        if (history.length == 0) {
+            rows = [];
+            prev = null
+        } else {
+            rows = history[0];
+            prev = rows[0];
+        }
+        opponentId =  userId == hrow.players[0]? hrow.players[1] : hrow.players[0];
+        row.opponent = userData[opponentId];
+        row.date = formatDate(hrow.timeStart);
+        row.time = formatTime(hrow.timeStart);
+        // compute game score
+        if (!hrow.winner) row.result = 'draw';
+        else {
+            if (hrow.winner == userId) {
+                row.result = 'win';
+                row.win++;
+            } else {
+                row.result = 'lose';
+                row.lose++;
+            }
+        }
+        if (prev && prev.date == row.date && prev.opponent.userId == row.opponent.userId){
+            row.win += prev.win;
+            row.lose += prev.lose;
+        }
+        row.score = row.win + ':' + row.lose;
+        //compute elo
+        row.elo = {
+            value:userData[userId][mode]['ratingElo']
+        };
+        //TODO: dynamic columns
+        row.elo.dynamic = prev ? row.elo.value - prev.elo.value : '';
+
+        if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){
+            row.elo.diff = row.elo.dynamic||0;
+            rows = [];
+            rows.unshift(row);
+            history.unshift([]);
+            history[0] = rows
+        } else {
+            row.elo.diff = prev.elo.diff + row.elo.dynamic;
+            rows.unshift(row);
+        }
+    };
+
+
+    HistoryManager.prototype.getHistory = function(mode, isUpdate, hideClose){
+        if (!isUpdate) this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
+        this.$container.append(this.historyView.render(mode||this.client.currentMode, false, hideClose).$el);
+        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:(isUpdate?this.userId:false)});
+    };
+
+    HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
+        if (blockId) this.$container = $('#'+blockId);
+        if (!this.$container) throw new Error('wrong history container id! ' + blockId);
+        this.$container.append(this.historyView.render(mode, false, true).$el);
+        this.userId = userId;
+        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:userId});
+    };
+
+
+    HistoryManager.prototype.getGame = function (id, userId, mode) {
+        userId = userId || this.userId || this.client.getPlayer().userId;
+        mode = mode || this.currentMode || this.client.currentMode;
+        this.isCancel = false;
+        this.client.send('history_manager', 'game', 'server', {mode:mode, id:id, userId: userId});
+    };
+
+
+    HistoryManager.prototype.close = function(){
+      this.historyView.close();
+    };
+
+    function formatDate(time) {
+        var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'сен', 'окт', 'ноя', 'дек'];
+        var date = new Date(time);
+        var day = date.getDate();
+        var month = months[date.getMonth()];
+        var year = date.getFullYear();
+        if (day < 10) day = '0' + day;
+        return day + " " + month + " "  + year;
+    }
+
+    function formatTime(time) {
+        var date =  new Date(time);
+        var h = date.getHours();
+        var m = date.getMinutes();
+        if (h < 10) h = '0' + h;
+        if (m < 10) m = '0' + m;
+        return  h + ':' + m;
+    }
+
+    HistoryManager.prototype.testHistory = [{"timeStart":1424080866344,"timeEnd":1424080868891,"players":["22050161915831","95120799727737"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":4,\"lose\":2,\"draw\":0,\"games\":6,\"rank\":1,\"ratingElo\":1627}},\"95120799727737\":{\"userId\":\"95120799727737\",\"userName\":\"us_95120799727737\",\"dateCreate\":1424080722018,\"default\":{\"win\":1,\"lose\":2,\"draw\":0,\"games\":3,\"rank\":5,\"ratingElo\":1587}}}"},{"timeStart":1424080860196,"timeEnd":1424080862868,"players":["22050161915831","95120799727737"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":3,\"lose\":2,\"draw\":0,\"games\":5,\"rank\":3,\"ratingElo\":1613}},\"95120799727737\":{\"userId\":\"95120799727737\",\"userName\":\"us_95120799727737\",\"dateCreate\":1424080722018,\"default\":{\"win\":1,\"lose\":1,\"draw\":0,\"games\":2,\"rank\":5,\"ratingElo\":1600}}}"},{"timeStart":1424080754813,"timeEnd":1424080762501,"players":["95120799727737","22050161915831"],"mode":"default","winner":"95120799727737","action":"game_over","userData":"{\"95120799727737\":{\"userId\":\"95120799727737\",\"userName\":\"us_95120799727737\",\"dateCreate\":1424080722018,\"default\":{\"win\":1,\"lose\":0,\"draw\":0,\"games\":1,\"rank\":3,\"ratingElo\":1615}},\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":2,\"lose\":2,\"draw\":0,\"games\":4,\"rank\":5,\"ratingElo\":1598}}}"},{"timeStart":1424080713717,"timeEnd":1424080715662,"players":["98637392232194","22050161915831"],"mode":"default","winner":"98637392232194","action":"game_over","userData":"{\"98637392232194\":{\"userId\":\"98637392232194\",\"userName\":\"us_98637392232194\",\"dateCreate\":1424080704161,\"default\":{\"win\":1,\"lose\":0,\"draw\":0,\"games\":1,\"rank\":1,\"ratingElo\":1616}},\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":2,\"lose\":1,\"draw\":0,\"games\":3,\"rank\":3,\"ratingElo\":1612}}}"},{"timeStart":1424080696911,"timeEnd":1424080698325,"players":["22050161915831","21508051152341"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":2,\"lose\":0,\"draw\":0,\"games\":2,\"rank\":1,\"ratingElo\":1627}},\"21508051152341\":{\"userId\":\"21508051152341\",\"userName\":\"us_21508051152341\",\"dateCreate\":1423834457435,\"default\":{\"win\":0,\"lose\":3,\"draw\":0,\"games\":3,\"rank\":4,\"ratingElo\":1561}}}"},{"timeStart":1424080690059,"timeEnd":1424080692709,"players":["22050161915831","21508051152341"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":1,\"lose\":0,\"draw\":0,\"games\":1,\"rank\":2,\"ratingElo\":1614}},\"21508051152341\":{\"userId\":\"21508051152341\",\"userName\":\"us_21508051152341\",\"dateCreate\":1423834457435,\"default\":{\"win\":0,\"lose\":2,\"draw\":0,\"games\":2,\"rank\":4,\"ratingElo\":1573}}}"}]
+    return HistoryManager;
+});
+
+define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="i/close.png" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <div class="loading"><img src="i/spin.gif"></div>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
+
+
+define('text!tpls/v6-ratingTD.ejs',[],function () { return '<td data-idcol="<%= id %>" class="rating<%= id %>"><%= value %><sup class="greenSup"><%= sup %></sup></td>';});
+
+
+define('text!tpls/v6-ratingTH.ejs',[],function () { return '<th data-idcol="<%= id %>" class="ratingTH<%= id %>" title="<%= title %>"><%= value %></th>';});
+
+
+define('text!tpls/v6-ratingTR.ejs',[],function () { return '<tr class="<%= trclass %>" data-userId="<%= userId %>" data-userName="<%= userName %>"><%= value %></tr>';});
+
+
+define('text!tpls/v6-ratingSearch.ejs',[],function () { return '<div style="padding-bottom:2px;">\r\n    <div style="float:left;margin-top:4px;">Поиск:</div>\r\n    <input type="text" placeholder="Поиск по имени" id="ratingAutoComplete" value="">\r\n</div>';});
+
+
+define('text!tpls/v6-ratingPhoto.ejs',[],function () { return '<div style="float:right;margin-top:2px;">\r\n    <a href="<%= photo %>" rel="lightbox" data-lightbox="<%= photo %>"><img src="i/camera.png"></a>\r\n</div>';});
+
+
+define('text!tpls/v6-ratingUser.ejs',[],function () { return '<span class="userName" data-userid="<%= userId %>"><%= userName %></span>';});
+
+define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-ratingTD.ejs', 'text!tpls/v6-ratingTH.ejs',
+        'text!tpls/v6-ratingTR.ejs', 'text!tpls/v6-ratingTab.ejs', 'text!tpls/v6-ratingSearch.ejs',
+        'text!tpls/v6-ratingPhoto.ejs', 'text!tpls/v6-ratingUser.ejs'],
+    function(_, Backbone, tplMain, tplTD, tplTH, tplTR, tplTab, tplSearch, tplPhoto, tplUser) {
+        
+
+        var RatingView = Backbone.View.extend({
+            tagName: 'div',
+            id: 'v6Rating',
+            tplMain: _.template(tplMain),
+            tplTD: _.template(tplTD),
+            tplTH: _.template(tplTH),
+            tplTR: _.template(tplTR),
+            tplTab: _.template(tplTab),
+            tplSearch: _.template(tplSearch),
+            tplUser: _.template(tplUser),
+            tplPhoto: _.template(tplPhoto),
+            events: {
+                'click .closeIcon': 'close',
+                'click #closeRatingBtn': 'close',
+                'click .headTitles th': 'thClicked',
+                'click .headIcons th': 'thClicked',
+                'click .filterPanel span': 'tabClicked',
+                'click .ratingTable .userName': 'userClicked'
+            },
+
+            thClicked: function(e){
+                var id = $(e.currentTarget).attr('data-idcol');
+                for (var i = 0; i < this.columns.length; i++){
+                    if (this.columns[i].id == id && this.columns[i].canOrder){
+                        this.setColumnOrder(id);
+                        console.log('log; rating col clicked',this.columns[i]);
+                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        break;
+                    }
+                }
+            },
+
+            tabClicked: function (e){
+                var id = $(e.currentTarget).attr('data-idtab');
+                for (var i = 0; i < this.subTabs.length; i++){
+                    if (this.subTabs[i].id == id){
+                        this.setActiveSubTab(id);
+                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        return;
+                    }
+                }
+            },
+
+            userClicked: function (e){
+                var userId = $(e.currentTarget).attr('data-userid');
+                var userName = $(e.currentTarget).html();
+                this.manager.client.onShowProfile(userId, userName);
+            },
+
+            initialize: function(_conf, _manager) {
+                this.conf = _conf;
+                this.manager = _manager;
+                this.tabs = _conf.tabs;
+                this.subTabs = _conf.subTabs;
+                this.columns = _conf.columns;
+                this.$el.html(this.tplMain());
+
+                this.$tabs = $(this.$el.find('.filterPanel').children()[0]);
+                this.$titles = this.$el.find('.headTitles');
+                this.$icons = this.$el.find('.headIcons');
+                this.$head = this.$icons.parent();
+                this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
+
+                this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
+                this.IMG_BOTH = '<img src="i/sort-both.png">';
+                this.IMG_ASC= '<img src="i/sort-asc.png">';
+                this.IMG_DESC = '<img src="i/sort-desc.png">';
+                this.ACTIVE_TAB = 'activeLink';
+                this.UNACTIVE_TAB = 'unactiveLink';
+                this.SORT = 'sorted';
+                this.YOU = 'Вы:';
+                this.HEAD_USER_CLASS = 'headUser';
+                this.ACTIVE_CLASS = 'active';
+                this.ONLINE_CLASS = 'online';
+                this.USER_CLASS = 'user';
+
+                this.renderTabs();
+                this.renderHead();
+                this.isClosed = false;
+            },
+
+            close: function () {
+                this.$el.hide();
+                this.isClosed = true;
+            },
+
+            renderTabs: function() {
+                for (var i in this.tabs){
+                    this.$tabs.append(this.tplTab(this.tabs[i]));
+                    this.setActiveTab(this.tabs[0].id);
+                }
+                if (this.subTabs.length>1) {
+                    this.$tabs.append('<br>');
+                    for (var i in this.subTabs){
+                        this.$tabs.append(this.tplTab(this.subTabs[i]));
+                        this.setActiveSubTab(this.subTabs[0].id);
+                    }
+                }
+            },
+
+            renderHead:function() {
+                var col, th;
+                for (var i in this.columns) {
+                    col = this.columns[i];
+                    if (col.canOrder) {
+                        if (col.id == 'ratingElo') col.order = 1;
+                        else col.order = 0;
+                    }
+                    th = {
+                        id: col.id,
+                        title: col.topTitle||'',
+                        value: col.title
+                    };
+                    this.$titles.append(this.tplTH(th));
+                    th.value = col.canOrder?this.IMG_BOTH:'';
+                    if (col.id == 'Rank') th.value= "";
+                    if (col.id == 'UserName') th.value = this.tplSearch();
+                    this.$icons.append(this.tplTH(th));
+                }
+                this.setColumnOrder('ratingElo');
+            },
+
+            renderRatings: function (ratings) {
+                var row;
+                if (ratings.infoUser) {
+                    row = ratings.infoUser;
+                    this.$head.append(this.tplTR({
+                        trclass: this.HEAD_USER_CLASS,
+                        userId: row.userId,
+                        userName: row.userName,
+                        value: this.renderRow(row, true)
+                    }));
+                }
+                if (!ratings.allUsers) return;
+                for (var i = 0; i < ratings.allUsers.length; i++) {
+                    row = ratings.allUsers[i];
+                    var trclass = '';
+                    if (row.user) trclass += this.USER_CLASS + ' ';
+                    if (row.active) trclass += this.ACTIVE_CLASS;
+                    this.$tbody.append(this.tplTR({
+                        trclass: trclass,
+                        userId: row.userId,
+                        userName: row.userName,
+                        value: this.renderRow(row)
+                    }));
+                }
+            },
+
+            renderRow: function(row, isUser){
+                var columns = ""; var col;
+                for (var i = 0; i < this.columns.length; i++){
+                    col = {
+                        id: this.columns[i].id,
+                        value: row[this.columns[i].source],
+                        sup: ''
+                    };
+                    if (col.id == 'userName') col.value = this.tplUser({
+                        userName: row.userName,
+                        userId: row.userId
+                    });
+                    if (isUser){ // Render user rating row (infoUser)
+                        if (col.id == 'rank') col.value = this.YOU;
+                        if (col.id == 'userName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + ' место)';
+                    }
+                    if (col.id == 'userName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
+                    columns += this.tplTD(col);
+                }
+                return columns;
+            },
+
+            setActiveTab: function(id){
+                for (var i = 0; i < this.tabs.length; i++){
+                    this.tabs[i].active = false;
+                    if (this.tabs[i].id != id)
+                        this.$tabs.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                    else {
+                        this.$tabs.find('span[data-idtab="'+this.tabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.currentTab = this.tabs[i];
+                    }
+                }
+            },
+
+            setActiveSubTab: function(id){
+                for (var i = 0; i < this.subTabs.length; i++){
+                    this.subTabs[i].active = false;
+                    if (this.subTabs[i].id != id)
+                        this.$tabs.find('span[data-idtab="'+this.subTabs[i].id+'"]').removeClass(this.ACTIVE_TAB).addClass(this.UNACTIVE_TAB);
+                    else {
+                        this.$tabs.find('span[data-idtab="'+this.subTabs[i].id+'"]').removeClass(this.UNACTIVE_TAB).addClass(this.ACTIVE_TAB);
+                        this.currentSubTab = this.subTabs[i];
+                    }
+                }
+            },
+
+            setColumnOrder: function (id, order){
+                for (var i = 2; i < this.columns.length; i++){
+                    if (this.columns[i].id != id) {
+                        this.columns[i].order = 0;
+                        this.$titles.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT);
+                        this.$icons.find('th[data-idcol="'+this.columns[i].id+'"]').removeClass(this.SORT).html(this.columns[i].canOrder?this.IMG_BOTH:'');
+                    } else {
+                        this.currentCollumn = this.columns[i];
+                        if (!order) {
+                            if (this.columns[i].order < 1) this.columns[i].order = 1;
+                            else this.columns[i].order = -1;
+                        } else {
+                            this.columns[i].order = order == 'desc' ? -1 : 1;
+                        }
+
+                        this.$titles.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT);
+                        this.$icons.find('th[data-idcol="' + this.columns[i].id + '"]').addClass(this.SORT).html(this.columns[i].order>0?this.IMG_ASC:this.IMG_DESC);
+                    }
+                }
+            },
+
+            render: function(ratings, mode, column, order) {
+                this.$head.find('.'+this.HEAD_USER_CLASS).remove();
+                this.$tbody.children().remove();
+                this.$el.show();
+                this.setColumnOrder(column, order);
+                if (mode) this.setActiveSubTab(mode);
+                if (!ratings) {
+                    this.isClosed = false;
+                    this.$el.find('.loading').show();
+                }
+                else {
+                    this.$el.find('.loading').hide();
+                    console.log('render ratings', ratings);
+                    this.renderRatings(ratings);
+                }
+
+                return this;
+            }
+
+
+        });
+        return RatingView;
+    });
+define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView) {
+    
+
+    var RatingManager = function (client) {
+        this.client = client;
+        this.currentRoom = null;
+        this.conf = {
+            tabs:[
+                {id: 'all_players', title: 'все игроки'},
+                {id: 'online_players', title: 'сейчас на сайте'}
+            ],
+            subTabs:[
+            ],
+            columns:[
+                {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
+                {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
+                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> эло',         canOrder:true },
+                {  id:'win',            source:'win',         title:'Выйграл <br> у соперников',canOrder:true },
+                {  id:'percent',        source:'percent',     title:' % ',                      canOrder:false },
+                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> Регистрации',    canOrder:true }
+            ]
+        };
+
+        this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
+    };
+
+    RatingManager.prototype = new EE();
+
+
+    RatingManager.prototype.init = function(conf){
+        for (var i = 0 ; i < this.client.modes.length; i++)
+            this.conf.subTabs.push({id:this.client.modes[i], title:this.client.getModeAlias(this.client.modes[i])});
+
+        this.ratingView = new RatingView(this.conf, this);
+    };
+
+
+    RatingManager.prototype.onMessage = function (message) {
+        var data = message.data, i;
+        console.log('rating_manager;', 'message', message);
+        switch (message.type) {
+            case 'ratings': this.onRatingsLoad(data.mode, data.ratings, data.column, data.order); break;
+        }
+    };
+
+
+    RatingManager.prototype.onRatingsLoad = function (mode, ratings, column, order){
+        var rank = false;
+        if (this.ratingView.isClosed) return;
+        if (ratings.infoUser) {
+            ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, ratings.infoUser[mode].rank);
+        }
+        for (var i = 0; i < ratings.allUsers.length; i++) {
+            if (column == 'ratingElo' && order == 'desc') rank = i+1; // set rank on order by rating
+            ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
+        }
+        setTimeout(function(){
+            this.$container.append(this.ratingView.render(ratings, mode, column, order).$el);
+        }.bind(this),200);
+    };
+
+
+    RatingManager.prototype.formatRatingsRow = function(mode, info, rank){
+        var row = {
+            userId: info.userId,
+            userName: info.userName,
+            photo: undefined
+        };
+        for (var i in info[mode]){
+            row[i] = info[mode][i];
+        }
+        if (rank !== false) row.rank = rank; // set rank on order
+        else row.rank = '';
+        if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
+        if (this.client.userList.getUser(info.userId)) row.active = true;
+        row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);
+        if (Date.now() - info.dateCreate < 172800000) row.dateCreate = this.ratingView.NOVICE;
+        else row.dateCreate = formatDate(info.dateCreate);
+        return row;
+    };
+
+
+    RatingManager.prototype.getRatings = function(mode, column, order){
+        this.$container.append(this.ratingView.render(false).$el);
+        this.client.send('rating_manager', 'ratings', 'server', {
+            mode:mode||this.client.currentMode,
+            column : column,
+            order : order
+        });
+    };
+
+    RatingManager.prototype.close = function(){
+        this.ratingView.close();
+    };
+
+    function formatDate(time) {
+        var date = new Date(time);
+        var day = date.getDate();
+        var month = date.getMonth() + 1;
+        var year = ("" + date.getFullYear()).substr(2, 2);
+        return ext(day, 2, "0") + "." + ext(month, 2, "0") + "."  + year;
+        function ext(str, len, char) {
+            //char = typeof (char) == "undefined" ? "&nbsp;" : char;
+            str = "" + str;
+            while (str.length < len) {
+                str = char + str;
+            }
+            return str;
+        }
+    }
+
+    RatingManager.prototype.testRatings = {"allUsers":[{"userId":"95514","userName":"us_95514","dateCreate":1423486149906,"mode1":{"win":2,"lose":0,"draw":0,"games":2,"rank":1,"ratingElo":1627},"mode2":{"win":1,"lose":0,"draw":0,"games":1,"rank":1,"ratingElo":1615}},{"userId":"93361","userName":"us_93361","dateCreate":1423486098554,"mode1":{"win":1,"lose":0,"draw":0,"games":1,"rank":2,"ratingElo":1615},"mode2":{"win":0,"lose":0,"draw":0,"games":0,"rank":0,"ratingElo":1600}},{"userId":"99937","userName":"us_99937","dateCreate":1423486099570,"mode1":{"win":0,"lose":3,"draw":0,"games":3,"rank":3,"ratingElo":1561},"mode2":{"win":0,"lose":1,"draw":0,"games":1,"rank":2,"ratingElo":1586}}],"infoUser":{"userId":"99937","userName":"us_99937","dateCreate":1423486099570,"mode1":{"win":0,"lose":3,"draw":0,"games":3,"rank":3,"ratingElo":1561},"mode2":{"win":0,"lose":1,"draw":0,"games":1,"rank":2,"ratingElo":1586}}};
+    return RatingManager;
+});
+define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
+        this.version = "0.6.0";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -2368,11 +3113,14 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
+        this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
         this.inviteManager = new InviteManager(this);
         this.chatManager = new ChatManager(this);
         this.viewsManager = new ViewsManager(this);
+        this.historyManager = new HistoryManager(this);
+        this.ratingManager = new RatingManager(this);
 
         this.currentMode = null;
 
@@ -2404,6 +3152,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.init = function(){
         this.socket.init();
         this.viewsManager.init();
+        console.log('client;', 'init version:', this.version);
         return this;
     };
 
@@ -2413,7 +3162,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             case 'server': this.onServerMessage(message); break;
             case 'invite_manager': this.inviteManager.onMessage(message); break;
             case 'game_manager': this.gameManager.onMessage(message); break;
-            case 'chat_manager':this.chatManager.onMessage(message); break;
+            case 'chat_manager': this.chatManager.onMessage(message); break;
+            case 'history_manager': this.historyManager.onMessage(message); break;
+            case 'rating_manager': this.ratingManager.onMessage(message); break;
         }
     };
 
@@ -2449,18 +3200,21 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.game = this.opts.game = opts.game;
         this.turnTime = this.opts.turnTime = opts.turnTime;
         this.modes = this.opts.modes = opts.modes;
-        this.currentMode = this.modes[0];
-        this.isLogin = true;
+        this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
 
+        this.currentMode = this.modes[0];
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
         this.emit('login', user);
+        this.isLogin = true;
+        this.ratingManager.init();
+        this.historyManager.init();
     };
 
 
     Client.prototype.send = function (module, type, target, data) {
-        if (!client.socket.isConnected){
+        if (!this.socket.isConnected){
             console.error('Client can not send message, socket is not connected!');
             return;
         }
@@ -2486,7 +3240,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     };
 
     Client.prototype.setMode = function (mode){
-        if (!client.socket.isConnected || !client.isLogin){
+        if (!this.socket.isConnected || !this.isLogin){
             console.error('Client can set mode, socket is not connected!');
             return;
         }
@@ -2523,7 +3277,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.onShowProfile = function(userId, userName){
         if (!userName) {
             var user = this.userList.getUser(userId);
-            if (!user) return;
+            if (!user) {
+                console.log('err;', 'user', userId, ' is not online!, can not get his name');
+                return;
+            }
             userName = user.userName;
         }
         this.emit('show_profile', {userId:userId, userName:userName});
@@ -2532,6 +3289,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.getPlayer = function(){
         return this.userList.player;
+    };
+
+
+    Client.prototype.getModeAlias = function(mode){
+        if (this.modesAlias[mode]) return this.modesAlias[mode];
+        else return mode;
     };
 
     return Client;

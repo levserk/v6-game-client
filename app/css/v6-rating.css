@@ -1,0 +1,166 @@
+#v6-rating {
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 16px;
+    padding: 5px;
+    background-color: white;
+    position: relative;
+}
+
+#v6-rating .closeIcon {
+    float: right;
+    cursor: pointer;
+}
+
+#v6-rating .filterPanel {
+    margin-bottom: 7px;
+}
+
+#v6-rating .activeLink {
+    text-decoration: none;
+    color: #069;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#v6-rating .unactiveLink {
+     cursor: pointer;
+     text-decoration: none;
+     color: #069;
+     font-size: 12px;
+     border-bottom: 1px solid #069;
+}
+
+#v6-rating .ratingTable {
+    font-size: 8pt;
+    text-align: center;
+    border-collapse: collapse;
+    border: 1px solid #dcdcdc;
+    width: 100%;
+    color: #444;
+    margin-top: 5px;
+}
+
+#v6-rating .ratingTable .online {
+    background-color: #EFF9DB
+}
+
+#v6-rating .ratingTable .active {
+    background-color: #D7FACF
+}
+
+.ratingTable thead {
+    background-color: #EEE;
+    border-bottom: 1px solid #dcdcdc;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.ratingTable th {
+    font-weight: normal;
+}
+
+.ratingTable .headTitles {
+    height: 40px;
+}
+
+.ratingTable .headIcons {
+    height: 30px;
+}
+
+.ratingTable .headUser {
+    background-color:#F7F7F7;
+    height:30px;
+    border-bottom:2px solid #AAAAAA;
+}
+
+.ratingTable .sorted {
+    background-color: #FCFCD8;
+}
+
+.ratingTable td {
+    border-bottom: 1px solid #dcdcdc;
+    border-top: 1px solid #dcdcdc;
+    padding: 5px;
+    vertical-align: bottom;
+    text-align: left;
+}
+
+.ratingTable tr td:nth-child(1) {
+    width: 15px;
+    text-align: right;
+}
+
+.ratingTable tr td:nth-child(2) {
+    width: 32%;
+}
+
+.ratingTable tr td:nth-child(3) {
+    text-align: center;
+}
+
+.ratingTable .ratingProfile {
+    cursor:pointer;
+}
+.ratingTable .ratingProfile:hover{
+    text-decoration: underline
+}
+
+.ratingTable .userName {
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.ratingTable .userName:hover{
+    text-decoration: underline;
+}
+
+.ratingTable .greenSup {
+    color: green;
+}
+
+.ratingTable .user {
+    font-weight: bold;
+}
+
+.ratingTable .ratingDate{
+    color: grey;
+    text-align: center;
+    font-weight: normal; !important;
+}
+
+.ratingTable .ratingVictory{
+    padding-left: 80px;
+}
+
+
+#v6-rating .footButtons{
+    padding: 10px 0px 20px;
+}
+
+#v6-rating .loading{
+     margin: 0 auto;
+     width: 32px;
+ }
+
+#v6-rating .footButtons .activeLink{
+    font-weight:normal;
+    cursor:pointer;
+}
+
+#v6-rating #ratingShowMore {
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    height: 28px;
+    line-height: 28px;
+    width: 128px;
+    margin: 0 auto;
+    margin-top: 10px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .05);
+    color: #404040;
+    border: 1px solid rgba(0, 0, 0, .15);
+    display: none;
+}

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css"/>
+    <link rel="stylesheet" href="css/_jquery-ui.css" />
+    <link rel="stylesheet" href="css/userList.css"/>
+    <link rel="stylesheet" href="css/dialogInvite.css"/>
+    <link rel="stylesheet" href="css/dialog.css"/>
+    <link rel="stylesheet" href="css/v6-chat.css"/>
+    <link rel="stylesheet" href="css/v6-rating.css"/>
+    <link rel="stylesheet" href="css/v6-history.css"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>StepByStep</title>
+</head>
+<body>
+<div id="historyDiv2" style="width: 800px; border: 1px solid black;">
+    <div id="v6-history">
+        <div class="historyHeader"><img class="closeIcon" src="i/close.png" title="Закрыть окно истории"></div>
+        <div class="historyWrapper">
+            <table class="historyTable">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th title="Имя противника">Противник</th>
+                    <th>Время</th>
+                    <th>№</th>
+                    <th colspan="2">Рейтинг</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr title="Соперник сдался" class="historyWin" data-id="8185" >
+                    <td class="sessionHeader historyDate" rowspan="1"> 24 дек 2014 </td>
+                    <td class="sessionHeader historyName" rowspan="1">
+                        <span class="userName" data-userid="5336512">Гость 4427826</span>
+                        <span class="userRank">(8658)</span>
+                        <span class="userScore">1:0</span>
+                        <div class="eloDiff diffPositive"></div>
+                    </td>
+                    <td>12:17</td>
+                    <td>24</td>
+                    <td>+11</td>
+                    <td>1694</td>
+                </tr>
+                <tr title="Соперник сдался" class="historyWin" data-id="8184" >
+                    <td class="sessionHeader historyDate" rowspan="3"> 24 дек 2014</td>
+                    <td class="sessionHeader historyName" rowspan="3">
+                        <span class="active-username" data-userid="18136">heap</span>
+                        <span class="userRank">(611)</span>
+                        <span class="score">1:1</span>
+                        <div class="eloDiff diffPositive">+6</div>
+                    </td>
+                    <td>12:16</td>
+                    <td>23</td>
+                    <td>+18</td>
+                    <td>1683</td>
+                </tr>
+                <tr title="" class="historyLose" data-id="8183">
+                    <td>12:16</td>
+                    <td>22</td>
+                    <td>-12</td>
+                    <td>1665</td>
+                </tr>
+                <tr title="" class="historyLose" data-id="8183">
+                    <td>12:16</td>
+                    <td>22</td>
+                    <td>-12</td>
+                    <td>1665</td>
+                </tr>
+                </tbody>
+                <tbody></tbody>
+            </table>
+            <div class="noHistory">Сохранения отсутствуют</div>
+        </div>
+    </div>
+</div>
+<div id="historyDiv" style="width: 800px; border: 1px solid black;"></div>
+<div id="userListDiv"></div>
+<div id="chatDiv"></div>
+<div id="ratingDiv" style="width: 700px; background: white; margin: 10px;"></div>
+<script src="lib/require.js" data-main="app"></script>
+</body>
+</html>

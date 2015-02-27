@@ -12,5 +12,10 @@ define(['views/user_list', 'views/dialogs', 'views/chat'], function(userListView
         this.v6ChatView = new v6ChatView(this.client);
     };
 
+    ViewsManager.prototype.closeAll = function(){
+        this.client.ratingManager.close();
+        this.client.historyManager.close();
+    };
+
     return ViewsManager;
 });

@@ -1,0 +1,7 @@
+<td class="sessionHeader historyDate" rowspan="<%= rows %>"> <%= date %> </td>
+<td class="sessionHeader historyName" rowspan="<%= rows %>">
+    <span class="userName" data-userid="<%= userId %>"><%= userName %></span>
+    <span class="userRank">(<%= rank %>)</span>
+    <span class="userScore"><%= score %></span>
+    <div class="eloDiff <%= (eloDiff>-1?'diffPositive':'diffNegative')%>"><%= eloDiff ===''?'':(eloDiff>-1?'+'+eloDiff:eloDiff)%></div>
+</td>

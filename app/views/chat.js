@@ -78,7 +78,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             },
 
             scrollEvent: function() {
-                if (this.$messagesWrap.scrollTop()<5 && !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
+                if (this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() != 0 &&
+                this.$messagesWrap.scrollTop()<5 &&
+                !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
                     this._setLoadingState();
                     this.client.chatManager.loadMessages();
                 }
@@ -246,7 +248,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             },
 
             _addOneMsg: function(msg) {
-                console.log('chat message', msg);
+                //console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle) return;
                 var $msg = this.tplMsg({msg:msg});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
@@ -268,7 +270,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             },
 
             _preaddMsgs: function(msg) {
-                console.log('pre chat message', msg);
+                //console.log('pre chat message', msg);
                 if (msg && msg.target != this.currentActiveTabTitle) return;
                 this._removeLoadingState();
                 if (!msg) return;

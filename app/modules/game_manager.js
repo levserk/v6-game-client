@@ -93,7 +93,8 @@ define(['EE'], function(EE) {
             ],
             first: this.getPlayer(data.first),
             id: data.id,
-            inviteData: data.inviteData
+            inviteData: data.inviteData,
+            score: this.currentRoom.score
         });
         this.emitTime();
     };
@@ -106,6 +107,7 @@ define(['EE'], function(EE) {
         this.timeInterval = null;
         this.prevTime = null;
         this.currentRoom.current = null;
+        this.currentRoom.score = data.score;
         if (data.winner){
             if (data.winner == this.client.getPlayer().userId) { // win
                 console.log('game_manager;', 'win', data);
@@ -262,8 +264,12 @@ define(['EE'], function(EE) {
         this.id = room.room;
         this.owner = client.getUser(room.owner);
         this.players = [];
+        this.score = {games:0};
         if (typeof room.players[0] == "object") this.players = room.players;
         else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
+        for (var i = 0; i < this.players.length; i++){
+            this.score[this.players[i].userId] = 0;
+        }
     }
 
     return GameManager;

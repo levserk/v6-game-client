@@ -186,6 +186,7 @@ define(function() {
         function _hideDialogs() { //TODO: hide all dialogs and messages
             $('.' + NOTIFICATION_CLASS).remove();
             $('.' + ROUNDRESULT_CLASS).remove();
+            $('.' + INVITE_CLASS).remove();
             clearTimeout(dialogTimeout);
         }
 

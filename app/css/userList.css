@@ -77,12 +77,12 @@
     border: 1px solid rgba(0,0,0,.15);
     height: 30px;
     line-height: 30px;
+    font-weight: 700;
+    color: #069;
 }
 
-#userList .btn span {
-    padding: 4px 0;
-    color: #069;
-    font-weight: 700;
+#userList .active {
+    background-color: #f7f791;
 }
 
 #userList .inviteBtn {

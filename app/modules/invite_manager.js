@@ -16,6 +16,8 @@ define(['EE'], function(EE) {
         });
         client.gameManager.on('game_start', function(){
             self.invite = null;
+            self.isPlayRandom = false;
+            self.client.viewsManager.userListView._setRandomPlay();
             self.rejectAll();
         });
         client.on('disconnected', function(){
@@ -43,6 +45,12 @@ define(['EE'], function(EE) {
     InviteManager.prototype.onInvite = function(invite){
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
+
+        if (this.isPlayRandom) {
+            this.accept(invite.from);
+            return;
+        }
+
         this.emit('new_invite', {
             from: this.client.getUser(invite.from),
             data: invite
@@ -130,6 +138,32 @@ define(['EE'], function(EE) {
         if (this.invites[userId]){
             this.emit('remove_invite', this.invites[userId]);
             delete this.invites[userId];
+        }
+    };
+
+
+    InviteManager.prototype.playRandom = function(cancel){
+        if (this.client.gameManager.inGame()){
+            console.warn('You are already in game!');
+            return;
+        }
+
+        if (!cancel){
+            for (var userId in this.invites){
+                this.accept(userId);
+                return;
+            }
+            this.isPlayRandom = true;
+            var params = this.client.opts.getUserParams == 'function'?this.client.opts.getUserParams():{};
+            if (params.mode){
+                console.error('invite param mode is reserved!');
+                return;
+            }
+            params.mode = this.client.currentMode;
+            this.client.send('invite_manager', 'random', 'server', params);
+        } else {
+            this.isPlayRandom = false;
+            this.client.send('invite_manager', 'random', 'server', false);
         }
     };
 

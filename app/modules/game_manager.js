@@ -217,6 +217,11 @@ define(['EE'], function(EE) {
     };
 
 
+    GameManager.prototype.inGame = function (){
+        return this.currentRoom != null;
+    };
+
+
     GameManager.prototype.onTimeTick = function(){
         var time = Date.now();
         if (!this.prevTime){

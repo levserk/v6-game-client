@@ -11,7 +11,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             'click .inviteBtn': 'invitePlayer',
             'click .userName': 'userClick',
             'click .tabs div': 'clickTab',
-            'click .disconnectButton': '_reconnect'
+            'click .disconnectButton': '_reconnect',
+            'click #randomPlay': 'playClicked'
         },
         _reconnect: function() {
             if (this.client.opts.reload) {
@@ -67,6 +68,10 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
 
             console.log('invite user', userId);
         },
+        playClicked: function (e) {
+            this.client.inviteManager.playRandom(this.client.inviteManager.isPlayRandom);
+            this._setRandomPlay();
+        },
         initialize: function(_client) {
             var bindedRender = this.render.bind(this);
 
@@ -89,9 +94,13 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
 
+            this.TEXT_PLAY_ACTIVE = 'Идет подбор игрока...';
+            this.TEXT_PLAY_UNACTIVE = 'Играть с любым';
+
             this.$list = this.$el.find('.tableWrap table');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
+            this.$btnPlay = this.$el.find('#randomPlay');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
             this.listenTo(this.client, 'mode_switch', bindedRender);
@@ -105,6 +114,16 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.currentActiveTabName = 'free';
             this._setActiveTab(this.currentActiveTabName);
             this.$list.html(this.$loadingTab);
+            this.randomPlay = false;
+        },
+        _setRandomPlay: function(){
+            if (this.client.inviteManager.isPlayRandom) {
+                this.$btnPlay.html(this.TEXT_PLAY_ACTIVE);
+                this.$btnPlay.addClass('active');
+            } else {
+                this.$btnPlay.html(this.TEXT_PLAY_UNACTIVE);
+                this.$btnPlay.removeClass('active');
+            }
         },
         _setActiveTab: function(tabName) {
             this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);

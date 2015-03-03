@@ -2,7 +2,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.6.7";
+        this.version = "0.6.8";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -105,8 +105,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         console.log('client;', 'login', user, userlist, rooms, opts, ban);
 
         this.game = this.opts.game = opts.game;
-        this.chatManager.current = this.game;
+        //TODO:
+        this.chatManager.current = this.viewsManager.v6ChatView.currentActiveTabTitle = this.game;
         this.turnTime = this.opts.turnTime = opts.turnTime;
+
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
         this.chatManager.ban = ban;

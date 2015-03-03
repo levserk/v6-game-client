@@ -20,6 +20,7 @@ define(function() {
             client.gameManager.on('game_leave', _hideDialogs);
             client.gameManager.on('ask_draw', _askDraw);
             client.gameManager.on('cancel_draw', _cancelDraw);
+            client.chatManager.on('show_ban', _showBan);
             client.on('login_error', _loginError);
         }
 
@@ -183,11 +184,47 @@ define(function() {
             });
         }
 
+        function _showBan(ban) {
+            var div = $('<div>');
+            div.addClass(NOTIFICATION_CLASS);
+            var html = 'Вы не можете писать сообщения в чате, т.к. добавлены в черный список ';
+            if (ban.reason && ban.reason != '') html += 'за ' + ban.reason;
+            else html += 'за употребление нецензурных выражений и/или спам ';
+            if (ban.timeEnd) {
+                html += (ban.timeEnd > 2280000000000 ? ' навсегда' : ' до ' + formatDate(ban.timeEnd));
+            }
+            div.html(html).dialog({
+                resizable: false,
+                modal: false,
+                buttons: {
+                    "Ок": function() {
+                        $(this).remove();
+                    }
+                }
+            });
+        }
+
         function _hideDialogs() { //TODO: hide all dialogs and messages
             $('.' + NOTIFICATION_CLASS).remove();
             $('.' + ROUNDRESULT_CLASS).remove();
             $('.' + INVITE_CLASS).remove();
             clearTimeout(dialogTimeout);
+        }
+
+        function formatDate(time) {
+            var date = new Date(time);
+            var day = date.getDate();
+            var month = date.getMonth() + 1;
+            var year = ("" + date.getFullYear()).substr(2, 2);
+            return ext(day, 2, "0") + "." + ext(month, 2, "0") + "."  + year;
+            function ext(str, len, char) {
+                //char = typeof (char) == "undefined" ? "&nbsp;" : char;
+                str = "" + str;
+                while (str.length < len) {
+                    str = char + str;
+                }
+                return str;
+            }
         }
 
         return {

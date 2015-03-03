@@ -89,11 +89,19 @@ define(['EE'], function(EE) {
                    this.onMessageLoad(ChatManager.initMessage(data[i], player), cache);
                 }
                 break;
+            case 'ban':
+                this.ban = message.data;
+                this.emit('show_ban', message.data);
+                break;
         }
     };
 
 
     ChatManager.prototype.sendMessage = function (text, target, admin){
+        if (this.ban){
+            this.emit('show_ban', this.ban);
+            return;
+        }
         var message = {
             text: text
         };
@@ -151,6 +159,12 @@ define(['EE'], function(EE) {
             && this.messages[target].length < this.MSG_COUNT) {
             this.loadMessages(this.MSG_COUNT, this.messages[target][0], target);
         }  else this.loadMessages(this.MSG_COUNT, null, target);
+    };
+
+
+    ChatManager.prototype.banUser = function(userId, days, reason) {
+        console.log('log;', 'ChatManager.banUser', userId, days, reason);
+        this.client.send('chat_manager', 'ban', 'server', {userId:userId, days:days, reason:reason});
     };
 
     return ChatManager;

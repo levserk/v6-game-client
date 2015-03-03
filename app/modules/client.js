@@ -2,7 +2,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.6.4";
+        this.version = "0.6.6";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -80,7 +80,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var data = message.data;
         switch (message.type){
             case 'login':
-                this.onLogin(data.you, data.userlist, data.rooms, data.opts);
+                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban);
                 break;
             case 'user_login':
                 this.userList.onUserLogin(data);
@@ -101,13 +101,14 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms, opts){
-        console.log('client;', 'login', user, userlist, rooms, opts);
+    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban){
+        console.log('client;', 'login', user, userlist, rooms, opts, ban);
 
         this.game = this.opts.game = opts.game;
         this.turnTime = this.opts.turnTime = opts.turnTime;
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
+        this.chatManager.ban = ban;
 
         this.currentMode = this.modes[0];
         var i;

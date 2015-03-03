@@ -2,7 +2,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.6.8";
+        this.version = "0.6.9";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -105,11 +105,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         console.log('client;', 'login', user, userlist, rooms, opts, ban);
 
         this.game = this.opts.game = opts.game;
-        //TODO:
-        this.chatManager.current = this.viewsManager.v6ChatView.currentActiveTabTitle = this.game;
-        this.turnTime = this.opts.turnTime = opts.turnTime;
-
-        this.modes = this.opts.modes = opts.modes;
+       this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
         this.chatManager.ban = ban;
 
@@ -117,6 +113,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
+
         this.emit('login', user);
         this.isLogin = true;
         this.ratingManager.init();

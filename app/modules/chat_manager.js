@@ -9,7 +9,11 @@ define(['EE'], function(EE) {
         this.current = client.game;
         this.MSG_COUNT = 10;
 
-        client.on('login', this.loadMessages.bind(this));
+        client.on('login', function(){
+            this.current = client.game;
+            client.viewsManager.v6ChatView.currentActiveTabTitle = client.game;
+            this.loadMessages();
+        }.bind(this));
 
         client.gameManager.on('game_start', function(room){
             for (var i = 0; i < room.players.length; i++){

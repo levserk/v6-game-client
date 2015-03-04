@@ -7,7 +7,7 @@ require(['require-cnf'], function () {
             //document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
             window.LogicGame = {isSuperUser:function(){return true;}};
             window._client = new Client({
-                port: 8080,
+                port: 8078,
                 resultDialogDelay: 1000,
                 reload: true,
                 getUserParams: function(){return {gameType:'Main Mode'}},

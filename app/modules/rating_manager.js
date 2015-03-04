@@ -14,10 +14,10 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             columns:[
                 {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
                 {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
-                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> эло',         canOrder:true },
-                {  id:'win',            source:'win',         title:'Выйграл <br> у соперников',canOrder:true },
+                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> Эло',         canOrder:true },
+                {  id:'win',            source:'win',         title:'Выиграл <br> у соперников',canOrder:true },
                 {  id:'percent',        source:'percent',     title:' % ',                      canOrder:false },
-                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> Регистрации',    canOrder:true }
+                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> регистрации',    canOrder:true }
             ]
         };
 

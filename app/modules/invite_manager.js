@@ -15,10 +15,11 @@ define(['EE'], function(EE) {
             self.removeInvite(user.userId);
         });
         client.gameManager.on('game_start', function(){
+            self.cancel();
+            self.rejectAll();
             self.invite = null;
             self.isPlayRandom = false;
             self.client.viewsManager.userListView._setRandomPlay();
-            self.rejectAll();
         });
         client.on('disconnected', function(){
             self.invite = null;

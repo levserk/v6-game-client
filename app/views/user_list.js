@@ -8,7 +8,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         tplInGame: _.template(tplInGame),
         tplMain: _.template(tplMain),
         events: {
-            'click .inviteBtn': 'invitePlayer',
+            'click .inviteBtn': '_inviteBtnClicked',
             'click .userName': 'userClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
@@ -43,15 +43,18 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 userId = target.attr('data-userId');
             this.client.onShowProfile(userId);
         },
-        invitePlayer: function(e) {
+        _inviteBtnClicked: function(e) {
+            var target = $(e.currentTarget),
+                userId = target.attr('data-userId');
+            this.invitePlayer(userId)
+        },
+        invitePlayer: function(userId) {
             if (this.client.gameManager.currentRoom) {
                 console.log('you already in game!');
                 return;
             }
 
-            var target = $(e.currentTarget),
-                userId = target.attr('data-userId');
-
+            var target = this.$el.find('.inviteBtn[data-userId="' + userId + '"]');
 
             if (target.hasClass(this.ACTIVE_INVITE_CLASS)) {
                 // cancel invite

@@ -57,7 +57,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 switch (actionObj.action){
                     case 'showProfile': this.client.onShowProfile(actionObj.userId, actionObj.userName); break;
-                    case 'invite': this.client.inviteManager.sendInvite(actionObj.userId); break;
+                    case 'invite': this.client.viewsManager.userListView.invitePlayer(actionObj.userId); break;
                     case 'ban': this.banUser(actionObj.userId, actionObj.userName); break;
                 }
             },

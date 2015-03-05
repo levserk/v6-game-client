@@ -216,6 +216,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
             },
 
+            setPublicTab: function(tabName){
+                this.tabs.public.target = tabName;
+                this.currentActiveTabName = 'public';
+                this._setActiveTab('public');
+            },
+
             _setActiveTab: function(tabName) {
                 var $tab = this.$el.find('.tabs div[data-type="' + tabName + '"]');
                 this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);

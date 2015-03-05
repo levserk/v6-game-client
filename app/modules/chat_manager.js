@@ -11,7 +11,7 @@ define(['EE'], function(EE) {
 
         client.on('login', function(){
             this.current = client.game;
-            client.viewsManager.v6ChatView.currentActiveTabTitle = client.game;
+            client.viewsManager.v6ChatView.setPublicTab(client.game);
             this.loadMessages();
         }.bind(this));
 

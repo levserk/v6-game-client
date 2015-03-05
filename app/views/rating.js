@@ -119,8 +119,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     };
                     this.$titles.append(this.tplTH(th));
                     th.value = col.canOrder?this.IMG_BOTH:'';
-                    if (col.id == 'Rank') th.value= "";
-                    if (col.id == 'UserName') th.value = this.tplSearch();
+                    if (col.id == 'rank') th.value= "";
+                    if (col.id == 'userName') th.value = this.tplSearch();
                     this.$icons.append(this.tplTH(th));
                 }
                 this.setColumnOrder('ratingElo');

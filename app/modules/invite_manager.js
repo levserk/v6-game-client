@@ -164,7 +164,7 @@ define(['EE'], function(EE) {
             this.client.send('invite_manager', 'random', 'server', params);
         } else {
             this.isPlayRandom = false;
-            this.client.send('invite_manager', 'random', 'server', false);
+            this.client.send('invite_manager', 'random', 'server', true);
         }
     };
 

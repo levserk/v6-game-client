@@ -105,7 +105,10 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.onGameRestart = function (data) {
         console.log('game_manager;', 'game restart', data);
-        this.onGameStart(data['roomInfo']);
+        var room = new Room(data['roomInfo'], this.client);
+        console.log('game_manager;', 'emit game_start', room);
+        this.currentRoom = room;
+        this.emit('game_start', room);
         this.onRoundStart(data['initData']);
     };
 

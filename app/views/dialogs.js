@@ -114,6 +114,10 @@ define(function() {
                         client.gameManager.cancelDraw();
                         $(this).remove();
                     }
+                },
+                close: function() {
+                    client.gameManager.cancelDraw();
+                    $(this).remove();
                 }
             }).parent().draggable();
         }
@@ -163,6 +167,10 @@ define(function() {
                             $(this).remove();
                             client.gameManager.leaveGame();
                         }
+                    },
+                    close: function() {
+                        $(this).remove();
+                        client.gameManager.leaveGame();
                     }
                 });
             }, client.opts.resultDialogDelay);

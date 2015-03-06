@@ -63,8 +63,24 @@
     height: 40px;
 }
 
+.ratingTable .headTitles th{
+    border-right: 1px solid #dcdcdc;
+}
+
+.ratingTable .headTitles th:nth-child(1){
+    border-right: none;
+}
+
 .ratingTable .headIcons {
     height: 30px;
+}
+
+.ratingTable .headIcons th{
+    border-right: 1px solid #dcdcdc;
+}
+
+.ratingTable .headIcons th:nth-child(1){
+    border-right: none;
 }
 
 .ratingTable .headUser {

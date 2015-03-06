@@ -6,8 +6,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         this.currentRoom = null;
         this.conf = {
             tabs:[
-                {id: 'all_players', title: 'все игроки'},
-                {id: 'online_players', title: 'сейчас на сайте'}
+                {id: 'all_players', title: 'все игроки'}
             ],
             subTabs:[
             ],

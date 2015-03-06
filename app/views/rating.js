@@ -228,8 +228,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 if (!ratings) {
                     this.isClosed = false;
                     this.$el.find('.loading').show();
+                    this.$head.hide();
                 }
                 else {
+                    this.$head.show();
                     this.$el.find('.loading').hide();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);

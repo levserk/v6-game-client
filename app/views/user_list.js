@@ -113,6 +113,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.listenTo(this.client.userList, 'new_room', bindedRender);
             this.listenTo(this.client.userList, 'close_room', bindedRender);
             this.listenTo(this.client, 'disconnected', bindedRender);
+            this.listenTo(this.client, 'user_relogin', bindedRender);
 
             this.currentActiveTabName = 'free';
             this._setActiveTab(this.currentActiveTabName);
@@ -167,7 +168,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
-            this._showPlayerListByTabName();
+            setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;
         }

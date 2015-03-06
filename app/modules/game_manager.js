@@ -65,6 +65,9 @@ define(['EE'], function(EE) {
             case 'round_end':
                 this.onRoundEnd(data);
                 break;
+            case 'game_restart':
+                this.onGameRestart(data);
+                break;
             case 'error':
                 console.log('game_manager;', 'error', data);
                 break;
@@ -97,6 +100,13 @@ define(['EE'], function(EE) {
             score: this.currentRoom.score
         });
         this.emitTime();
+    };
+
+
+    GameManager.prototype.onGameRestart = function (data) {
+        console.log('game_manager;', 'game restart', data);
+        this.onGameStart(data['roomInfo']);
+        this.onRoundStart(data['initData']);
     };
 
 

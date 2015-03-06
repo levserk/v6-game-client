@@ -14,6 +14,13 @@ define(['EE'], function(EE) {
             }
             self.removeInvite(user.userId);
         });
+        client.on('user_relogin', function (user) {
+            if (self.invite && self.invite.target == user.userId) {
+                self.invite = null;
+                user.isInvited = false;
+            }
+            self.removeInvite(user.userId);
+        });
         client.gameManager.on('game_start', function(){
             self.cancel();
             self.rejectAll();

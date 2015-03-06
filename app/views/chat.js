@@ -264,7 +264,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     $msg = $(e.currentTarget);
                     msgId = $msg.attr('data-msgId')
                 }
-
+                if (msgId) {
+                    this.client.chatManager.deleteMessage(parseFloat(msgId));
+                }
                 // если был передан id сообщения
                 if (!$msg) {
                     $msg = this.$el.find('li[data-msgId="' + msgId + '"]').remove();

@@ -171,17 +171,28 @@ define(['EE'], function(EE) {
                     this.emit('switch_player', this.currentRoom.current);
                 }
                 break;
+            default:
+                console.log('log;', 'GameManager.onUserEvent user:', user, 'event:', event);
+                this.emit('event', event);
         }
     };
 
 
     GameManager.prototype.leaveGame = function(){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
     };
 
 
     GameManager.prototype.leaveRoom = function(){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         if (!this.currentRoom.isClosed) throw new Error('leave not closed room! '+ this.currentRoom.id);
         console.log('game_manager;', 'emit game_leave;', this.currentRoom);
         this.emit('game_leave', this.currentRoom);
@@ -190,11 +201,19 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendReady = function(){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'ready', 'server', true);
     };
 
 
     GameManager.prototype.sendTurn = function(turn){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         if (this.currentRoom.userTime < 1000) {
             console.warn('game_manager;', 'your time is out!');
             return;
@@ -205,26 +224,59 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendThrow = function(){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'throw'});
     };
 
 
     GameManager.prototype.sendDraw = function(){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
     };
 
 
+    GameManager.prototype.sendEvent = function (type, event, target) {
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
+        console.log('log;', 'GameManager.sendEvent', type, event);
+        event.type = type;
+        if (target) event.target = target;
+        else target = 'server';
+        this.client.send('game_manager', 'event', target, event);
+    };
+
+
     GameManager.prototype.acceptDraw = function(){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'accept'});
     };
 
 
     GameManager.prototype.cancelDraw = function(){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'cancel'});
     };
 
 
     GameManager.prototype.getPlayer = function(id){
+        if (!this.currentRoom){
+            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            return
+        }
         if (this.currentRoom)
             for (var i = 0; i < this.currentRoom.players.length; i++)
                 if (this.currentRoom.players[i].userId == id) return this.currentRoom.players[i];

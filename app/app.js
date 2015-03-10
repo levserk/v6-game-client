@@ -45,6 +45,10 @@ require(['require-cnf'], function () {
                 console.log('main;','switch_player', 'next: ', data, 'is your turn: ', data == _client.getPlayer().userId);
             });
 
+            _client.gameManager.on('event', function(data){
+                console.log('main;','event', data);
+            });
+
             _client.gameManager.on('timeout', function(data){
                 console.log('main;','timeout', 'user: ', data.user, 'is your timeout: ', data.user == _client.getPlayer().userId);
             });

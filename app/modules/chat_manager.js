@@ -125,7 +125,7 @@ define(['EE'], function(EE) {
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
         console.log('chat_manager;', 'loading messages', count, time, this.first);
-       this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target});
+        this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target});
     };
 
 

@@ -20,6 +20,8 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             ]
         };
 
+        if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf);
+
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
     };
 

@@ -15,6 +15,18 @@ require(['require-cnf'], function () {
                     return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
                         + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);
                 },
+                initRating: function(conf){
+                    conf.columns.splice(conf.columns.length-2, 0, {
+                        id:'score', source:'score', title:'Очки', canOrder:true, undef: 100
+                    });
+                    return conf;
+                },
+                initHistory: function(conf){
+                    conf.columns.push({
+                        id:'score', source:'score', title:'Очки', undef: 100
+                    });
+                    return conf;
+                },
                 blocks:{
                     userListId:'userListDiv',
                     chatId:'chatDiv',

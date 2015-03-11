@@ -74,7 +74,8 @@ require(['require-cnf'], function () {
             });
 
             _client.gameManager.on('time', function(data){
-                console.log('main;','time user:', data);
+                if (data.userTimeS < 4)
+                    console.log('main;','time user:', data);
             });
 
             _client.on('show_profile', function(data){

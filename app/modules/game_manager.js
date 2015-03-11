@@ -297,7 +297,7 @@ define(['EE'], function(EE) {
         }
         var delta = time - this.prevTime;
 
-        if (delta > 333) {
+        if (delta > 100) {
             this.currentRoom.userTime -= delta;
             if (this.currentRoom.userTime  < 0) {
                 this.currentRoom.userTime = 0;
@@ -319,6 +319,7 @@ define(['EE'], function(EE) {
             user:this.currentRoom.current,
             userTimeMS: this.currentRoom.userTime,
             userTimeS: Math.floor(this.currentRoom.userTime/ 1000),
+            userTimePer: this.currentRoom.userTime / this.client.opts.turnTime / 1000,
             userTimeFormat: minutes + ':' + seconds
         });
     };

@@ -168,6 +168,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
+            if (this.client.unload) return;
             setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;

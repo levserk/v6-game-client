@@ -60,6 +60,11 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         });
 
         this.getUser = this.userList.getUser.bind(this.userList);
+
+        self.unload = false;
+        window.onbeforeunload = function(){
+            self.unload = true;
+        };
     };
 
     Client.prototype  = new EE();

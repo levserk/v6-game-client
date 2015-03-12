@@ -84,7 +84,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 break;
             case 'user_relogin':
                 var user = this.userList.getUser(data.userId);
-                console.log('log;', 'user relogin', user);
+                console.log('client;', 'user relogin', user);
                 if (user) this.emit('user_relogin', user);
                 break;
             case 'user_login':
@@ -193,7 +193,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         if (!userName) {
             var user = this.userList.getUser(userId);
             if (!user) {
-                console.log('err;', 'user', userId, ' is not online!, can not get his name');
+                console.error('client;', 'user', userId, ' is not online!, can not get his name');
                 return;
             }
             userName = user.userName;

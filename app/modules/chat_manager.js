@@ -167,12 +167,12 @@ define(['EE'], function(EE) {
 
 
     ChatManager.prototype.banUser = function(userId, days, reason) {
-        console.log('log;', 'ChatManager.banUser', userId, days, reason);
+        console.log('chat_manager;', 'banUser', userId, days, reason);
         this.client.send('chat_manager', 'ban', 'server', {userId:userId, days:days, reason:reason});
     };
 
     ChatManager.prototype.deleteMessage = function(time) {
-        console.log('log;', 'ChatManager.deleteMessage', time);
+        console.log('chat_manager;', 'deleteMessage', time);
         this.client.send('chat_manager', 'delete', 'server', {time:time});
     };
 

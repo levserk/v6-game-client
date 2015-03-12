@@ -172,7 +172,7 @@ define(['EE'], function(EE) {
                 }
                 break;
             default:
-                console.log('log;', 'GameManager.onUserEvent user:', user, 'event:', event);
+                console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
                 this.emit('event', event);
         }
     };
@@ -180,7 +180,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.leaveGame = function(){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'leaveGame', 'game not started!');
             return
         }
         // TODO: send to server leave game, block game and wait leave message
@@ -190,7 +190,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.leaveRoom = function(){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'leaveRoom', 'game not started!');
             return
         }
         if (!this.currentRoom.isClosed) throw new Error('leave not closed room! '+ this.currentRoom.id);
@@ -202,7 +202,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.sendReady = function(){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'sendReady', 'game not started!');
             return
         }
         this.client.send('game_manager', 'ready', 'server', true);
@@ -211,7 +211,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.sendTurn = function(turn){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'sendTurn', 'game not started!');
             return
         }
         if (this.currentRoom.userTime < 1000) {
@@ -225,7 +225,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.sendThrow = function(){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager', 'sendThrow', 'game not started!');
             return
         }
         this.client.send('game_manager', 'event', 'server', {type:'throw'});
@@ -234,7 +234,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.sendDraw = function(){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'sendDraw', 'game not started!');
             return
         }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
@@ -243,10 +243,10 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.sendEvent = function (type, event, target) {
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'sendEvent', 'game not started!');
             return
         }
-        console.log('log;', 'GameManager.sendEvent', type, event);
+        console.log('game_manager;', 'sendEvent', type, event);
         event.type = type;
         if (target) event.target = target;
         else target = 'server';
@@ -256,7 +256,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.acceptDraw = function(){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'acceptDraw', 'game not started!');
             return
         }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'accept'});
@@ -265,7 +265,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.cancelDraw = function(){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'cancelDraw', 'game not started!');
             return
         }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'cancel'});
@@ -274,7 +274,7 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.getPlayer = function(id){
         if (!this.currentRoom){
-            console.log('err;', 'GameManager.sendEvent', 'game not started!');
+            console.error('game_manager;', 'getPlayer', 'game not started!');
             return
         }
         if (this.currentRoom)

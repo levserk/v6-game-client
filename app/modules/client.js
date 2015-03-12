@@ -2,12 +2,20 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.6.21";
+        this.version = "0.6.22";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
         opts.turnTime = opts.turnTime || 60;
         opts.blocks = opts.blocks || {};
+        opts.images = opts.images || {
+            close: 'i/close.png',
+            spin:  'i/spin.gif',
+            sortAsc:  'i/sort-asc.png',
+            sortDesc:  'i/sort-desc.png',
+            sortBoth:  'i/sort-both.png',
+            del: 'i/delete.png'
+        };
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();

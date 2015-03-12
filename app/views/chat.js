@@ -156,6 +156,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
             initialize: function(_client) {
                 this.client = _client;
+                this.images = _client.opts.images;
                 this.$el.html(this.tplMain());
 
                 this.MAX_MSG_LENGTH = 128;
@@ -176,7 +177,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 }
                 window.document.body.addEventListener('click', this.hideMenuElement.bind(this));
 
-                this.$rules = $(this.tplRules());
+                this.$rules = $(this.tplRules({close: this.images.close}));
                 window.document.body.appendChild(this.$rules[0]);
                 this.$rules.find('img.closeIcon').on('click', function() {
                     this.$rules.hide();
@@ -184,7 +185,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
 
-                this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner"></div></li>');
+                this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner" style="background: url(' + this.images.spin + ');"></div></li>');
                 this.$messagesWrap = this.$el.find('.messagesWrap');
                 this.$msgsList = this.$messagesWrap.find('ul');
                 this.$inputMsg = this.$el.find('.inputMsg');
@@ -283,7 +284,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             _addOneMsg: function(msg) {
                 //console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle) return;
-                var $msg = this.tplMsg({msg:msg});
+                var $msg = this.tplMsg({msg:msg, imgDel:this.images.del});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
 
                 if (!this.client.chatManager.last[msg.target] || this.client.chatManager.last[msg.target].d != msg.d) this.$msgsList.append(this.tplDay(msg));
@@ -313,7 +314,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 if (oldDay) oldDay.remove();
                 // add day previous msg
                 if (this.client.chatManager.first[msg.target].d != msg.d) this.$msgsList.prepend(this.tplDay(this.client.chatManager.first[msg.target]));
-                var $msg = this.tplMsg({msg: msg});
+                var $msg = this.tplMsg({msg: msg, imgDel:this.images.del});
                 this.$msgsList.prepend($msg);
                 // add day this, now firs message
                 this.$msgsList.prepend(this.tplDay(msg));

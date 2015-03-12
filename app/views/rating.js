@@ -59,7 +59,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain());
+                this.$el.html(this.tplMain({close:this.conf.images.close, spin: this.conf.images.spin}));
 
                 this.$tabs = $(this.$el.find('.filterPanel').children()[0]);
                 this.$titles = this.$el.find('.headTitles');
@@ -68,9 +68,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
 
                 this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
-                this.IMG_BOTH = '<img src="i/sort-both.png">';
-                this.IMG_ASC= '<img src="i/sort-asc.png">';
-                this.IMG_DESC = '<img src="i/sort-desc.png">';
+                this.IMG_BOTH = '<img src="' + _conf.images.sortBoth + '">';
+                this.IMG_ASC= '<img src="' + _conf.images.sortAsc + '">';
+                this.IMG_DESC = '<img src="' + _conf.images.sortDesc + '">';
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
                 this.SORT = 'sorted';

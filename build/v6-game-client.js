@@ -2072,13 +2072,13 @@ define('views/dialogs',[],function() {
 define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
 
 
-define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение" style="background-image: url(i/sprite.png);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
+define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение" style="background-image: url(<%= imgDel %>);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
 
 
 define('text!tpls/v6-chatDay.ejs',[],function () { return '<li class="chatDay" data-day-msgId="<%= time %>">\r\n    <div>\r\n        <%= d %>\r\n    </div>\r\n</li>';});
 
 
-define('text!tpls/v6-chatRules.ejs',[],function () { return '<div id="chat-rules" class="aboutPanel">\r\n    <img class="closeIcon" src="i/close.png">\r\n\r\n    <div style="padding: 10px 12px 15px 25px;">\r\n        <h2>Правила чата</h2>\r\n        <p style="line-height: 16px;">В чате запрещено:<br>\r\n            <span style="margin-left:5px;">1. использование ненормативной лексики и оскорбительных выражений</span><br>\r\n            <span style="margin-left:5px;">2. хамское и некорректное общение с другими участниками</span><br>\r\n            <span style="margin-left:5px;">3. многократная публикация бессмысленных, несодержательных или одинаковых сообщений.</span>\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Баны</span> выносятся: на 1 день, на 3 дня, на 7 дней,на\r\n            месяц или навсегда, в зависимости от степени тяжести нарушения.\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Бан</span> снимается автоматически по истечении срока.\r\n        </p>\r\n\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-chatRules.ejs',[],function () { return '<div id="chat-rules" class="aboutPanel">\r\n    <img class="closeIcon" src="<%= close %>">\r\n\r\n    <div style="padding: 10px 12px 15px 25px;">\r\n        <h2>Правила чата</h2>\r\n        <p style="line-height: 16px;">В чате запрещено:<br>\r\n            <span style="margin-left:5px;">1. использование ненормативной лексики и оскорбительных выражений</span><br>\r\n            <span style="margin-left:5px;">2. хамское и некорректное общение с другими участниками</span><br>\r\n            <span style="margin-left:5px;">3. многократная публикация бессмысленных, несодержательных или одинаковых сообщений.</span>\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Баны</span> выносятся: на 1 день, на 3 дня, на 7 дней,на\r\n            месяц или навсегда, в зависимости от степени тяжести нарушения.\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Бан</span> снимается автоматически по истечении срока.\r\n        </p>\r\n\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-chatBan.ejs',[],function () { return '<div>\r\n    <span class="ban-username" style="font-weight:bold;">Бан игрока <i><%= userName%></i></span><br><br>\r\n    <span>Причина бана:</span>\r\n    <br>\r\n    <div class="inputTextField" id="ban-reason" contenteditable="true" style="height:54px; border: 1px solid #aaaaaa;"></div><br>\r\n\r\n    <span>Длительность бана:</span><br>\r\n    <select id="ban-duration">\r\n        <option value="1">1 день</option>\r\n        <option value="3">3 дня</option>\r\n        <option value="7" selected="">7 дней</option>\r\n        <option value="30">30 дней</option>\r\n        <option value="9999">Навсегда</option>\r\n    </select>\r\n\r\n</div>';});
@@ -2241,6 +2241,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
             initialize: function(_client) {
                 this.client = _client;
+                this.images = _client.opts.images;
                 this.$el.html(this.tplMain());
 
                 this.MAX_MSG_LENGTH = 128;
@@ -2261,7 +2262,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 }
                 window.document.body.addEventListener('click', this.hideMenuElement.bind(this));
 
-                this.$rules = $(this.tplRules());
+                this.$rules = $(this.tplRules({close: this.images.close}));
                 window.document.body.appendChild(this.$rules[0]);
                 this.$rules.find('img.closeIcon').on('click', function() {
                     this.$rules.hide();
@@ -2269,7 +2270,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
 
-                this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner"></div></li>');
+                this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner" style="background: url(' + this.images.spin + ');"></div></li>');
                 this.$messagesWrap = this.$el.find('.messagesWrap');
                 this.$msgsList = this.$messagesWrap.find('ul');
                 this.$inputMsg = this.$el.find('.inputMsg');
@@ -2368,7 +2369,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             _addOneMsg: function(msg) {
                 //console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle) return;
-                var $msg = this.tplMsg({msg:msg});
+                var $msg = this.tplMsg({msg:msg, imgDel:this.images.del});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
 
                 if (!this.client.chatManager.last[msg.target] || this.client.chatManager.last[msg.target].d != msg.d) this.$msgsList.append(this.tplDay(msg));
@@ -2398,7 +2399,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 if (oldDay) oldDay.remove();
                 // add day previous msg
                 if (this.client.chatManager.first[msg.target].d != msg.d) this.$msgsList.prepend(this.tplDay(this.client.chatManager.first[msg.target]));
-                var $msg = this.tplMsg({msg: msg});
+                var $msg = this.tplMsg({msg: msg, imgDel:this.images.del});
                 this.$msgsList.prepend($msg);
                 // add day this, now firs message
                 this.$msgsList.prepend(this.tplDay(msg));
@@ -2621,7 +2622,7 @@ define('modules/chat_manager',['EE'], function(EE) {
     return ChatManager;
 });
 
-define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader"><img class="closeIcon" src="i/close.png" title="Закрыть окно истории"></div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="i/spin.gif"></div>\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader"><img class="closeIcon" src="<%= close %>" title="Закрыть окно истории"></div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-historyHeaderTD.ejs',[],function () { return '<td class="sessionHeader historyDate" rowspan="<%= rows %>"> <%= date %> </td>\r\n<td class="sessionHeader historyName" rowspan="<%= rows %>">\r\n    <span class="userName" data-userid="<%= userId %>"><%= userName %></span>\r\n    <span class="userRank">(<%= rank %>)</span>\r\n    <span class="userScore"><%= score %></span>\r\n    <div class="eloDiff <%= (eloDiff>-1?\'diffPositive\':\'diffNegative\')%>"><%= eloDiff ===\'\'?\'\':(eloDiff>-1?\'+\'+eloDiff:eloDiff)%></div>\r\n</td>';});
@@ -2659,7 +2660,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                 this._manager = manager;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain());
+                this.$el.html(this.tplMain({close: _conf.images.close, spin: _conf.images.spin}));
 
                 this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
@@ -2827,6 +2828,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         };
 
         if (typeof client.opts.initHistory== "function") this.conf =  client.opts.initHistory(this.conf);
+        this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.historyId?$('#'+client.opts.blocks.historyId):$('body'));
         this.isCancel = false;
@@ -2998,7 +3000,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     return HistoryManager;
 });
 
-define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="i/close.png" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <div class="loading"><img src="i/spin.gif"></div>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="<%= close %>" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-ratingTD.ejs',[],function () { return '<td data-idcol="<%= id %>" class="rating<%= id %>"><div><%= value %><sup class="greenSup"><%= sup %></sup></div></td>';});
@@ -3079,7 +3081,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain());
+                this.$el.html(this.tplMain({close:this.conf.images.close, spin: this.conf.images.spin}));
 
                 this.$tabs = $(this.$el.find('.filterPanel').children()[0]);
                 this.$titles = this.$el.find('.headTitles');
@@ -3088,9 +3090,9 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
 
                 this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
-                this.IMG_BOTH = '<img src="i/sort-both.png">';
-                this.IMG_ASC= '<img src="i/sort-asc.png">';
-                this.IMG_DESC = '<img src="i/sort-desc.png">';
+                this.IMG_BOTH = '<img src="' + _conf.images.sortBoth + '">';
+                this.IMG_ASC= '<img src="' + _conf.images.sortAsc + '">';
+                this.IMG_DESC = '<img src="' + _conf.images.sortDesc + '">';
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
                 this.SORT = 'sorted';
@@ -3288,6 +3290,7 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
         };
 
         if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf);
+        this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
     };
@@ -3386,12 +3389,20 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.6.21";
+        this.version = "0.6.22";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
         opts.turnTime = opts.turnTime || 60;
         opts.blocks = opts.blocks || {};
+        opts.images = opts.images || {
+            close: 'i/close.png',
+            spin:  'i/spin.gif',
+            sortAsc:  'i/sort-asc.png',
+            sortDesc:  'i/sort-desc.png',
+            sortBoth:  'i/sort-both.png',
+            del: 'i/delete.png'
+        };
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();

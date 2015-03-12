@@ -32,6 +32,14 @@ require(['require-cnf'], function () {
                     chatId:'chatDiv',
                     ratingId:'ratingDiv',
                     historyId:'historyDiv'
+                },
+                images:{
+                    close: '//logic-games.spb.ru/v6-game-client/app/i/close.png',
+                    spin:  '//logic-games.spb.ru/v6-game-client/app/i/spin.gif',
+                    sortAsc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
+                    sortDesc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
+                    sortBoth:  '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
+                    del: '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
                 }
             }).init();
 

@@ -22,7 +22,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 this._manager = manager;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain());
+                this.$el.html(this.tplMain({close: _conf.images.close, spin: _conf.images.spin}));
 
                 this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);

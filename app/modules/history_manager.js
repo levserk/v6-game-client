@@ -17,6 +17,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         };
 
         if (typeof client.opts.initHistory== "function") this.conf =  client.opts.initHistory(this.conf);
+        this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.historyId?$('#'+client.opts.blocks.historyId):$('body'));
         this.isCancel = false;

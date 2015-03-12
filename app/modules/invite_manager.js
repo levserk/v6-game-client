@@ -54,7 +54,8 @@ define(['EE'], function(EE) {
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
 
-        if (this.isPlayRandom) {
+        if (this.isPlayRandom && this.client.currentMode == invite.mode) {
+            console.log('invite_manager;', 'auto accept invite', invite);
             this.accept(invite.from);
             return;
         }
@@ -158,8 +159,12 @@ define(['EE'], function(EE) {
 
         if (!cancel){
             for (var userId in this.invites){
-                this.accept(userId);
-                return;
+                if (this.invites[userId].mode == this.client.currentMode){
+                    console.log('invite_manager;', 'auto accept invite', this.invites[userId]);
+                    this.accept(userId);
+                    return;
+                }
+
             }
             this.isPlayRandom = true;
             var params = this.client.opts.getUserParams == 'function'?this.client.opts.getUserParams():{};

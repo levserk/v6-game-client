@@ -4,12 +4,12 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <title>StepByStep</title>
-    <link rel="stylesheet" href="../build/v6-game-client.css"/>
-    <script src="lib/jquery-2.1.1.min.js"></script>
-    <script src="lib/jquery-ui.js"></script>
-    <script src="lib/underscore-min.js"></script>
-    <script src="lib/backbone-min.js"></script>
-    <script src="../build/v6-game-client.js"></script>
+    <link rel="stylesheet" href="//logic-games.spb.ru/v6-game-client/build/v6-game-client.css"/>
+    <script src="//logic-games.spb.ru/v6-game-client/app/lib/jquery-2.1.1.min.js"></script>
+    <script src="//logic-games.spb.ru/v6-game-client/app/lib/jquery-ui.js"></script>
+    <script src="//logic-games.spb.ru/v6-game-client/app/lib/underscore-min.js"></script>
+    <script src="//logic-games.spb.ru/v6-game-client/app/lib/backbone-min.js"></script>
+    <script src="//logic-games.spb.ru/v6-game-client/build/v6-game-client.js"></script>
 </head>
 <body>
 <div id="userListDiv"></div>
@@ -22,6 +22,7 @@
     document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
     window.LogicGame = {isSuperUser:function(){return true;}};
     window._client = new Client({
+        domain:'localhost',
         port: 8078,
         resultDialogDelay: 1000,
         reload: true,

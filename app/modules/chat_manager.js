@@ -35,11 +35,9 @@ define(['EE'], function(EE) {
     ChatManager.prototype = new EE();
 
 
-    ChatManager.initMessage = function(message, player){
-        for (var i in message.userData){
-            message.rank = message.userData[i].rank;
-            if (!message.rank || message.rank < 1) message.rank = '—';
-        }
+    ChatManager.initMessage = function(message, player, mode){
+        message.rank = message.userData[mode].rank;
+        if (!message.rank || message.rank < 1) message.rank = '—';
         if (message.target == player.userId) // is private message, set target sender
             message.target = message.userId;
 
@@ -67,7 +65,7 @@ define(['EE'], function(EE) {
         console.log('chat_manager;', 'message', message);
         switch (message.type) {
             case 'message':
-                message = ChatManager.initMessage(data, player);
+                message = ChatManager.initMessage(data, player, this.client.currentMode);
                 if (!this.first[message.target]) this.first[message.target] = message;
 
                 if (!this.messages[message.target]) this.messages[message.target] = [];
@@ -86,11 +84,11 @@ define(['EE'], function(EE) {
                     this.emit('load', null);
                     return;
                 }
-                message = ChatManager.initMessage(data[0], player);
+                message = ChatManager.initMessage(data[0], player, this.client.currentMode);
                 if (!this.messages[message.target]) this.messages[message.target] = [];
                 cache = this.messages[message.target];
                 for (i = 0; i < data.length; i++){
-                   this.onMessageLoad(ChatManager.initMessage(data[i], player), cache);
+                   this.onMessageLoad(ChatManager.initMessage(data[i], player, this.client.currentMode), cache);
                 }
                 break;
             case 'ban':

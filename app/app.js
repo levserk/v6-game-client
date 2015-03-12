@@ -4,7 +4,7 @@ require(['require-cnf'], function () {
             console.log('app start');
 
             // Test generate userId
-            //document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
+            document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
             window.LogicGame = {isSuperUser:function(){return true;}};
             window._client = new Client({
                 port: 8078,

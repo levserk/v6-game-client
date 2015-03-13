@@ -1648,11 +1648,9 @@ define('modules/chat_manager',['EE'], function(EE) {
     ChatManager.prototype = new EE();
 
 
-    ChatManager.initMessage = function(message, player){
-        for (var i in message.userData){
-            message.rank = message.userData[i].rank;
-            if (!message.rank || message.rank < 1) message.rank = '—';
-        }
+    ChatManager.initMessage = function(message, player, mode){
+        message.rank = message.userData[mode].rank;
+        if (!message.rank || message.rank < 1) message.rank = '—';
         if (message.target == player.userId) // is private message, set target sender
             message.target = message.userId;
 
@@ -1680,7 +1678,7 @@ define('modules/chat_manager',['EE'], function(EE) {
         console.log('chat_manager;', 'message', message);
         switch (message.type) {
             case 'message':
-                message = ChatManager.initMessage(data, player);
+                message = ChatManager.initMessage(data, player, this.client.currentMode);
                 if (!this.first[message.target]) this.first[message.target] = message;
 
                 if (!this.messages[message.target]) this.messages[message.target] = [];
@@ -1699,11 +1697,11 @@ define('modules/chat_manager',['EE'], function(EE) {
                     this.emit('load', null);
                     return;
                 }
-                message = ChatManager.initMessage(data[0], player);
+                message = ChatManager.initMessage(data[0], player, this.client.currentMode);
                 if (!this.messages[message.target]) this.messages[message.target] = [];
                 cache = this.messages[message.target];
                 for (i = 0; i < data.length; i++){
-                   this.onMessageLoad(ChatManager.initMessage(data[i], player), cache);
+                   this.onMessageLoad(ChatManager.initMessage(data[i], player, this.client.currentMode), cache);
                 }
                 break;
             case 'ban':
@@ -2559,7 +2557,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.6.22";
+        this.version = "0.6.23";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

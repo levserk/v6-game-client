@@ -145,8 +145,17 @@
     font-weight: normal; !important;
 }
 
-.ratingTable .ratingVictory{
-    padding-left: 80px;
+.ratingTable .ratingpercent{
+    text-align: center;
+}
+
+.ratingTable .ratingdateCreate{
+    text-align: center;
+}
+
+.ratingTable .ratingwin div{
+    width: 15px;
+    margin: 0 auto;
 }
 
 

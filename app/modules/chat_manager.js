@@ -36,7 +36,7 @@ define(['EE'], function(EE) {
 
 
     ChatManager.initMessage = function(message, player, mode){
-        message.rank = message.userData[mode].rank;
+        if (message.userData[mode]) message.rank = message.userData[mode].rank;
         if (!message.rank || message.rank < 1) message.rank = '—';
         if (message.target == player.userId) // is private message, set target sender
             message.target = message.userId;

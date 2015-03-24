@@ -7,6 +7,7 @@ require(['require-cnf'], function () {
             document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
             window.LogicGame = {isSuperUser:function(){return true;}};
             window._client = new Client({
+                game: 'test2',
                 port: 8078,
                 resultDialogDelay: 1000,
                 reload: true,
@@ -62,7 +63,7 @@ require(['require-cnf'], function () {
             });
 
             _client.gameManager.on('switch_player', function(data){
-                console.log('main;','switch_player', 'next: ', data, 'is your turn: ', data == _client.getPlayer().userId);
+                console.log('main;','switch_player', 'next: ', data, 'your next: ', data.userId == _client.getPlayer().userId);
             });
 
             _client.gameManager.on('event', function(data){
@@ -81,8 +82,12 @@ require(['require-cnf'], function () {
                 console.log('main;','game_leave room:', data);
             });
 
+            _client.gameManager.on('game_load', function(data){
+                console.log('main;','game_loaded, game history:', data);
+            });
+
             _client.gameManager.on('time', function(data){
-                if (data.userTimeS < 4)
+                if (data.userTimeMS > 0 && data.userTimeS < 1)
                     console.log('main;','time user:', data);
             });
 

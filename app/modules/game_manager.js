@@ -110,6 +110,27 @@ define(['EE'], function(EE) {
         this.currentRoom = room;
         this.emit('game_start', room);
         this.onRoundStart(data['initData']);
+        data.history = '['+data.history+']';
+        data.history = data.history.replace(new RegExp('@', 'g'),',');
+        var history = JSON.parse(data.history);
+        if (data.playerTurns.length != 0){
+            if (data.playerTurns.length == 1)
+                data.playerTurns = data.playerTurns[0];
+            history.push(data.playerTurns);
+        }
+        this.emit('game_load', history);
+        data.nextPlayer = this.getPlayer(data.nextPlayer);
+        if (data.nextPlayer){
+            this.currentRoom.current = data.nextPlayer;
+            this.currentRoom.userTime = this.client.opts.turnTime * 1000 - data.userTime;
+            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+            this.emit('switch_player', this.currentRoom.current);
+            this.emitTime();
+            if (!this.timeInterval){
+                this.prevTime = null;
+                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
+            }
+        }
     };
 
 

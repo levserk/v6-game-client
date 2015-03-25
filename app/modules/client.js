@@ -46,6 +46,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.socket.on("disconnection", function() {
             console.log('client;', 'socket disconnected');
+            self.isLogin = false;
             self.emit('disconnected');
         });
 
@@ -93,7 +94,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var data = message.data;
         switch (message.type){
             case 'login':
-                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban);
+                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban, data.options);
                 break;
             case 'user_relogin':
                 var user = this.userList.getUser(data.userId);
@@ -119,23 +120,24 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban){
-        console.log('client;', 'login', user, userlist, rooms, opts, ban);
+    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban, options){
+        console.log('client;', 'login', user, userlist, rooms, opts, ban, options);
 
         this.game = this.opts.game = opts.game;
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
         this.opts.turnTime = opts.turnTime;
         this.chatManager.ban = ban;
-
         this.currentMode = this.modes[0];
-        this.emit('login', user);
+
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
 
-
         this.isLogin = true;
+
+        this.emit('login', user);
+
         this.ratingManager.init();
         this.historyManager.init();
     };
@@ -144,6 +146,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.send = function (module, type, target, data) {
         if (!this.socket.isConnected){
             console.error('Client can not send message, socket is not connected!');
+            return;
+        }
+        if (!this.isLogin){
+            console.error('Client can not send message, client is not login!');
             return;
         }
         if (typeof module == "object" && module.module && module.type && module.data) {
@@ -223,6 +229,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.getModeAlias = function(mode){
         if (this.modesAlias[mode]) return this.modesAlias[mode];
         else return mode;
+    };
+
+
+    Client.prototype.saveOptions = function(options){
+        if (!options) return;
+        this.send('server', 'options', 'server', options);
     };
 
     return Client;

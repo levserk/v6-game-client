@@ -14,9 +14,19 @@ define(['EE'], function(EE) {
             }
             self.removeInvite(user.userId);
         });
+        client.on('user_relogin', function (user) {
+            if (self.invite && self.invite.target == user.userId) {
+                self.invite = null;
+                user.isInvited = false;
+            }
+            self.removeInvite(user.userId);
+        });
         client.gameManager.on('game_start', function(){
-            self.invite = null;
+            self.cancel();
             self.rejectAll();
+            self.invite = null;
+            self.isPlayRandom = false;
+            self.client.viewsManager.userListView._setRandomPlay();
         });
         client.on('disconnected', function(){
             self.invite = null;
@@ -43,6 +53,13 @@ define(['EE'], function(EE) {
     InviteManager.prototype.onInvite = function(invite){
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
+
+        if (this.isPlayRandom && this.client.currentMode == invite.mode) {
+            console.log('invite_manager;', 'auto accept invite', invite);
+            this.accept(invite.from);
+            return;
+        }
+
         this.emit('new_invite', {
             from: this.client.getUser(invite.from),
             data: invite
@@ -130,6 +147,36 @@ define(['EE'], function(EE) {
         if (this.invites[userId]){
             this.emit('remove_invite', this.invites[userId]);
             delete this.invites[userId];
+        }
+    };
+
+
+    InviteManager.prototype.playRandom = function(cancel){
+        if (this.client.gameManager.inGame()){
+            console.warn('You are already in game!');
+            return;
+        }
+
+        if (!cancel){
+            for (var userId in this.invites){
+                if (this.invites[userId].mode == this.client.currentMode){
+                    console.log('invite_manager;', 'auto accept invite', this.invites[userId]);
+                    this.accept(userId);
+                    return;
+                }
+
+            }
+            this.isPlayRandom = true;
+            var params = this.client.opts.getUserParams == 'function'?this.client.opts.getUserParams():{};
+            if (params.mode){
+                console.error('invite param mode is reserved!');
+                return;
+            }
+            params.mode = this.client.currentMode;
+            this.client.send('invite_manager', 'random', 'server', params);
+        } else {
+            this.isPlayRandom = false;
+            this.client.send('invite_manager', 'random', 'server', true);
         }
     };
 

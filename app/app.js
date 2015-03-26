@@ -3,11 +3,14 @@ require(['require-cnf'], function () {
         require(['main.js'], function (Client) {
             console.log('app start');
 
+            var settingsTemplate = '<div><p>Цвет</p> <div> <label><input type="radio" name="color" value="red" >красный</label> <label><input type="radio" name="color" value="black" >черный</label> </div> </div> <p>Настройки игры</p> <div> <div class="option"> <label><input type="checkbox" name="sounds"> Включить звук</label> </div> <div class="option"> <label><input type="checkbox" name="disableInvite"> Запретить приглашать меня в игру</label> </div></div>';
+
             // Test generate userId
             //document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
             window.LogicGame = {isSuperUser:function(){return true;}};
             window._client = new Client({
-                port: 8080,
+                game: 'test2',
+                port: 8078,
                 resultDialogDelay: 1000,
                 reload: true,
                 getUserParams: function(){return {gameType:'Main Mode'}},
@@ -15,12 +18,36 @@ require(['require-cnf'], function () {
                     return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
                         + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);
                 },
+                initRating: function(conf){
+                    conf.columns.splice(conf.columns.length-2, 0, {
+                        id:'score', source:'score', title:'Очки', canOrder:true, undef: 100
+                    });
+                    return conf;
+                },
+                initHistory: function(conf){
+                    conf.columns.push({
+                        id:'score', source:'score', title:'Очки', undef: 100
+                    });
+                    return conf;
+                },
                 blocks:{
                     userListId:'userListDiv',
                     chatId:'chatDiv',
                     ratingId:'ratingDiv',
                     historyId:'historyDiv'
-                }
+                },
+                images:{
+                    close: '//logic-games.spb.ru/v6-game-client/app/i/close.png',
+                    spin:  '//logic-games.spb.ru/v6-game-client/app/i/spin.gif',
+                    sortAsc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
+                    sortDesc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
+                    sortBoth:  '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
+                    del: '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
+                },
+                settings:{
+                    color: 'red'
+                },
+                settingsTemplate: settingsTemplate
             }).init();
 
             var _client = window._client;
@@ -42,7 +69,11 @@ require(['require-cnf'], function () {
             });
 
             _client.gameManager.on('switch_player', function(data){
-                console.log('main;','switch_player', 'next: ', data, 'is your turn: ', data == _client.getPlayer().userId);
+                console.log('main;','switch_player', 'next: ', data, 'your next: ', data.userId == _client.getPlayer().userId);
+            });
+
+            _client.gameManager.on('event', function(data){
+                console.log('main;','event', data);
             });
 
             _client.gameManager.on('timeout', function(data){
@@ -57,12 +88,25 @@ require(['require-cnf'], function () {
                 console.log('main;','game_leave room:', data);
             });
 
+            _client.gameManager.on('game_load', function(data){
+                console.log('main;','game_loaded, game history:', data);
+            });
+
             _client.gameManager.on('time', function(data){
-                console.log('main;','time user:', data);
+                if (data.userTimeMS > 0 && data.userTimeS < 1)
+                    console.log('main;','time user:', data);
             });
 
             _client.on('show_profile', function(data){
                 console.log('main;','show_profile user:', data);
+            });
+
+            _client.on('settings_changed', function(data){
+                console.log('main;','settings_changed property:', data);
+            });
+
+            _client.on('settings_saved', function(data){
+                console.log('main;','settings_changed settings:', data);
             });
 
 

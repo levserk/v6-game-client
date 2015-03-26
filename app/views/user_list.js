@@ -8,10 +8,11 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         tplInGame: _.template(tplInGame),
         tplMain: _.template(tplMain),
         events: {
-            'click .inviteBtn': 'invitePlayer',
+            'click .inviteBtn': '_inviteBtnClicked',
             'click .userName': 'userClick',
             'click .tabs div': 'clickTab',
-            'click .disconnectButton': '_reconnect'
+            'click .disconnectButton': '_reconnect',
+            'click #randomPlay': 'playClicked'
         },
         _reconnect: function() {
             if (this.client.opts.reload) {
@@ -42,15 +43,18 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 userId = target.attr('data-userId');
             this.client.onShowProfile(userId);
         },
-        invitePlayer: function(e) {
+        _inviteBtnClicked: function(e) {
+            var target = $(e.currentTarget),
+                userId = target.attr('data-userId');
+            this.invitePlayer(userId)
+        },
+        invitePlayer: function(userId) {
             if (this.client.gameManager.currentRoom) {
                 console.log('you already in game!');
                 return;
             }
 
-            var target = $(e.currentTarget),
-                userId = target.attr('data-userId');
-
+            var target = this.$el.find('.inviteBtn[data-userId="' + userId + '"]');
 
             if (target.hasClass(this.ACTIVE_INVITE_CLASS)) {
                 // cancel invite
@@ -66,6 +70,10 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             }
 
             console.log('invite user', userId);
+        },
+        playClicked: function (e) {
+            this.client.inviteManager.playRandom(this.client.inviteManager.isPlayRandom);
+            this._setRandomPlay();
         },
         initialize: function(_client) {
             var bindedRender = this.render.bind(this);
@@ -89,9 +97,13 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
 
+            this.TEXT_PLAY_ACTIVE = 'Идет подбор игрока...';
+            this.TEXT_PLAY_UNACTIVE = 'Играть с любым';
+
             this.$list = this.$el.find('.tableWrap table');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
+            this.$btnPlay = this.$el.find('#randomPlay');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
             this.listenTo(this.client, 'mode_switch', bindedRender);
@@ -101,10 +113,21 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.listenTo(this.client.userList, 'new_room', bindedRender);
             this.listenTo(this.client.userList, 'close_room', bindedRender);
             this.listenTo(this.client, 'disconnected', bindedRender);
+            this.listenTo(this.client, 'user_relogin', bindedRender);
 
             this.currentActiveTabName = 'free';
             this._setActiveTab(this.currentActiveTabName);
             this.$list.html(this.$loadingTab);
+            this.randomPlay = false;
+        },
+        _setRandomPlay: function(){
+            if (this.client.inviteManager.isPlayRandom) {
+                this.$btnPlay.html(this.TEXT_PLAY_ACTIVE);
+                this.$btnPlay.addClass('active');
+            } else {
+                this.$btnPlay.html(this.TEXT_PLAY_UNACTIVE);
+                this.$btnPlay.removeClass('active');
+            }
         },
         _setActiveTab: function(tabName) {
             this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
@@ -145,7 +168,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
-            this._showPlayerListByTabName();
+            if (this.client.unload) return;
+            setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;
         }

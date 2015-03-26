@@ -127,6 +127,23 @@ define(['EE'], function(EE) {
             } else delete user.isInvited;
             if (!user.isInRoom) userList.push(user);
         }
+        userList.sort(function(a, b){
+            var ar = a.getRank();
+            if (isNaN(+ar)) {
+                ar = 99999999;
+                if (a.isPlayer) {
+                    ar = 10000000;
+                }
+            }
+            var br = b.getRank();
+            if (isNaN(+br)) {
+                br = 99999999;
+                if (b.isPlayer) {
+                    br = 100000000;
+                }
+            }
+            return +(ar >br)
+        });
         return userList;
     };
 

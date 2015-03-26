@@ -65,6 +65,9 @@ define(['EE'], function(EE) {
             case 'round_end':
                 this.onRoundEnd(data);
                 break;
+            case 'game_restart':
+                this.onGameRestart(data);
+                break;
             case 'error':
                 console.log('game_manager;', 'error', data);
                 break;
@@ -93,9 +96,41 @@ define(['EE'], function(EE) {
             ],
             first: this.getPlayer(data.first),
             id: data.id,
-            inviteData: data.inviteData
+            inviteData: data.inviteData,
+            score: this.currentRoom.score
         });
         this.emitTime();
+    };
+
+
+    GameManager.prototype.onGameRestart = function (data) {
+        console.log('game_manager;', 'game restart', data);
+        var room = new Room(data['roomInfo'], this.client);
+        console.log('game_manager;', 'emit game_start', room);
+        this.currentRoom = room;
+        this.emit('game_start', room);
+        this.onRoundStart(data['initData']);
+        data.history = '['+data.history+']';
+        data.history = data.history.replace(new RegExp('@', 'g'),',');
+        var history = JSON.parse(data.history);
+        if (data.playerTurns.length != 0){
+            if (data.playerTurns.length == 1)
+                data.playerTurns = data.playerTurns[0];
+            history.push(data.playerTurns);
+        }
+        this.emit('game_load', history);
+        data.nextPlayer = this.getPlayer(data.nextPlayer);
+        if (data.nextPlayer){
+            this.currentRoom.current = data.nextPlayer;
+            this.currentRoom.userTime = this.client.opts.turnTime * 1000 - data.userTime;
+            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+            this.emit('switch_player', this.currentRoom.current);
+            this.emitTime();
+            if (!this.timeInterval){
+                this.prevTime = null;
+                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
+            }
+        }
     };
 
 
@@ -106,6 +141,7 @@ define(['EE'], function(EE) {
         this.timeInterval = null;
         this.prevTime = null;
         this.currentRoom.current = null;
+        this.currentRoom.score = data.score;
         if (data.winner){
             if (data.winner == this.client.getPlayer().userId) { // win
                 console.log('game_manager;', 'win', data);
@@ -156,17 +192,28 @@ define(['EE'], function(EE) {
                     this.emit('switch_player', this.currentRoom.current);
                 }
                 break;
+            default:
+                console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
+                this.emit('event', event);
         }
     };
 
 
     GameManager.prototype.leaveGame = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'leaveGame', 'game not started!');
+            return
+        }
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
     };
 
 
     GameManager.prototype.leaveRoom = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'leaveRoom', 'game not started!');
+            return
+        }
         if (!this.currentRoom.isClosed) throw new Error('leave not closed room! '+ this.currentRoom.id);
         console.log('game_manager;', 'emit game_leave;', this.currentRoom);
         this.emit('game_leave', this.currentRoom);
@@ -175,11 +222,19 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendReady = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'sendReady', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'ready', 'server', true);
     };
 
 
     GameManager.prototype.sendTurn = function(turn){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'sendTurn', 'game not started!');
+            return
+        }
         if (this.currentRoom.userTime < 1000) {
             console.warn('game_manager;', 'your time is out!');
             return;
@@ -190,30 +245,68 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendThrow = function(){
+        if (!this.currentRoom){
+            console.error('game_manager', 'sendThrow', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'throw'});
     };
 
 
     GameManager.prototype.sendDraw = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'sendDraw', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
     };
 
 
+    GameManager.prototype.sendEvent = function (type, event, target) {
+        if (!this.currentRoom){
+            console.error('game_manager;', 'sendEvent', 'game not started!');
+            return
+        }
+        console.log('game_manager;', 'sendEvent', type, event);
+        event.type = type;
+        if (target) event.target = target;
+        else target = 'server';
+        this.client.send('game_manager', 'event', target, event);
+    };
+
+
     GameManager.prototype.acceptDraw = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'acceptDraw', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'accept'});
     };
 
 
     GameManager.prototype.cancelDraw = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'cancelDraw', 'game not started!');
+            return
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'cancel'});
     };
 
 
     GameManager.prototype.getPlayer = function(id){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'getPlayer', 'game not started!');
+            return
+        }
         if (this.currentRoom)
             for (var i = 0; i < this.currentRoom.players.length; i++)
                 if (this.currentRoom.players[i].userId == id) return this.currentRoom.players[i];
         return null;
+    };
+
+
+    GameManager.prototype.inGame = function (){
+        return this.currentRoom != null;
     };
 
 
@@ -225,7 +318,7 @@ define(['EE'], function(EE) {
         }
         var delta = time - this.prevTime;
 
-        if (delta > 333) {
+        if (delta > 100) {
             this.currentRoom.userTime -= delta;
             if (this.currentRoom.userTime  < 0) {
                 this.currentRoom.userTime = 0;
@@ -247,6 +340,7 @@ define(['EE'], function(EE) {
             user:this.currentRoom.current,
             userTimeMS: this.currentRoom.userTime,
             userTimeS: Math.floor(this.currentRoom.userTime/ 1000),
+            userTimePer: this.currentRoom.userTime / this.client.opts.turnTime / 1000,
             userTimeFormat: minutes + ':' + seconds
         });
     };
@@ -257,8 +351,12 @@ define(['EE'], function(EE) {
         this.id = room.room;
         this.owner = client.getUser(room.owner);
         this.players = [];
+        this.score = {games:0};
         if (typeof room.players[0] == "object") this.players = room.players;
         else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
+        for (var i = 0; i < this.players.length; i++){
+            this.score[this.players[i].userId] = 0;
+        }
     }
 
     return GameManager;

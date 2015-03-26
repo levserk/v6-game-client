@@ -6,20 +6,22 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         this.currentRoom = null;
         this.conf = {
             tabs:[
-                {id: 'all_players', title: 'все игроки'},
-                {id: 'online_players', title: 'сейчас на сайте'}
+                {id: 'all_players', title: 'все игроки'}
             ],
             subTabs:[
             ],
             columns:[
                 {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
                 {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
-                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> эло',         canOrder:true },
-                {  id:'win',            source:'win',         title:'Выйграл <br> у соперников',canOrder:true },
+                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> Эло',         canOrder:true },
+                {  id:'win',            source:'win',         title:'Выиграл <br> у соперников',canOrder:true },
                 {  id:'percent',        source:'percent',     title:' % ',                      canOrder:false },
-                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> Регистрации',    canOrder:true }
+                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> регистрации',    canOrder:true }
             ]
         };
+
+        if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf);
+        this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
     };
@@ -74,8 +76,10 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
         if (this.client.userList.getUser(info.userId)) row.active = true;
         row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);
-        if (Date.now() - info.dateCreate < 172800000) row.dateCreate = this.ratingView.NOVICE;
-        else row.dateCreate = formatDate(info.dateCreate);
+        if (Date.now() - info.dateCreate < 86400000)
+            row.dateCreate = this.ratingView.NOVICE;
+        else
+            row.dateCreate = formatDate(info.dateCreate);
         return row;
     };
 

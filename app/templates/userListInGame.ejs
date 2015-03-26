@@ -1,6 +1,6 @@
 <% _.each(rooms, function(room) { %>
-<tr>
-    <td class="userName"><%= room.players[0].userName %></td>
-    <td class="userName"><%= room.players[1].userName %></td>
+<tr data-id="<%= room.room %>">
+    <td class="userName" title="<%= room.players[0].userName + ' (' +  room.players[0].getRank(room.mode) + ')' %>" ><%= room.players[0].userName %></td>
+    <td class="userName" title="<%= room.players[1].userName + ' (' +  room.players[1].getRank(room.mode) + ')' %>" ><%= room.players[1].userName %></td>
 </tr>
 <% }) %>

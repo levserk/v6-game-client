@@ -2,12 +2,21 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.6.0";
+        this.version = "0.7.3";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
         opts.turnTime = opts.turnTime || 60;
         opts.blocks = opts.blocks || {};
+        opts.images = opts.images || {
+            close: 'i/close.png',
+            spin:  'i/spin.gif',
+            sortAsc:  'i/sort-asc.png',
+            sortDesc:  'i/sort-desc.png',
+            sortBoth:  'i/sort-both.png',
+            del: 'i/delete.png'
+        };
+        opts.settings = opts.settings || {};
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -20,6 +29,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
+        this.defaultSettings = $.extend(defaultSettings, opts.settings);
         this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
@@ -38,6 +48,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.socket.on("disconnection", function() {
             console.log('client;', 'socket disconnected');
+            self.isLogin = false;
             self.emit('disconnected');
         });
 
@@ -52,6 +63,11 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         });
 
         this.getUser = this.userList.getUser.bind(this.userList);
+
+        self.unload = false;
+        window.onbeforeunload = function(){
+            self.unload = true;
+        };
     };
 
     Client.prototype  = new EE();
@@ -80,7 +96,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var data = message.data;
         switch (message.type){
             case 'login':
-                this.onLogin(data.you, data.userlist, data.rooms, data.opts);
+                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban, data.settings);
+                break;
+            case 'user_relogin':
+                var user = this.userList.getUser(data.userId);
+                console.log('client;', 'user relogin', user);
+                if (user) this.emit('user_relogin', user);
                 break;
             case 'user_login':
                 this.userList.onUserLogin(data);
@@ -101,20 +122,26 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms, opts){
-        console.log('client;', 'login', user, userlist, rooms, opts);
-
+    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban, settings){
+        console.log('client;', 'login', user, userlist, rooms, opts, ban, settings);
+        settings = settings || {};
         this.game = this.opts.game = opts.game;
-        this.turnTime = this.opts.turnTime = opts.turnTime;
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
-
+        this.opts.turnTime = opts.turnTime;
+        this.chatManager.ban = ban;
         this.currentMode = this.modes[0];
+        this.settings = $.extend(this.defaultSettings, settings);
+        console.log('client;', 'settings',  this.settings);
+
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
-        this.emit('login', user);
+
         this.isLogin = true;
+
+        this.emit('login', user);
+
         this.ratingManager.init();
         this.historyManager.init();
     };
@@ -123,6 +150,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.send = function (module, type, target, data) {
         if (!this.socket.isConnected){
             console.error('Client can not send message, socket is not connected!');
+            return;
+        }
+        if (!this.isLogin){
+            console.error('Client can not send message, client is not login!');
             return;
         }
         if (typeof module == "object" && module.module && module.type && module.data) {
@@ -185,7 +216,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         if (!userName) {
             var user = this.userList.getUser(userId);
             if (!user) {
-                console.log('err;', 'user', userId, ' is not online!, can not get his name');
+                console.error('client;', 'user', userId, ' is not online!, can not get his name');
                 return;
             }
             userName = user.userName;
@@ -202,6 +233,29 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.getModeAlias = function(mode){
         if (this.modesAlias[mode]) return this.modesAlias[mode];
         else return mode;
+    };
+
+
+    Client.prototype.saveSettings = function(settings){
+        settings = settings || this.settings;
+        var saveSettings = {};
+        for (var prop in this.defaultSettings){
+            if (this.defaultSettings.hasOwnProperty(prop))
+                saveSettings[prop] = settings[prop];
+        }
+        console.log('client;', 'save settings:', saveSettings);
+        this.send('server', 'settings', 'server', saveSettings);
+        this.emit('settings_saved', settings)
+    };
+
+
+    Client.prototype._onSettingsChanged = function(property){
+        this.emit('settings_changed', property);
+    };
+
+    var defaultSettings = {
+        disableInvite: false,
+        sounds: true
     };
 
     return Client;

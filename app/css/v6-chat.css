@@ -155,7 +155,6 @@
 }
 
 #v6Chat .spinner {
-    background: url("../i/spin.gif");
     width: 30px;
     height: 30px;
     background-size: contain;
@@ -193,13 +192,10 @@
     float: right;
     display: none;
     cursor: pointer;
-    width: 20px;
-    height: 20px;
-    background-image: url(../i/sprite.png);
+    width: 15px;
+    height: 15px;
     background-repeat: no-repeat;
-    background-position: -180px -20px;
-    float: right;
-    cursor: pointer;
+    background-position: center;
 }
 
 #v6Chat .chatMsg:hover .delete {

@@ -22,7 +22,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 this._manager = manager;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain());
+                this.$el.html(this.tplMain({close: _conf.images.close, spin: _conf.images.spin}));
 
                 this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
@@ -73,7 +73,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             },
 
             renderHead:function() {
-
+                for (var i = 0; i < this.columns.length; i++){
+                    this.$titles.append(this.tplTH({
+                            title: this.columns[i].title,
+                            value: this.columns[i].title,
+                            colspan: this.columns[i].dynamic?2:1
+                        })
+                    );
+                }
             },
 
             renderHistory: function (mode, history) {
@@ -109,11 +116,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                         userName: row.opponent.userName,
                         rank: row.opponent[mode]['rank'],
                         eloDiff: count>1?row.elo.diff:'',
-                        score: row.score
+                        score: row.gameScore
                     });
                 }
                 for (var i = 2; i < this.columns.length; i++){
                     col = row[this.columns[i].source];
+                    if (col == undefined) col = this.columns[i].undef;
                     if (this.columns[i].dynamic){
                         columns += this.tplTD((col['dynamic']>-1&&col['dynamic']!==''?'+':'')+ col['dynamic']);
                         columns += this.tplTD(col['value']);

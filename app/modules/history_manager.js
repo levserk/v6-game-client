@@ -8,13 +8,16 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             tabs:[],
             subTabs:[],
             columns:[
-                {  id:'Date',       source:'date',      title:'Дата' },
-                {  id:'Opponent',   source:'opponent',  title:'Противник' },
-                {  id:'Time',       source:'time',      title:'Время'     },
-                {  id:'Number',     source:'number',    title:'#' },
-                {  id:'Elo',        source:'elo',       title:'Рейтинг', dynamic:true, startValue:1600 }
+                {  id:'date',       source:'date',      title:'Дата' },
+                {  id:'opponent',   source:'opponent',  title:'Противник' },
+                {  id:'time',       source:'time',      title:'Время'     },
+                {  id:'number',     source:'number',    title:'#' },
+                {  id:'elo',        source:'elo',       title:'Рейтинг', dynamic:true, startValue:1600 }
             ]
         };
+
+        if (typeof client.opts.initHistory== "function") this.conf =  client.opts.initHistory(this.conf);
+        this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.historyId?$('#'+client.opts.blocks.historyId):$('body'));
         this.isCancel = false;
@@ -91,6 +94,12 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             prev = rows[0];
         }
         opponentId =  userId == hrow.players[0]? hrow.players[1] : hrow.players[0];
+        for (var i = 0; i < this.conf.columns.length; i++){
+            var col = this.conf.columns[i];
+            if (['date', 'opponent', 'time', 'number', 'elo'].indexOf(col.id) == -1){
+                row[col.source] = userData[userId][mode][col.source];
+            }
+        }
         row.opponent = userData[opponentId];
         row.date = formatDate(hrow.timeStart);
         row.time = formatTime(hrow.timeStart);
@@ -109,7 +118,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             row.win += prev.win;
             row.lose += prev.lose;
         }
-        row.score = row.win + ':' + row.lose;
+        row.gameScore = row.win + ':' + row.lose;
         //compute elo
         row.elo = {
             value:userData[userId][mode]['ratingElo']

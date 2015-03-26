@@ -1,5 +1,5 @@
-define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs', 'text!tpls/v6-chatDay.ejs', 'text!tpls/v6-chatRules.ejs'],
-    function(_, Backbone, tplMain, tplMsg, tplDay, tplRules) {
+define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-chatMsg.ejs', 'text!tpls/v6-chatDay.ejs', 'text!tpls/v6-chatRules.ejs', 'text!tpls/v6-chatBan.ejs'],
+    function(_, Backbone, tplMain, tplMsg, tplDay, tplRules, tplBan) {
         'use strict';
 
         var ChatView = Backbone.View.extend({
@@ -9,6 +9,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             tplMsg: _.template(tplMsg),
             tplDay: _.template(tplDay),
             tplRules: _.template(tplRules),
+            tplBan: _.template(tplBan),
             events: {
                 'click .chatMsg': '_deleteMsg',
                 'click .tab': 'clickTab',
@@ -22,6 +23,24 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 'click .chatRules': 'showChatRules'
             },
 
+            banUser: function(userId, userName){
+                var mng =  this.client.chatManager;
+                var div = $(this.tplBan({userName: userName})).attr('data-userId', userId).dialog({
+                    buttons: {
+                        "Добавить в бан": function() {
+                           mng.banUser($(this).attr('data-userId'),$(this).find('#ban-duration')[0].value, $(this).find('#ban-reason').html());
+                            $(this).remove();
+                        },
+                        "Отмена": function(){
+                            $(this).remove();
+                        }
+                    },
+                    close: function() {
+                        $(this).remove();
+                    }
+                }).parent().draggable();
+            },
+
             showChatRules: function() {
                 this.$rules.css({
                     top: ($(window).height() / 2) - (this.$rules.outerHeight() / 2),
@@ -32,10 +51,15 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             clickDialogAction: function(e) {
                 var actionObj = {
                     action: $(e.currentTarget).attr('data-action'),
-                    userId: this.$menu.attr('data-userId')
+                    userId: this.$menu.attr('data-userId'),
+                    userName: this.$menu.attr('data-userName')
                 };
 
-                console.log('chat dialog menu:', actionObj);
+                switch (actionObj.action){
+                    case 'showProfile': this.client.onShowProfile(actionObj.userId, actionObj.userName); break;
+                    case 'invite': this.client.viewsManager.userListView.invitePlayer(actionObj.userId); break;
+                    case 'ban': this.banUser(actionObj.userId, actionObj.userName); break;
+                }
             },
 
             showMenu: function(e) {
@@ -45,6 +69,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 setTimeout(function() {
                     this.$menu.attr('data-userId', $(e.target).parent().attr('data-userid'));
+                    this.$menu.attr('data-userName', $(e.target).html());
                     this.$menu.css({
                         left: OFFSET, // фиксированный отступ слева
                         top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
@@ -131,6 +156,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
             initialize: function(_client) {
                 this.client = _client;
+                this.images = _client.opts.images;
                 this.$el.html(this.tplMain());
 
                 this.MAX_MSG_LENGTH = 128;
@@ -151,7 +177,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 }
                 window.document.body.addEventListener('click', this.hideMenuElement.bind(this));
 
-                this.$rules = $(this.tplRules());
+                this.$rules = $(this.tplRules({close: this.images.close}));
                 window.document.body.appendChild(this.$rules[0]);
                 this.$rules.find('img.closeIcon').on('click', function() {
                     this.$rules.hide();
@@ -159,7 +185,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
 
-                this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner"></div></li>');
+                this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner" style="background: url(' + this.images.spin + ');"></div></li>');
                 this.$messagesWrap = this.$el.find('.messagesWrap');
                 this.$msgsList = this.$messagesWrap.find('ul');
                 this.$inputMsg = this.$el.find('.inputMsg');
@@ -189,6 +215,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.listenTo(this.client.chatManager, 'open_dialog', this._openDialog.bind(this));
                 this.listenTo(this.client.chatManager, 'close_dialog', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
+            },
+
+            setPublicTab: function(tabName){
+                this.tabs.public.target = tabName;
+                this.currentActiveTabName = 'public';
+                this._setActiveTab('public');
             },
 
             _setActiveTab: function(tabName) {
@@ -233,7 +265,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     $msg = $(e.currentTarget);
                     msgId = $msg.attr('data-msgId')
                 }
-
+                if (msgId) {
+                    this.client.chatManager.deleteMessage(parseFloat(msgId));
+                }
                 // если был передан id сообщения
                 if (!$msg) {
                     $msg = this.$el.find('li[data-msgId="' + msgId + '"]').remove();
@@ -250,7 +284,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             _addOneMsg: function(msg) {
                 //console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle) return;
-                var $msg = this.tplMsg({msg:msg});
+                var $msg = this.tplMsg({msg:msg, imgDel:this.images.del});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
 
                 if (!this.client.chatManager.last[msg.target] || this.client.chatManager.last[msg.target].d != msg.d) this.$msgsList.append(this.tplDay(msg));
@@ -280,7 +314,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 if (oldDay) oldDay.remove();
                 // add day previous msg
                 if (this.client.chatManager.first[msg.target].d != msg.d) this.$msgsList.prepend(this.tplDay(this.client.chatManager.first[msg.target]));
-                var $msg = this.tplMsg({msg: msg});
+                var $msg = this.tplMsg({msg: msg, imgDel:this.images.del});
                 this.$msgsList.prepend($msg);
                 // add day this, now firs message
                 this.$msgsList.prepend(this.tplDay(msg));

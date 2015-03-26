@@ -59,7 +59,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain());
+                this.$el.html(this.tplMain({close:this.conf.images.close, spin: this.conf.images.spin}));
 
                 this.$tabs = $(this.$el.find('.filterPanel').children()[0]);
                 this.$titles = this.$el.find('.headTitles');
@@ -68,9 +68,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
 
                 this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
-                this.IMG_BOTH = '<img src="i/sort-both.png">';
-                this.IMG_ASC= '<img src="i/sort-asc.png">';
-                this.IMG_DESC = '<img src="i/sort-desc.png">';
+                this.IMG_BOTH = '<img src="' + _conf.images.sortBoth + '">';
+                this.IMG_ASC= '<img src="' + _conf.images.sortAsc + '">';
+                this.IMG_DESC = '<img src="' + _conf.images.sortDesc + '">';
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
                 this.SORT = 'sorted';
@@ -119,8 +119,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     };
                     this.$titles.append(this.tplTH(th));
                     th.value = col.canOrder?this.IMG_BOTH:'';
-                    if (col.id == 'Rank') th.value= "";
-                    if (col.id == 'UserName') th.value = this.tplSearch();
+                    if (col.id == 'rank') th.value= "";
+                    if (col.id == 'userName') th.value = this.tplSearch();
                     this.$icons.append(this.tplTH(th));
                 }
                 this.setColumnOrder('ratingElo');
@@ -155,6 +155,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             renderRow: function(row, isUser){
                 var columns = ""; var col;
                 for (var i = 0; i < this.columns.length; i++){
+                    if (row[this.columns[i].source] == undefined) row[this.columns[i].source] = this.columns[i].undef;
                     col = {
                         id: this.columns[i].id,
                         value: row[this.columns[i].source],
@@ -228,8 +229,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 if (!ratings) {
                     this.isClosed = false;
                     this.$el.find('.loading').show();
+                    this.$head.hide();
                 }
                 else {
+                    this.$head.show();
                     this.$el.find('.loading').hide();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);

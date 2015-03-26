@@ -110,6 +110,27 @@ define('modules/game_manager',['EE'], function(EE) {
         this.currentRoom = room;
         this.emit('game_start', room);
         this.onRoundStart(data['initData']);
+        data.history = '['+data.history+']';
+        data.history = data.history.replace(new RegExp('@', 'g'),',');
+        var history = JSON.parse(data.history);
+        if (data.playerTurns.length != 0){
+            if (data.playerTurns.length == 1)
+                data.playerTurns = data.playerTurns[0];
+            history.push(data.playerTurns);
+        }
+        this.emit('game_load', history);
+        data.nextPlayer = this.getPlayer(data.nextPlayer);
+        if (data.nextPlayer){
+            this.currentRoom.current = data.nextPlayer;
+            this.currentRoom.userTime = this.client.opts.turnTime * 1000 - data.userTime;
+            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+            this.emit('switch_player', this.currentRoom.current);
+            this.emitTime();
+            if (!this.timeInterval){
+                this.prevTime = null;
+                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
+            }
+        }
     };
 
 
@@ -808,10 +829,10 @@ define('modules/socket',['EE'], function(EE) {
     return Socket;
 });
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName" data-userId="<%= user.userId %>"><%= user.userName %></td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>"><%= user.userName %></td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr>\r\n    <td class="userName"><%= room.players[0].userName %></td>\r\n    <td class="userName"><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
 define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span>Играть с любым</span>\r\n</div>';});
@@ -986,6 +1007,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
+            if (this.client.unload) return;
             setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;
@@ -1242,7 +1264,7 @@ define('views/dialogs',[],function() {
 define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
 
 
-define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение" style="background-image: url(<%= imgDel %>);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
+define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>" title="<%= msg.userName %>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение" style="background-image: url(<%= imgDel %>);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
 
 
 define('text!tpls/v6-chatDay.ejs',[],function () { return '<li class="chatDay" data-day-msgId="<%= time %>">\r\n    <div>\r\n        <%= d %>\r\n    </div>\r\n</li>';});
@@ -1590,7 +1612,149 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
         });
         return ChatView;
     });
-define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'], function(userListView, dialogsView, v6ChatView) {
+
+define('text!tpls/v6-settingsMain.ejs',[],function () { return '\r\n    <img class="closeIcon" src="<%= close %>">\r\n    <div class="settingsContainer">\r\n    <%= settings %>\r\n    </div>\r\n    <div >\r\n        <div class="confirmBtn">OK</div>\r\n    </div>\r\n';});
+
+
+define('text!tpls/v6-settingsDefault.ejs',[],function () { return '<p>Настройки игры</p>\r\n<div>\r\n    <div class="option">\r\n        <label><input type="checkbox" name="sounds">\r\n            Включить звук</label>\r\n    </div>\r\n    <div class="option">\r\n        <label><input type="checkbox" name="disableInvite">\r\n            Запретить приглашать меня в игру</label>\r\n    </div>\r\n</div>\r\n';});
+
+define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6-settingsDefault.ejs'],
+    function(_, Backbone, tplMain, tplDefault) {
+        
+
+        var SettingsView = Backbone.View.extend({
+            tagName: 'div',
+            id: 'v6-settings',
+            tplMain: _.template(tplMain),
+            tplDefault: _.template(tplDefault),
+            events: {
+                'click .closeIcon': 'close',
+                'change input': 'changed',
+                'click .confirmBtn': 'save'
+            },
+
+
+            initialize: function(client) {
+                this.client = client;
+                this.images  = client.opts.images;
+
+                this.$el.html(this.tplMain({close:this.images.close, settings: client.opts.settingsTemplate ? _.template(client.opts.settingsTemplate)() : this.tplDefault()}));
+
+                $('body').append(this.$el);
+                this.$el.hide();
+
+            },
+
+            changed: function (e){
+                var $target = $(e.target),
+                    type = $target.prop('type'),
+                    property = $target.prop('name'),
+                    value = type == "radio" ? $target.val() : $target.prop('checked'),
+                    settings = this.client.settings,
+                    defaultSettings = this.client.defaultSettings;
+
+                if (defaultSettings.hasOwnProperty(property)){
+                    console.log('settings; changed', {property: property, value: value, type: type});
+                    if (this.changedProperties.indexOf(property) == -1)this.changedProperties.push(property);
+                    this.client._onSettingsChanged({property: property, value: value, type: type});
+                } else {
+                    console.warn('settings;', 'default settings does not have property', property);
+                }
+            },
+
+            save: function () {
+                this.$el.hide();
+                this.isClosed = true;
+
+                var defaultSettings = this.client.defaultSettings,
+                    settings = this.client.settings,
+                    value, $input;
+                if (this.changedProperties.length == 0) {
+                    console.log('settings; nothing changed');
+                    return;
+                }
+                for (var property in defaultSettings){
+                    if (defaultSettings.hasOwnProperty(property)){
+                        value = settings[property];
+                        if (typeof value == "boolean") {
+                            $input = this.$el.find('input[name=' + property + ']');
+                            value = $input.prop('checked');
+                        }
+                        else {
+                            $input = this.$el.find('input[name=' + property + ']:checked');
+                            value = $input.val();
+                        }
+                        if ($input) {
+                            console.log('settings; save', property, value, $input.prop('type'));
+                            settings[property] = value;
+                        } else {
+                            console.error('settings;', 'input element not found! ', property);
+                        }
+                    }
+                }
+                this.client.saveSettings();
+            },
+
+            load: function () {
+                this.changedProperties = [];
+                var defaultSettings = this.client.defaultSettings,
+                    settings = this.client.settings,
+                    value, $input;
+                for (var property in defaultSettings){
+                    if (defaultSettings.hasOwnProperty(property)){
+                        value = settings[property];
+                        if (typeof value == "boolean")
+                            $input = this.$el.find('input[name=' + property + ']');
+                        else
+                            $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
+                        if ($input) {
+                            console.log('settings; load', property, value, $input.prop('type'));
+                            $input.prop('checked', !!value);
+                        } else {
+                            console.error('settings;', 'input element not found! ', property, value);
+                        }
+                    }
+                }
+            },
+
+            close: function () {
+                this.$el.hide();
+                this.isClosed = true;
+
+                //emit changed default
+                var $input, value, property, settings = this.client.settings;
+                for (var i = 0; i < this.changedProperties.length; i++){
+                    property = this.changedProperties[i];
+                    value = settings[property];
+                    if (typeof value == "boolean")
+                        $input = this.$el.find('input[name=' + property + ']');
+                    else
+                        $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
+                    if ($input) {
+                        console.log('settings; default', {property: property, value: value, type: $input.prop('type')});
+                        this.client._onSettingsChanged({property: property, value: value, type: $input.prop('type')});
+                    } else {
+                        console.error('settings;', 'input element not found! ', property, value);
+                    }
+                }
+            },
+
+
+            show: function () {
+                this.$el.css({
+                    top: ($(window).height() / 2) - (this.$el.outerHeight() / 2),
+                    left: ($(window).width() / 2) - (this.$el.outerWidth() / 2)
+                }).show();
+                this.load();
+            }
+
+        });
+
+
+        return SettingsView;
+    });
+
+define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], function(userListView, dialogsView, v6ChatView, v6SettingsView) {
     var ViewsManager = function(client){
         this.client = client;
         this.userListView = null;
@@ -1602,11 +1766,17 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         this.userListView = new userListView(this.client);
         this.dialogsView.init(this.client);
         this.v6ChatView = new v6ChatView(this.client);
+        this.settingsView = new v6SettingsView(this.client)
     };
 
     ViewsManager.prototype.closeAll = function(){
         this.client.ratingManager.close();
         this.client.historyManager.close();
+        this.settingsView.close();
+    };
+
+    ViewsManager.prototype.showSettings = function () {
+        this.settingsView.show();
     };
 
     return ViewsManager;
@@ -1649,7 +1819,7 @@ define('modules/chat_manager',['EE'], function(EE) {
 
 
     ChatManager.initMessage = function(message, player, mode){
-        message.rank = message.userData[mode].rank;
+        if (message.userData[mode]) message.rank = message.userData[mode].rank;
         if (!message.rank || message.rank < 1) message.rank = '—';
         if (message.target == player.userId) // is private message, set target sender
             message.target = message.userId;
@@ -2557,7 +2727,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.6.23";
+        this.version = "0.7.3";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -2571,6 +2741,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             sortBoth:  'i/sort-both.png',
             del: 'i/delete.png'
         };
+        opts.settings = opts.settings || {};
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -2583,6 +2754,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
+        this.defaultSettings = $.extend(defaultSettings, opts.settings);
         this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
@@ -2601,6 +2773,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.socket.on("disconnection", function() {
             console.log('client;', 'socket disconnected');
+            self.isLogin = false;
             self.emit('disconnected');
         });
 
@@ -2615,6 +2788,11 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         });
 
         this.getUser = this.userList.getUser.bind(this.userList);
+
+        self.unload = false;
+        window.onbeforeunload = function(){
+            self.unload = true;
+        };
     };
 
     Client.prototype  = new EE();
@@ -2643,7 +2821,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var data = message.data;
         switch (message.type){
             case 'login':
-                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban);
+                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban, data.settings);
                 break;
             case 'user_relogin':
                 var user = this.userList.getUser(data.userId);
@@ -2669,23 +2847,26 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban){
-        console.log('client;', 'login', user, userlist, rooms, opts, ban);
-
+    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban, settings){
+        console.log('client;', 'login', user, userlist, rooms, opts, ban, settings);
+        settings = settings || {};
         this.game = this.opts.game = opts.game;
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
         this.opts.turnTime = opts.turnTime;
         this.chatManager.ban = ban;
-
         this.currentMode = this.modes[0];
-        this.emit('login', user);
+        this.settings = $.extend(this.defaultSettings, settings);
+        console.log('client;', 'settings',  this.settings);
+
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
 
-
         this.isLogin = true;
+
+        this.emit('login', user);
+
         this.ratingManager.init();
         this.historyManager.init();
     };
@@ -2694,6 +2875,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.send = function (module, type, target, data) {
         if (!this.socket.isConnected){
             console.error('Client can not send message, socket is not connected!');
+            return;
+        }
+        if (!this.isLogin){
+            console.error('Client can not send message, client is not login!');
             return;
         }
         if (typeof module == "object" && module.module && module.type && module.data) {
@@ -2773,6 +2958,29 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.getModeAlias = function(mode){
         if (this.modesAlias[mode]) return this.modesAlias[mode];
         else return mode;
+    };
+
+
+    Client.prototype.saveSettings = function(settings){
+        settings = settings || this.settings;
+        var saveSettings = {};
+        for (var prop in this.defaultSettings){
+            if (this.defaultSettings.hasOwnProperty(prop))
+                saveSettings[prop] = settings[prop];
+        }
+        console.log('client;', 'save settings:', saveSettings);
+        this.send('server', 'settings', 'server', saveSettings);
+        this.emit('settings_saved', settings)
+    };
+
+
+    Client.prototype._onSettingsChanged = function(property){
+        this.emit('settings_changed', property);
+    };
+
+    var defaultSettings = {
+        disableInvite: false,
+        sounds: true
     };
 
     return Client;

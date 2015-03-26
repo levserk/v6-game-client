@@ -3,8 +3,10 @@ require(['require-cnf'], function () {
         require(['main.js'], function (Client) {
             console.log('app start');
 
+            var settingsTemplate = '<div><p>Цвет</p> <div> <label><input type="radio" name="color" value="red" >красный</label> <label><input type="radio" name="color" value="black" >черный</label> </div> </div> <p>Настройки игры</p> <div> <div class="option"> <label><input type="checkbox" name="sounds"> Включить звук</label> </div> <div class="option"> <label><input type="checkbox" name="disableInvite"> Запретить приглашать меня в игру</label> </div></div>';
+
             // Test generate userId
-            document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
+            //document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
             window.LogicGame = {isSuperUser:function(){return true;}};
             window._client = new Client({
                 game: 'test2',
@@ -41,7 +43,11 @@ require(['require-cnf'], function () {
                     sortDesc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
                     sortBoth:  '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
                     del: '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
-                }
+                },
+                settings:{
+                    color: 'red'
+                },
+                settingsTemplate: settingsTemplate
             }).init();
 
             var _client = window._client;
@@ -93,6 +99,14 @@ require(['require-cnf'], function () {
 
             _client.on('show_profile', function(data){
                 console.log('main;','show_profile user:', data);
+            });
+
+            _client.on('settings_changed', function(data){
+                console.log('main;','settings_changed property:', data);
+            });
+
+            _client.on('settings_saved', function(data){
+                console.log('main;','settings_changed settings:', data);
             });
 
 

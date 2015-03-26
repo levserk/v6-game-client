@@ -2,7 +2,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.7.0";
+        this.version = "0.7.3";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -16,6 +16,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             sortBoth:  'i/sort-both.png',
             del: 'i/delete.png'
         };
+        opts.settings = opts.settings || {};
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -28,6 +29,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
+        this.defaultSettings = $.extend(defaultSettings, opts.settings);
         this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
@@ -94,7 +96,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var data = message.data;
         switch (message.type){
             case 'login':
-                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban, data.options);
+                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban, data.settings);
                 break;
             case 'user_relogin':
                 var user = this.userList.getUser(data.userId);
@@ -120,15 +122,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban, options){
-        console.log('client;', 'login', user, userlist, rooms, opts, ban, options);
-
+    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban, settings){
+        console.log('client;', 'login', user, userlist, rooms, opts, ban, settings);
+        settings = settings || {};
         this.game = this.opts.game = opts.game;
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
         this.opts.turnTime = opts.turnTime;
         this.chatManager.ban = ban;
         this.currentMode = this.modes[0];
+        this.settings = $.extend(this.defaultSettings, settings);
+        console.log('client;', 'settings',  this.settings);
 
         var i;
         for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
@@ -232,9 +236,26 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     };
 
 
-    Client.prototype.saveOptions = function(options){
-        if (!options) return;
-        this.send('server', 'options', 'server', options);
+    Client.prototype.saveSettings = function(settings){
+        settings = settings || this.settings;
+        var saveSettings = {};
+        for (var prop in this.defaultSettings){
+            if (this.defaultSettings.hasOwnProperty(prop))
+                saveSettings[prop] = settings[prop];
+        }
+        console.log('client;', 'save settings:', saveSettings);
+        this.send('server', 'settings', 'server', saveSettings);
+        this.emit('settings_saved', settings)
+    };
+
+
+    Client.prototype._onSettingsChanged = function(property){
+        this.emit('settings_changed', property);
+    };
+
+    var defaultSettings = {
+        disableInvite: false,
+        sounds: true
     };
 
     return Client;

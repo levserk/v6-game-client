@@ -17,7 +17,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
             initialize: function(client) {
                 this.client = client;
                 this.images  = client.opts.images;
-
+                this.changedProperties = [];
                 this.$el.html(this.tplMain({close:this.images.close, settings: client.opts.settingsTemplate ? _.template(client.opts.settingsTemplate)() : this.tplDefault()}));
 
                 $('body').append(this.$el);

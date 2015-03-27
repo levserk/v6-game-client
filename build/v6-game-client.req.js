@@ -35,23 +35,7 @@ define('modules/game_manager',['EE'], function(EE) {
                 this.onRoundStart(data);
                 break;
             case 'turn':
-                console.log('game_manager;', 'emit turn', data);
-                if (data.turn.nextPlayer) {
-                    data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
-                    delete data.turn.nextPlayer;
-                }
-                this.emit('turn', data);
-                if (data.nextPlayer){
-                    this.currentRoom.current = data.nextPlayer;
-                    this.currentRoom.userTime = this.client.opts.turnTime * 1000;
-                    this.emit('switch_player', this.currentRoom.current);
-                    this.emitTime();
-                    if (!this.timeInterval){
-                        this.prevTime = null;
-                        this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
-                    }
-                }
-
+                this.onTurn(data);
                 break;
             case 'event':
                 var user = this.getPlayer(data.user);
@@ -167,6 +151,26 @@ define('modules/game_manager',['EE'], function(EE) {
         console.log('game_manager;', 'user_leave', this.currentRoom, user);
         if (user != this.client.getPlayer()) this.emit('user_leave', user);
         else this.leaveRoom();
+    };
+
+
+    GameManager.prototype.onTurn = function(data){
+        console.log('game_manager;', 'emit turn', data);
+        if (data.turn.nextPlayer) {
+            data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
+            delete data.turn.nextPlayer;
+        }
+        this.emit('turn', data);
+        if (data.nextPlayer){
+            this.currentRoom.current = data.nextPlayer;
+            this.currentRoom.userTime = this.client.opts.turnTime * 1000;
+            this.emit('switch_player', this.currentRoom.current);
+            this.emitTime();
+            if (!this.timeInterval){
+                this.prevTime = null;
+                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
+            }
+        }
     };
 
 
@@ -556,9 +560,6 @@ define('modules/user_list',['EE'], function(EE) {
         this.users = [];
         this.rooms = [];
 
-        client.on('login', function(user){
-            self.onUserLogin(user, true);
-        });
         client.on('disconnected', function(){
             self.rooms = [];
             self.users = [];
@@ -1637,7 +1638,7 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
             initialize: function(client) {
                 this.client = client;
                 this.images  = client.opts.images;
-
+                this.changedProperties = [];
                 this.$el.html(this.tplMain({close:this.images.close, settings: client.opts.settingsTemplate ? _.template(client.opts.settingsTemplate)() : this.tplDefault()}));
 
                 $('body').append(this.$el);
@@ -2727,7 +2728,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.7.3";
+        this.version = "0.7.4";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -2859,8 +2860,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.settings = $.extend(this.defaultSettings, settings);
         console.log('client;', 'settings',  this.settings);
 
-        var i;
-        for (i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
+        this.userList.onUserLogin(user, true);
+        for (var i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
 
         this.isLogin = true;

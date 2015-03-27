@@ -72,7 +72,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         game.userData = JSON.parse(game.userData);
         var players = [];
         for (var i = 0; i < game.players.length; i++){
-            players.push(game.userData[game.players[i]]);
+            players.push(this.client.userList.createUser(game.userData[game.players[i]]));
         }
         if (players.length != players.length) throw new Error('UserData and players are different!');
         game.players = players;

@@ -1140,6 +1140,14 @@ define('modules/user_list',['EE'], function(EE) {
     };
 
 
+    UserList.prototype.createUser = function(data) {
+        if (!data.userId || !data.userName){
+            console.error('user_list;', 'wrong data for User', data);
+        }
+        return new User(data, data.userId == this.player.userId, this.client);
+    };
+
+
     function User(data, fIsPlayer, client){
         if (!data || !data.userId || !data.userName) throw new Error("wrong user data!");
         for (var key in data){
@@ -3052,7 +3060,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         game.userData = JSON.parse(game.userData);
         var players = [];
         for (var i = 0; i < game.players.length; i++){
-            players.push(game.userData[game.players[i]]);
+            players.push(this.client.userList.createUser(game.userData[game.players[i]]));
         }
         if (players.length != players.length) throw new Error('UserData and players are different!');
         game.players = players;

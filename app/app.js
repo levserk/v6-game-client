@@ -97,6 +97,10 @@ require(['require-cnf'], function () {
                     console.log('main;','time user:', data);
             });
 
+            _client.historyManager.on('game_load', function(game){
+                console.log('main;','history game loaded, game:', game);
+            });
+
             _client.on('show_profile', function(data){
                 console.log('main;','show_profile user:', data);
             });

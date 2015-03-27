@@ -35,23 +35,7 @@ define(['EE'], function(EE) {
                 this.onRoundStart(data);
                 break;
             case 'turn':
-                console.log('game_manager;', 'emit turn', data);
-                if (data.turn.nextPlayer) {
-                    data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
-                    delete data.turn.nextPlayer;
-                }
-                this.emit('turn', data);
-                if (data.nextPlayer){
-                    this.currentRoom.current = data.nextPlayer;
-                    this.currentRoom.userTime = this.client.opts.turnTime * 1000;
-                    this.emit('switch_player', this.currentRoom.current);
-                    this.emitTime();
-                    if (!this.timeInterval){
-                        this.prevTime = null;
-                        this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
-                    }
-                }
-
+                this.onTurn(data);
                 break;
             case 'event':
                 var user = this.getPlayer(data.user);
@@ -167,6 +151,26 @@ define(['EE'], function(EE) {
         console.log('game_manager;', 'user_leave', this.currentRoom, user);
         if (user != this.client.getPlayer()) this.emit('user_leave', user);
         else this.leaveRoom();
+    };
+
+
+    GameManager.prototype.onTurn = function(data){
+        console.log('game_manager;', 'emit turn', data);
+        if (data.turn.nextPlayer) {
+            data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
+            delete data.turn.nextPlayer;
+        }
+        this.emit('turn', data);
+        if (data.nextPlayer){
+            this.currentRoom.current = data.nextPlayer;
+            this.currentRoom.userTime = this.client.opts.turnTime * 1000;
+            this.emit('switch_player', this.currentRoom.current);
+            this.emitTime();
+            if (!this.timeInterval){
+                this.prevTime = null;
+                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
+            }
+        }
     };
 
 

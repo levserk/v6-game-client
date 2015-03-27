@@ -87,6 +87,10 @@ define(['EE'], function(EE) {
 
     InviteManager.prototype.sendInvite = function(userId, params) {
         // find user, get current params, send invite and emit event invite sand // params.gameType;
+        if (this.client.gameManager.inGame()){
+            console.warn('You are already in game!');
+            return;
+        }
         if (!userId){
             console.warn('invite_manager; ', 'wrong userId to send invite', userId);
             return;
@@ -107,6 +111,10 @@ define(['EE'], function(EE) {
 
 
     InviteManager.prototype.accept = function(userId){
+        if (this.client.gameManager.inGame()){
+            console.warn('You are already in game!');
+            return;
+        }
         if (this.invites[userId]){
             var invite = this.invites[userId];
             delete this.invites[userId];

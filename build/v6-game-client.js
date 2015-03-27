@@ -457,7 +457,7 @@ define('modules/game_manager',['EE'], function(EE) {
         switch (message.type) {
             case 'new_game':
                 for ( i = 0; i < data.players.length; i++){
-                    if (data.players[i] == player || data.players[i] == player.userId){ //TODO: warn! userList changed user ids list to user list; leave old game
+                    if (data.players[i] == player){
                         if (this.currentRoom)
                             if (this.currentRoom.isClosed) this.leaveRoom();
                             else throw new Error('start game before current game finished! old: '+this.currentRoom.id+' new:'+data.room);
@@ -499,7 +499,6 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.onGameStart = function(room){
-        //TODO: check and hide invite
         room = new Room(room, this.client);
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
@@ -528,11 +527,17 @@ define('modules/game_manager',['EE'], function(EE) {
 
     GameManager.prototype.onGameRestart = function (data) {
         console.log('game_manager;', 'game restart', data);
+
+        //start game
         var room = new Room(data['roomInfo'], this.client);
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
+        room.score = data.score || room.score;
         this.emit('game_start', room);
+
         this.onRoundStart(data['initData']);
+
+        // load game history
         data.history = '['+data.history+']';
         data.history = data.history.replace(new RegExp('@', 'g'),',');
         var history = JSON.parse(data.history);
@@ -542,6 +547,8 @@ define('modules/game_manager',['EE'], function(EE) {
             history.push(data.playerTurns);
         }
         this.emit('game_load', history);
+
+        // switch player
         data.nextPlayer = this.getPlayer(data.nextPlayer);
         if (data.nextPlayer){
             this.currentRoom.current = data.nextPlayer;
@@ -749,7 +756,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.inGame = function (){
-        return this.currentRoom != null;
+        return this.currentRoom != null && this.getPlayer(this.client.getPlayer().userId);
     };
 
 
@@ -893,6 +900,10 @@ define('modules/invite_manager',['EE'], function(EE) {
 
     InviteManager.prototype.sendInvite = function(userId, params) {
         // find user, get current params, send invite and emit event invite sand // params.gameType;
+        if (this.client.gameManager.inGame()){
+            console.warn('You are already in game!');
+            return;
+        }
         if (!userId){
             console.warn('invite_manager; ', 'wrong userId to send invite', userId);
             return;
@@ -913,6 +924,10 @@ define('modules/invite_manager',['EE'], function(EE) {
 
 
     InviteManager.prototype.accept = function(userId){
+        if (this.client.gameManager.inGame()){
+            console.warn('You are already in game!');
+            return;
+        }
         if (this.invites[userId]){
             var invite = this.invites[userId];
             delete this.invites[userId];
@@ -1092,7 +1107,7 @@ define('modules/user_list',['EE'], function(EE) {
 
     UserList.prototype.getUsers = function() {
         var invite = this.client.inviteManager.invite;
-        if (invite) {
+        if (invite) { // mark invited user
             return _.map(this.users, function(usr) {
                 if (usr.userId === invite.target) {
                     usr.isInvited = true;
@@ -1109,7 +1124,7 @@ define('modules/user_list',['EE'], function(EE) {
         var userList = [], invite = this.client.inviteManager.invite, user;
         for (var i = 0; i < this.users.length; i++){
             user = this.users[i];
-            if (invite && user.userId == invite.target) {
+            if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
             if (!user.isInRoom) userList.push(user);
@@ -1131,6 +1146,25 @@ define('modules/user_list',['EE'], function(EE) {
             }
             return +(ar >br)
         });
+        return userList;
+    };
+
+
+    UserList.prototype.getFreeUserList = function() {
+        var userList = [], invite = this.client.inviteManager.invite, user;
+        for (var i = 0; i < this.users.length; i++){
+            user = this.users[i];
+            if (user.isPlayer){
+                continue;
+            }
+            if (invite && user.userId == invite.target) { // user is invited
+                continue;
+            }
+            if (user.isInRoom) {
+                continue;
+            }
+            userList.push(user);
+        }
         return userList;
     };
 
@@ -1727,8 +1761,8 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.invitePlayer(userId)
         },
         invitePlayer: function(userId) {
-            if (this.client.gameManager.currentRoom) {
-                console.log('you already in game!');
+            if (this.client.gameManager.inGame()) {
+                console.warn('You are already in game!');
                 return;
             }
 
@@ -2181,10 +2215,23 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             showMenu: function(e) {
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
-                    OFFSET = 20; // отступ, чтобы не закрывало имя
+                    OFFSET = 20, // отступ, чтобы не закрывало имя
+                    userId = $(e.target).parent().attr('data-userid');
 
                 setTimeout(function() {
-                    this.$menu.attr('data-userId', $(e.target).parent().attr('data-userid'));
+                    this.$menu.find('li[data-action=invite]').hide();
+                    if (!this.client.gameManager.inGame()) {                // show invite user, if we can
+                        var userlist = this.client.userList.getFreeUserList();
+                        if (userlist) {                                     // check user is free
+                            for (var i = 0; i < userlist.length; i++){
+                                if (userlist[i].userId == userId){
+                                    this.$menu.find('li[data-action=invite]').show();
+                                }
+                            }
+                        }
+                    }
+
+                    this.$menu.attr('data-userId', userId);
                     this.$menu.attr('data-userName', $(e.target).html());
                     this.$menu.css({
                         left: OFFSET, // фиксированный отступ слева
@@ -2991,7 +3038,6 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
 
     var HistoryManager = function (client) {
         this.client = client;
-        this.currentRoom = null;
         this.conf = {
             tabs:[],
             subTabs:[],
@@ -3449,7 +3495,6 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
 
     var RatingManager = function (client) {
         this.client = client;
-        this.currentRoom = null;
         this.conf = {
             tabs:[
                 {id: 'all_players', title: 'все игроки'}
@@ -3566,7 +3611,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.7.4";
+        this.version = "0.7.5";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

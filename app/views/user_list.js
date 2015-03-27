@@ -49,8 +49,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.invitePlayer(userId)
         },
         invitePlayer: function(userId) {
-            if (this.client.gameManager.currentRoom) {
-                console.log('you already in game!');
+            if (this.client.gameManager.inGame()) {
+                console.warn('You are already in game!');
                 return;
             }
 

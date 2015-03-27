@@ -18,7 +18,7 @@ define(['EE'], function(EE) {
         switch (message.type) {
             case 'new_game':
                 for ( i = 0; i < data.players.length; i++){
-                    if (data.players[i] == player || data.players[i] == player.userId){ //TODO: warn! userList changed user ids list to user list; leave old game
+                    if (data.players[i] == player){
                         if (this.currentRoom)
                             if (this.currentRoom.isClosed) this.leaveRoom();
                             else throw new Error('start game before current game finished! old: '+this.currentRoom.id+' new:'+data.room);
@@ -60,7 +60,6 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.onGameStart = function(room){
-        //TODO: check and hide invite
         room = new Room(room, this.client);
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
@@ -89,11 +88,17 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.onGameRestart = function (data) {
         console.log('game_manager;', 'game restart', data);
+
+        //start game
         var room = new Room(data['roomInfo'], this.client);
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
+        room.score = data.score || room.score;
         this.emit('game_start', room);
+
         this.onRoundStart(data['initData']);
+
+        // load game history
         data.history = '['+data.history+']';
         data.history = data.history.replace(new RegExp('@', 'g'),',');
         var history = JSON.parse(data.history);
@@ -103,6 +108,8 @@ define(['EE'], function(EE) {
             history.push(data.playerTurns);
         }
         this.emit('game_load', history);
+
+        // switch player
         data.nextPlayer = this.getPlayer(data.nextPlayer);
         if (data.nextPlayer){
             this.currentRoom.current = data.nextPlayer;
@@ -310,7 +317,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.inGame = function (){
-        return this.currentRoom != null;
+        return this.currentRoom != null && this.getPlayer(this.client.getPlayer().userId);
     };
 
 

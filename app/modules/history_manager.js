@@ -3,7 +3,6 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
 
     var HistoryManager = function (client) {
         this.client = client;
-        this.currentRoom = null;
         this.conf = {
             tabs:[],
             subTabs:[],

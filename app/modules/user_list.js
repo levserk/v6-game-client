@@ -102,7 +102,7 @@ define(['EE'], function(EE) {
 
     UserList.prototype.getUsers = function() {
         var invite = this.client.inviteManager.invite;
-        if (invite) {
+        if (invite) { // mark invited user
             return _.map(this.users, function(usr) {
                 if (usr.userId === invite.target) {
                     usr.isInvited = true;
@@ -119,7 +119,7 @@ define(['EE'], function(EE) {
         var userList = [], invite = this.client.inviteManager.invite, user;
         for (var i = 0; i < this.users.length; i++){
             user = this.users[i];
-            if (invite && user.userId == invite.target) {
+            if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
             if (!user.isInRoom) userList.push(user);
@@ -141,6 +141,25 @@ define(['EE'], function(EE) {
             }
             return +(ar >br)
         });
+        return userList;
+    };
+
+
+    UserList.prototype.getFreeUserList = function() {
+        var userList = [], invite = this.client.inviteManager.invite, user;
+        for (var i = 0; i < this.users.length; i++){
+            user = this.users[i];
+            if (user.isPlayer){
+                continue;
+            }
+            if (invite && user.userId == invite.target) { // user is invited
+                continue;
+            }
+            if (user.isInRoom) {
+                continue;
+            }
+            userList.push(user);
+        }
         return userList;
     };
 

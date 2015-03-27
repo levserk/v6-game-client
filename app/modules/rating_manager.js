@@ -3,7 +3,6 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
 
     var RatingManager = function (client) {
         this.client = client;
-        this.currentRoom = null;
         this.conf = {
             tabs:[
                 {id: 'all_players', title: 'все игроки'}

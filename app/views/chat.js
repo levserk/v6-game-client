@@ -65,10 +65,23 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             showMenu: function(e) {
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
-                    OFFSET = 20; // отступ, чтобы не закрывало имя
+                    OFFSET = 20, // отступ, чтобы не закрывало имя
+                    userId = $(e.target).parent().attr('data-userid');
 
                 setTimeout(function() {
-                    this.$menu.attr('data-userId', $(e.target).parent().attr('data-userid'));
+                    this.$menu.find('li[data-action=invite]').hide();
+                    if (!this.client.gameManager.inGame()) {                // show invite user, if we can
+                        var userlist = this.client.userList.getFreeUserList();
+                        if (userlist) {                                     // check user is free
+                            for (var i = 0; i < userlist.length; i++){
+                                if (userlist[i].userId == userId){
+                                    this.$menu.find('li[data-action=invite]').show();
+                                }
+                            }
+                        }
+                    }
+
+                    this.$menu.attr('data-userId', userId);
                     this.$menu.attr('data-userName', $(e.target).html());
                     this.$menu.css({
                         left: OFFSET, // фиксированный отступ слева

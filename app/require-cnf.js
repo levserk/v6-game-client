@@ -10,7 +10,8 @@ define(function() {
             tpls: 'templates',
             client: 'modules/client',
             EE: 'lib/EventEmitter.min',
-            'jquery-ui': 'lib/jquery-ui'
+            'jquery-ui': 'lib/jquery-ui',
+            'antimat': 'lib/antimat'
         },
         shim: {
             backbone: {

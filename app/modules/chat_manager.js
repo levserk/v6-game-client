@@ -1,4 +1,4 @@
-define(['EE'], function(EE) {
+define(['EE', 'antimat'], function(EE) {
     'use strict';
     var ChatManager = function (client) {
         this.client = client;
@@ -102,6 +102,10 @@ define(['EE'], function(EE) {
     ChatManager.prototype.sendMessage = function (text, target, admin){
         if (this.ban){
             this.emit('show_ban', this.ban);
+            return;
+        }
+        if (window.containsMat(text)){
+            console.warn('chat_manager; censored text', text);
             return;
         }
         var message = {

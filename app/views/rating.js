@@ -221,19 +221,17 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             },
 
             render: function(ratings, mode, column, order) {
-                this.$head.find('.'+this.HEAD_USER_CLASS).remove();
-                this.$tbody.children().remove();
                 this.$el.show();
                 this.setColumnOrder(column, order);
                 if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {
                     this.isClosed = false;
                     this.$el.find('.loading').show();
-                    this.$head.hide();
                 }
                 else {
-                    this.$head.show();
                     this.$el.find('.loading').hide();
+                    this.$head.find('.'+this.HEAD_USER_CLASS).remove();
+                    this.$tbody.children().remove();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);
                 }

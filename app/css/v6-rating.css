@@ -37,7 +37,6 @@
     border: 1px solid #dcdcdc;
     width: 100%;
     color: #444;
-    margin-top: 5px;
 }
 
 #v6-rating .ratingTable .online {
@@ -164,8 +163,10 @@
 }
 
 #v6-rating .loading{
-     margin: 0 auto;
-     width: 32px;
+    margin: 0 auto;
+    width: 32px;
+    margin-bottom: -38px;
+    margin-top: 10px;
  }
 
 #v6-rating .footButtons .activeLink{

@@ -9,9 +9,6 @@ define(['EE'], function(EE) {
         this.users = [];
         this.rooms = [];
 
-        client.on('login', function(user){
-            self.onUserLogin(user, true);
-        });
         client.on('disconnected', function(){
             self.rooms = [];
             self.users = [];

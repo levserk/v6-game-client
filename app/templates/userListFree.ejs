@@ -1,5 +1,5 @@
 <% _.each(users, function(user) { %>
-<tr>
+<tr class="userListFree">
     <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>"><%= user.userName %></td>
     <td class="userRank"><%= user.getRank() %></td>
     <% if (user.isPlayer) { %>

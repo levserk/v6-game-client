@@ -1702,13 +1702,13 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr>\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>"><%= user.userName %></td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree">\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>"><%= user.userName %></td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr class="userListGame" data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td>:</td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span>Играть с любым</span>\r\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table cellspacing="0" class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span>Играть с любым</span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -3465,7 +3465,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     return HistoryManager;
 });
 
-define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="<%= close %>" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="<%= close %>" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-ratingTD.ejs',[],function () { return '<td data-idcol="<%= id %>" class="rating<%= id %>"><div><%= value %><sup class="greenSup"><%= sup %></sup></div></td>';});
@@ -3708,19 +3708,17 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             },
 
             render: function(ratings, mode, column, order) {
-                this.$head.find('.'+this.HEAD_USER_CLASS).remove();
-                this.$tbody.children().remove();
                 this.$el.show();
                 this.setColumnOrder(column, order);
                 if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {
                     this.isClosed = false;
                     this.$el.find('.loading').show();
-                    this.$head.hide();
                 }
                 else {
-                    this.$head.show();
                     this.$el.find('.loading').hide();
+                    this.$head.find('.'+this.HEAD_USER_CLASS).remove();
+                    this.$tbody.children().remove();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);
                 }
@@ -3853,7 +3851,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.7.6";
+        this.version = "0.7.7";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

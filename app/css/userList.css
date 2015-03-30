@@ -104,7 +104,7 @@
     white-space: nowrap;
 }
 
-#userList .userName:hover {
+#userList .userListFree .userName:hover {
     background-color: #edf1f5;
 }
 
@@ -113,6 +113,23 @@
     font-size: 9px;
     text-align: right;
     padding-right: 25px;
+}
+
+#userList .userListGame:hover{
+    background-color: #edf1f5;
+}
+
+#userList .userListGame{
+    width: 20px;
+}
+
+#userList .userListGame td:nth-child(1){
+    text-align: right;
+}
+
+#userList .userListGame td:nth-child(2){
+    width: 20px;
+    text-align: center;
 }
 
 #userList .inGame {

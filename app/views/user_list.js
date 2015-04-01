@@ -10,6 +10,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         events: {
             'click .inviteBtn': '_inviteBtnClicked',
             'click .userName': 'userClick',
+            'click .userListGame': 'roomClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
             'click #randomPlay': 'playClicked'
@@ -43,6 +44,15 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 userId = target.attr('data-userId');
             this.client.onShowProfile(userId);
         },
+        roomClick: function(e) {
+            var target = $(e.currentTarget),
+                roomId = target.attr('data-Id');
+            if (roomId) {
+                this.client.gameManager.spectate(roomId);
+            } else {
+                console.warn('wrong room id', roomId);
+            }
+        },
         _inviteBtnClicked: function(e) {
             var target = $(e.currentTarget),
                 userId = target.attr('data-userId');
@@ -68,8 +78,6 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 target.addClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Отмена');
             }
-
-            console.log('invite user', userId);
         },
         playClicked: function (e) {
             this.client.inviteManager.playRandom(this.client.inviteManager.isPlayRandom);

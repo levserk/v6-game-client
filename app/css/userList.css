@@ -121,6 +121,7 @@
 
 #userList .userListGame{
     width: 20px;
+    cursor: pointer;
 }
 
 #userList .userListGame td:nth-child(1){

@@ -16,6 +16,7 @@ define(['EE', 'antimat'], function(EE) {
         }.bind(this));
 
         client.gameManager.on('game_start', function(room){
+            if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
                     this.openDialog(room.players[i].userId, room.players[i].userName);
@@ -24,6 +25,7 @@ define(['EE', 'antimat'], function(EE) {
         }.bind(this));
 
         client.gameManager.on('game_leave', function(room){
+            if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
                     this.closeDialog(room.players[i].userId);

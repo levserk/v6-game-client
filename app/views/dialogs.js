@@ -65,7 +65,7 @@ define(function() {
                         $(this).remove();
                     }
                 }
-            });
+            }).parent().draggable();
         }
 
         function _cancelInvite(opt) {
@@ -94,10 +94,11 @@ define(function() {
                         client.gameManager.leaveRoom();
                     }
                 }
-            });
+            }).parent().draggable();
         }
 
         function _askDraw(user) {
+            if (!this.client.gameManager.inGame()) return;
             console.log('ask draw', user);
             var div = $('<div>');
             div.addClass(NOTIFICATION_CLASS);
@@ -135,10 +136,13 @@ define(function() {
                         $(this).remove();
                     }
                 }
-            });
+            }).parent().draggable();
         }
 
         function _roundEnd(data) {
+            if (!data.isPlayer) {
+                return;
+            }
             _hideDialogs();
 
             var div = $('<div>');
@@ -172,7 +176,7 @@ define(function() {
                         $(this).remove();
                         client.gameManager.leaveGame();
                     }
-                });
+                }).parent().draggable();
             }, client.opts.resultDialogDelay);
 
         }

@@ -452,14 +452,14 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.onMessage = function(message){
-        var data = message.data, player = this.client.getPlayer(), i;
+        var data = message.data, player = this.client.getPlayer(), i, user;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
             case 'new_game':
                 for ( i = 0; i < data.players.length; i++){
                     if (data.players[i] == player){
                         if (this.currentRoom)
-                            if (this.currentRoom.isClosed) this.leaveRoom();
+                            if (this.currentRoom.isClosed || !this.currentRoom.isPlayer) this.leaveRoom();
                             else throw new Error('start game before current game finished! old: '+this.currentRoom.id+' new:'+data.room);
                         this.onGameStart(data);
                     }
@@ -477,12 +477,12 @@ define('modules/game_manager',['EE'], function(EE) {
                 this.onTurn(data);
                 break;
             case 'event':
-                var user = this.getPlayer(data.user);
+                user = this.getPlayer(data.user);
                 console.log('game_manager;', 'game event', data, user);
                 this.onUserEvent(user, data);
                 break;
             case 'user_leave':
-                var user = this.getPlayer(data);
+                user = this.getPlayer(data);
                 this.onUserLeave(user);
                 break;
             case 'round_end':
@@ -491,8 +491,25 @@ define('modules/game_manager',['EE'], function(EE) {
             case 'game_restart':
                 this.onGameRestart(data);
                 break;
+            case 'spectate':
+                this.onSpectateStart(data);
+                break;
+            case 'spectator_join':
+                console.log('game_manager;', 'spectate_join', data);
+                break;
+            case 'spectator_leave':
+                console.log('game_manager;', 'spectate_leave', data);
+                if (this.currentRoom && this.currentRoom.id != data.room){
+                    console.error('game_manager;', 'user leave wrong room, roomId:', data.room, 'current room: ', this.currentRoom);
+                    return;
+                }
+                if (data.user == this.client.getPlayer().userId && this.currentRoom) {
+                    this.currentRoom.isClosed = true;
+                    this.leaveRoom();
+                }
+                break;
             case 'error':
-                console.log('game_manager;', 'error', data);
+                console.error('game_manager;', 'error', data);
                 break;
         }
     };
@@ -519,7 +536,8 @@ define('modules/game_manager',['EE'], function(EE) {
             first: this.getPlayer(data.first),
             id: data.id,
             inviteData: data.inviteData,
-            score: this.currentRoom.score
+            score: this.currentRoom.score,
+            isPlayer: this.currentRoom.isPlayer
         });
         this.emitTime();
     };
@@ -564,14 +582,61 @@ define('modules/game_manager',['EE'], function(EE) {
     };
 
 
+    GameManager.prototype.onSpectateStart = function(data){
+        console.log('game_manager;', 'spectate restart', data);
+
+        //start game
+        var room = new Room(data['roomInfo'], this.client);
+        // TODO: server send spectators
+        room.spectators.push(this.client.getPlayer().userId);
+
+        console.log('game_manager;', 'emit game_start', room);
+        this.currentRoom = room;
+        room.score = data.score || room.score;
+        this.emit('game_start', room);
+
+        if (data.state == 'waiting'){
+            console.log('game_manager', 'start spectate', 'waiting players ready to play');
+            return;
+        }
+        this.onRoundStart(data['initData']);
+
+        // load game history
+        data.history = '['+data.history+']';
+        data.history = data.history.replace(new RegExp('@', 'g'),',');
+        var history = JSON.parse(data.history);
+        if (data.playerTurns.length != 0){
+            if (data.playerTurns.length == 1)
+                data.playerTurns = data.playerTurns[0];
+            history.push(data.playerTurns);
+        }
+        this.emit('game_load', history);
+
+        // switch player
+        data.nextPlayer = this.getPlayer(data.nextPlayer);
+        if (data.nextPlayer){
+            this.currentRoom.current = data.nextPlayer;
+            this.currentRoom.userTime = this.client.opts.turnTime * 1000 - data.userTime;
+            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+            this.emit('switch_player', this.currentRoom.current);
+            this.emitTime();
+            if ( data.userTime != null && !this.timeInterval){
+                this.prevTime = null;
+                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
+            }
+        }
+    };
+
+
     GameManager.prototype.onRoundEnd = function(data){
         console.log('game_manager', 'emit round_end', data, this.currentRoom);
         clearInterval(this.timeInterval);
-        data.mode = this.currentRoom.data.mode;
         this.timeInterval = null;
         this.prevTime = null;
         this.currentRoom.current = null;
         this.currentRoom.score = data.score;
+        data.mode = this.currentRoom.data.mode;
+        data.isPlayer = this.currentRoom.isPlayer;
         if (data.winner){
             if (data.winner == this.client.getPlayer().userId) { // win
                 console.log('game_manager;', 'win', data);
@@ -587,7 +652,7 @@ define('modules/game_manager',['EE'], function(EE) {
                 console.log('game_manager;', 'draw', data);
             }
         }
-        this.emit('round_end', data, this.client.getPlayer());
+        this.emit('round_end', data);
     };
 
 
@@ -652,7 +717,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.leaveGame = function(){
         if (!this.currentRoom){
             console.error('game_manager;', 'leaveGame', 'game not started!');
-            return
+            return;
         }
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
@@ -662,9 +727,15 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.leaveRoom = function(){
         if (!this.currentRoom){
             console.error('game_manager;', 'leaveRoom', 'game not started!');
-            return
+            return;
         }
-        if (!this.currentRoom.isClosed) throw new Error('leave not closed room! '+ this.currentRoom.id);
+        if (!this.currentRoom.isClosed) {
+            if (this.currentRoom.isPlayer)
+                throw new Error('leave not closed room! ' + this.currentRoom.id);
+            else console.error('game_manager', 'spectator leave not closed room')
+        }
+        clearInterval(this.timeInterval);
+        this.timeInterval = null;
         console.log('game_manager;', 'emit game_leave;', this.currentRoom);
         this.emit('game_leave', this.currentRoom);
         this.currentRoom = null;
@@ -674,7 +745,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.sendReady = function(){
         if (!this.currentRoom){
             console.error('game_manager;', 'sendReady', 'game not started!');
-            return
+            return;
         }
         this.client.send('game_manager', 'ready', 'server', true);
     };
@@ -697,7 +768,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.sendThrow = function(){
         if (!this.currentRoom){
             console.error('game_manager', 'sendThrow', 'game not started!');
-            return
+            return;
         }
         this.client.send('game_manager', 'event', 'server', {type:'throw'});
     };
@@ -706,7 +777,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.sendDraw = function(){
         if (!this.currentRoom){
             console.error('game_manager;', 'sendDraw', 'game not started!');
-            return
+            return;
         }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
     };
@@ -715,7 +786,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.sendEvent = function (type, event, target) {
         if (!this.currentRoom){
             console.error('game_manager;', 'sendEvent', 'game not started!');
-            return
+            return;
         }
         console.log('game_manager;', 'sendEvent', type, event);
         event.type = type;
@@ -728,7 +799,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.acceptDraw = function(){
         if (!this.currentRoom){
             console.error('game_manager;', 'acceptDraw', 'game not started!');
-            return
+            return;
         }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'accept'});
     };
@@ -737,16 +808,24 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.cancelDraw = function(){
         if (!this.currentRoom){
             console.error('game_manager;', 'cancelDraw', 'game not started!');
-            return
+            return;
         }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'cancel'});
+    };
+
+
+    GameManager.prototype.spectate = function(room){
+        if (!room){
+            return;
+        }
+        this.client.send('game_manager', 'spectate', 'server', {roomId: room});
     };
 
 
     GameManager.prototype.getPlayer = function(id){
         if (!this.currentRoom){
             console.error('game_manager;', 'getPlayer', 'game not started!');
-            return
+            return;
         }
         if (this.currentRoom)
             for (var i = 0; i < this.currentRoom.players.length; i++)
@@ -801,12 +880,21 @@ define('modules/game_manager',['EE'], function(EE) {
         this.id = room.room;
         this.owner = client.getUser(room.owner);
         this.players = [];
-        this.score = {games:0};
+        this.spectators = [];
+        this.isPlayer = false;
+
+        // init players
         if (typeof room.players[0] == "object") this.players = room.players;
         else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
-        for (var i = 0; i < this.players.length; i++){
+
+        this.score = {games:0};
+        for (i = 0; i < this.players.length; i++){
             this.score[this.players[i].userId] = 0;
+            if (this.players[i] == client.getPlayer()) this.isPlayer = true;
         }
+
+        room.spectators = room.spectators || [];
+        for (i = 0; i < room.spectators.length; i++) this.spectators.push(client.getUser(room.spectators[i]));
     }
 
     return GameManager;
@@ -1722,6 +1810,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
         events: {
             'click .inviteBtn': '_inviteBtnClicked',
             'click .userName': 'userClick',
+            'click .userListGame': 'roomClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
             'click #randomPlay': 'playClicked'
@@ -1755,6 +1844,15 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
                 userId = target.attr('data-userId');
             this.client.onShowProfile(userId);
         },
+        roomClick: function(e) {
+            var target = $(e.currentTarget),
+                roomId = target.attr('data-Id');
+            if (roomId) {
+                this.client.gameManager.spectate(roomId);
+            } else {
+                console.warn('wrong room id', roomId);
+            }
+        },
         _inviteBtnClicked: function(e) {
             var target = $(e.currentTarget),
                 userId = target.attr('data-userId');
@@ -1780,8 +1878,6 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
                 target.addClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Отмена');
             }
-
-            console.log('invite user', userId);
         },
         playClicked: function (e) {
             this.client.inviteManager.playRandom(this.client.inviteManager.isPlayRandom);
@@ -1955,7 +2051,7 @@ define('views/dialogs',[],function() {
                         $(this).remove();
                     }
                 }
-            });
+            }).parent().draggable();
         }
 
         function _cancelInvite(opt) {
@@ -1984,10 +2080,11 @@ define('views/dialogs',[],function() {
                         client.gameManager.leaveRoom();
                     }
                 }
-            });
+            }).parent().draggable();
         }
 
         function _askDraw(user) {
+            if (!this.client.gameManager.inGame()) return;
             console.log('ask draw', user);
             var div = $('<div>');
             div.addClass(NOTIFICATION_CLASS);
@@ -2025,10 +2122,13 @@ define('views/dialogs',[],function() {
                         $(this).remove();
                     }
                 }
-            });
+            }).parent().draggable();
         }
 
         function _roundEnd(data) {
+            if (!data.isPlayer) {
+                return;
+            }
             _hideDialogs();
 
             var div = $('<div>');
@@ -2062,7 +2162,7 @@ define('views/dialogs',[],function() {
                         $(this).remove();
                         client.gameManager.leaveGame();
                     }
-                });
+                }).parent().draggable();
             }, client.opts.resultDialogDelay);
 
         }
@@ -2923,6 +3023,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         }.bind(this));
 
         client.gameManager.on('game_start', function(room){
+            if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
                     this.openDialog(room.players[i].userId, room.players[i].userName);
@@ -2931,6 +3032,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         }.bind(this));
 
         client.gameManager.on('game_leave', function(room){
+            if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
                     this.closeDialog(room.players[i].userId);
@@ -3851,7 +3953,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.7.7";
+        this.version = "0.7.8";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

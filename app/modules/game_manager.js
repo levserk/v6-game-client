@@ -61,7 +61,8 @@ define(['EE'], function(EE) {
             case 'spectator_leave':
                 console.log('game_manager;', 'spectate_leave', data);
                 if (this.currentRoom && this.currentRoom.id != data.room){
-                    console.error('game_manager;', 'user leave wrong room, roomId:', data.room, 'current room: ', this.currentRoom)
+                    console.error('game_manager;', 'user leave wrong room, roomId:', data.room, 'current room: ', this.currentRoom);
+                    return;
                 }
                 if (data.user == this.client.getPlayer().userId && this.currentRoom) {
                     this.currentRoom.isClosed = true;
@@ -155,6 +156,10 @@ define(['EE'], function(EE) {
         room.score = data.score || room.score;
         this.emit('game_start', room);
 
+        if (data.state == 'waiting'){
+            console.log('game_manager', 'start spectate', 'waiting players ready to play');
+            return;
+        }
         this.onRoundStart(data['initData']);
 
         // load game history

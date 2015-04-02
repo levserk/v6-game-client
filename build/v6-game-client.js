@@ -652,6 +652,11 @@ define('modules/game_manager',['EE'], function(EE) {
                 console.log('game_manager;', 'draw', data);
             }
         }
+
+        if (!this.currentRoom.isPlayer){
+            data.result = null;
+        }
+
         this.emit('round_end', data);
     };
 
@@ -3949,25 +3954,120 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
     RatingManager.prototype.testRatings = {"allUsers":[{"userId":"95514","userName":"us_95514","dateCreate":1423486149906,"mode1":{"win":2,"lose":0,"draw":0,"games":2,"rank":1,"ratingElo":1627},"mode2":{"win":1,"lose":0,"draw":0,"games":1,"rank":1,"ratingElo":1615}},{"userId":"93361","userName":"us_93361","dateCreate":1423486098554,"mode1":{"win":1,"lose":0,"draw":0,"games":1,"rank":2,"ratingElo":1615},"mode2":{"win":0,"lose":0,"draw":0,"games":0,"rank":0,"ratingElo":1600}},{"userId":"99937","userName":"us_99937","dateCreate":1423486099570,"mode1":{"win":0,"lose":3,"draw":0,"games":3,"rank":3,"ratingElo":1561},"mode2":{"win":0,"lose":1,"draw":0,"games":1,"rank":2,"ratingElo":1586}}],"infoUser":{"userId":"99937","userName":"us_99937","dateCreate":1423486099570,"mode1":{"win":0,"lose":3,"draw":0,"games":3,"rank":3,"ratingElo":1561},"mode2":{"win":0,"lose":1,"draw":0,"games":1,"rank":2,"ratingElo":1586}}};
     return RatingManager;
 });
-define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager', 'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'EE'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,  EE) {
+define('modules/sound_manager',['EE', 'underscore'], function(EE, _) {
+    
+
+    var SoundManager = function (client) {
+        this.client = client;
+        this.soundsList = client.opts.sounds || {};
+        this.sounds = {};
+        this.initSounds();
+        this.volume = 1;
+        this.sound = null;
+        this.msAlerTimeBound = 15000;
+
+        this.client.gameManager.on('game_start', function(){
+            this._playSound('start');
+        }.bind(this));
+
+        this.client.gameManager.on('turn', function(){
+            this._playSound('turn');
+        }.bind(this));
+
+        this.client.gameManager.on('round_end', function(data){
+            if (data.result) {
+                this._playSound(data.result);
+            }
+        }.bind(this));
+
+        this.client.inviteManager.on('new_invite', function(data){
+            this._playSound('invite');
+        }.bind(this));
+
+        this.client.gameManager.on('time', _.throttle(function(data){       // alert sound time bound in one second
+            if (data.user == client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000) {
+                this._playSound('timeout', 0.5 + (this.msAlerTimeBound - data.userTimeMS) / this.msAlerTimeBound / 2);
+            }
+        }.bind(this), 1000));
+    };
+
+    SoundManager.prototype = new EE();
+
+
+    SoundManager.prototype.initSounds = function(){
+        for (var id in this.soundsList) {
+            if (this.soundsList.hasOwnProperty(id))
+                this.sounds[id] = new Sound(this.soundsList[id], id);
+        }
+    };
+
+
+    SoundManager.prototype._playSound = function(id){
+        // check auto play sound enable
+        if (this.sounds[id] && this.sounds[id].enable)
+            this.playSound(id);
+    };
+
+
+    SoundManager.prototype.playSound = function(id, volume){
+        if (!this.client.settings.sounds) return;
+        volume = volume || this.volume;
+        if (!this.sounds[id]){
+            console.error('sound_manager;', 'wrong sound id', id);
+            return;
+        }
+        if (this.sound)
+            this.sound.stop();
+        this.sound = this.sounds[id].play(volume);
+    };
+
+
+    var Sound = function (data, id){
+        this.volume = data.volume || 1;
+        this.sound = document.createElement('audio');
+        this.sound.id = 'sound-'+id;
+        this.sound.src = data.src;
+        this.enable = data.enable !== false;
+        document.body.appendChild(this.sound);
+    };
+
+    Sound.prototype.play = function(volume) {
+        volume *= this.volume;
+        if (volume < 0 || volume > 1) volume = 1;
+        try {
+            this.sound.currentTime = 0;
+            this.sound.volume = volume;
+            this.sound.play();
+            return this;
+        } catch (e) {
+            console.error('sound;', 'sound play error', e);
+            return null;
+        }
+    };
+
+    Sound.prototype.stop = function() {
+        try {
+            this.sound.pause()
+        } catch (e) {
+            console.error('sound;', 'sound stop error', e);
+        }
+    };
+
+    return SoundManager;
+});
+define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
+        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.7.8";
+        this.version = "0.7.9";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
         opts.turnTime = opts.turnTime || 60;
         opts.blocks = opts.blocks || {};
-        opts.images = opts.images || {
-            close: 'i/close.png',
-            spin:  'i/spin.gif',
-            sortAsc:  'i/sort-asc.png',
-            sortDesc:  'i/sort-desc.png',
-            sortBoth:  'i/sort-both.png',
-            del: 'i/delete.png'
-        };
-        opts.settings = opts.settings || {};
+        opts.images = opts.images || defaultImages;
+        opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -3980,7 +4080,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
-        this.defaultSettings = $.extend(defaultSettings, opts.settings);
+        this.defaultSettings = $.extend({}, defaultSettings, opts.settings || {});
         this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
@@ -3989,6 +4089,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.viewsManager = new ViewsManager(this);
         this.historyManager = new HistoryManager(this);
         this.ratingManager = new RatingManager(this);
+        this.soundManager = new SoundManager(this);
 
         this.currentMode = null;
 
@@ -4082,7 +4183,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.opts.turnTime = opts.turnTime;
         this.chatManager.ban = ban;
         this.currentMode = this.modes[0];
-        this.settings = $.extend(this.defaultSettings, settings);
+        this.settings = $.extend({},this.defaultSettings, settings);
         console.log('client;', 'settings',  this.settings);
 
         this.userList.onUserLogin(user, true);
@@ -4207,6 +4308,37 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     var defaultSettings = {
         disableInvite: false,
         sounds: true
+    };
+
+    var defaultImages = {
+        close: 'i/close.png',
+        spin:  'i/spin.gif',
+        sortAsc:  'i/sort-asc.png',
+        sortDesc:  'i/sort-desc.png',
+        sortBoth:  'i/sort-both.png',
+        del: 'i/delete.png'
+    };
+
+    var defaultSounds = {
+        start: {
+            src: 'audio/v6-game-start.ogg'
+        },
+        turn: {
+            src: 'audio/v6-game-turn.ogg',
+            volume: 0.5
+        },
+        win: {
+            src: 'audio/v6-game-win.ogg'
+        },
+        lose: {
+            src: 'audio/v6-game-lose.ogg'
+        },
+        invite: {
+            src: 'audio/v6-invite.ogg'
+        },
+        timeout: {
+            src: 'audio/v6-timeout.ogg'
+        }
     };
 
     return Client;

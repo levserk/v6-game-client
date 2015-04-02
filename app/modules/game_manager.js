@@ -213,6 +213,11 @@ define(['EE'], function(EE) {
                 console.log('game_manager;', 'draw', data);
             }
         }
+
+        if (!this.currentRoom.isPlayer){
+            data.result = null;
+        }
+
         this.emit('round_end', data);
     };
 

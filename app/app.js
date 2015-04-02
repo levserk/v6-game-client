@@ -37,15 +37,38 @@ require(['require-cnf'], function () {
                     historyId:'historyDiv'
                 },
                 images:{
-                    close: '//logic-games.spb.ru/v6-game-client/app/i/close.png',
-                    spin:  '//logic-games.spb.ru/v6-game-client/app/i/spin.gif',
-                    sortAsc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
-                    sortDesc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
-                    sortBoth:  '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
-                    del: '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
+                    close: 'i/close.png',
+                    spin:  'i/spin.gif',
+                    sortAsc:  'i/sort-asc.png',
+                    sortDesc:  'i/sort-desc.png',
+                    sortBoth:  'i/sort-both.png',
+                    del: 'i/delete.png'
+                },
+                sounds: {
+                        start: {
+                            src: 'audio/v6-game-start.ogg'
+                        },
+                        turn: {
+                            src: 'audio/v6-game-turn.ogg',
+                            volume: 0.5,
+                            enable: false
+                        },
+                        win: {
+                            src: 'audio/v6-game-win.ogg'
+                        },
+                        lose: {
+                            src: 'audio/v6-game-lose.ogg'
+                        },
+                        invite: {
+                            src: 'audio/v6-invite.ogg'
+                        },
+                        timeout: {
+                            src: 'audio/v6-timeout.ogg'
+                        }
                 },
                 settings:{
-                    color: 'red'
+                    color: 'red',
+                    sounds: false
                 },
                 settingsTemplate: settingsTemplate
             }).init();
@@ -92,10 +115,9 @@ require(['require-cnf'], function () {
                 console.log('main;','game_loaded, game history:', data);
             });
 
-            _client.gameManager.on('time', function(data){
-                if (data.userTimeMS > 0 && data.userTimeS < 1)
-                    console.log('main;','time user:', data);
-            });
+            _client.gameManager.on('time', _.throttle(function(data){
+                console.log('main;','time user:', data);
+            }, 5000));
 
             _client.historyManager.on('game_load', function(game){
                 console.log('main;','history game loaded, game:', game);

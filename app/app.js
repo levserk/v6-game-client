@@ -5,9 +5,18 @@ require(['require-cnf'], function () {
 
             var settingsTemplate = '<div><p>Цвет</p> <div> <label><input type="radio" name="color" value="red" >красный</label> <label><input type="radio" name="color" value="black" >черный</label> </div> </div> <p>Настройки игры</p> <div> <div class="option"> <label><input type="checkbox" name="sounds"> Включить звук</label> </div> <div class="option"> <label><input type="checkbox" name="disableInvite"> Запретить приглашать меня в игру</label> </div></div>';
 
-            // Test generate userId
-            //document.cookie = 'userId='+(Math.floor(Math.random()*100000000000000))+"; path=/;";
+            var userId = getCookie('userId') || 0;
+            //userId = Math.floor(Math.random()*10000);
+            var userName = 'User ' + userId;
+            var sign = userId + userName;
+            var user = {
+                userId: userId,
+                userName: userName,
+                sign: sign
+            };
+
             window.LogicGame = {isSuperUser:function(){return true;}};
+
             window._client = new Client({
                 game: 'test2',
                 port: 8078,
@@ -71,7 +80,7 @@ require(['require-cnf'], function () {
                     sounds: false
                 },
                 settingsTemplate: settingsTemplate
-            }).init();
+            }).init(user);
 
             var _client = window._client;
             _client.on('login', function(data){
@@ -117,7 +126,7 @@ require(['require-cnf'], function () {
 
             _client.gameManager.on('time', _.throttle(function(data){
                 console.log('main;','time user:', data);
-            }, 5000));
+            }, 1000, {trailing: false}));
 
             _client.historyManager.on('game_load', function(game){
                 console.log('main;','history game loaded, game:', game);
@@ -179,6 +188,22 @@ require(['require-cnf'], function () {
                     window._client.historyManager.getHistory(false, false, false);
                 });
                 $('body').append(div);
+            }
+
+            function getCookie(c_name)
+            {
+                if (document.cookie.length>0)
+                {
+                    c_start=document.cookie.indexOf(c_name + "=");
+                    if (c_start!=-1)
+                    {
+                        c_start=c_start + c_name.length+1;
+                        c_end=document.cookie.indexOf(";",c_start);
+                        if (c_end==-1) c_end=document.cookie.length;
+                        return unescape(document.cookie.substring(c_start,c_end));
+                    }
+                }
+                return "";
             }
         });
     });

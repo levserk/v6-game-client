@@ -15,7 +15,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 'click .closeIcon': 'close',
                 'click .historyTable tr': 'trClicked',
                 'click .historyTable .userName': 'userClicked',
-                'click .historyHeader span': 'tabClicked'
+                'click .historyHeader span': 'tabClicked',
+                'click #showMore': 'showMore'
             },
             initialize: function(_conf, manager) {
                 this.conf = _conf;
@@ -28,6 +29,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
                 this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
                 this.$noHistory = $(this.$el.find('.noHistory'));
+                this.$showMore = $(this.$el.find('#showMore'));
 
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
@@ -63,6 +65,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             close: function () {
                 this.$el.hide();
                 this.isClosed = true;
+            },
+
+            showMore:function () {
+                this._manager.getHistory(false, true, null, true);
             },
 
             renderTabs: function() {
@@ -132,12 +138,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 return columns;
             },
 
-            render: function(mode, history, hideClose) {
-                this.$tbody.children().remove();
+            render: function(mode, history, hideClose, showMore) {
                 this.$el.show();
                 this.setActiveTab(mode);
                 if (hideClose === true) this.$el.find('.closeIcon').hide();
                 if (hideClose === false) this.$el.find('.closeIcon').show();
+                if (!showMore) this.$showMore.hide(); else this.$showMore.show();
 
                 if (!history) {
                     this.isClosed = false;
@@ -145,6 +151,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                     this.$noHistory.hide();
                 }
                 else {
+                    this.$tbody.children().remove();
                     if (history.length == 0) this.$noHistory.show();
                     this.$el.find('.loading').hide();
                     console.log('render history', history);

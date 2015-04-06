@@ -48,6 +48,21 @@
     width: 32px;
 }
 
+#v6-history #showMore{
+    margin: 10px auto;
+    width: 100px;
+    background-image: linear-gradient(top,transparent,transparent);
+    color: #404040;
+    border: 1px solid grey;
+    border-radius: 2px;
+    cursor: pointer;
+    font-weight: 700;
+    text-align: center;
+
+    height: 28px;
+    line-height: 28px;
+}
+
 #v6-history .noHistory{
     font-weight: bold;
     text-align: center;

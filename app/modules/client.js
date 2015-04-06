@@ -72,10 +72,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         user.userId = user.userId || window._userId;
         user.userName = user.userName || window._userName;
         user.sign = user.sign || window._sign || '';
-        //if (!user.userName || !user.userId || !user.sign){
-        //    throw new Error('Client init error, wrong user parameters'
-        //                    + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
-        //}
+        if (!user.userName || !user.userId || !user.sign){
+            throw new Error('Client init error, wrong user parameters'
+                            + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
+        }
         document.cookie = '_userId=' + user.userId + "; path=/;";
         document.cookie = '_userName=' + user.userName + "; path=/;";
         document.cookie = '_sign=' + user.sign + "; path=/;";

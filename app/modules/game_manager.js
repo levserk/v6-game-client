@@ -89,11 +89,10 @@ define(['EE'], function(EE) {
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.client.opts.turnTime * 1000;
+        var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
+
         this.emit('round_start', {
-            players: [
-                this.getPlayer(data.players[0]),
-                this.getPlayer(data.players[1])
-            ],
+            players: players,
             first: this.getPlayer(data.first),
             id: data.id,
             inviteData: data.inviteData,

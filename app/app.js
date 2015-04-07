@@ -7,7 +7,7 @@ require(['require-cnf'], function () {
 
             var userId = getCookie('userId') || 0;
             //userId = Math.floor(Math.random()*10000);
-            var userName = 'User ' + userId;
+            var userName = 'Гость ' + userId;
             var sign = userId + userName;
             var user = {
                 userId: userId,

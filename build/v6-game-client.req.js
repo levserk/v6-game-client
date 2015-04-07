@@ -3268,7 +3268,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.0";
+        this.version = "0.8.1";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -3304,6 +3304,13 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
             console.log('client;', 'socket connected');
+            self.isLogin = false;
+            self.socket.send({
+                module:'server',
+                type:'login',
+                target:'server',
+                data: self.loginData
+            });
         });
 
         this.socket.on("disconnection", function() {
@@ -3335,16 +3342,14 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.init = function(user){
         user = user || {};
         user.userId = user.userId || window._userId;
-        user.userName = user.userName || window._userName;
+        user.userName = user.userName || window._username;
         user.sign = user.sign || window._sign || '';
         if (!user.userName || !user.userId || !user.sign){
             throw new Error('Client init error, wrong user parameters'
                             + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
         }
         document.cookie = '_userId=' + user.userId + "; path=/;";
-        document.cookie = '_userName=' + user.userName + "; path=/;";
-        document.cookie = '_sign=' + user.sign + "; path=/;";
-
+        this.loginData = user;
         this.socket.init();
         this.viewsManager.init();
         console.log('client;', 'init version:', this.version);

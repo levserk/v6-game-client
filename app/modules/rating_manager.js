@@ -23,6 +23,8 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
+        this.maxCount = 500;
+        this.count = 0;
     };
 
     RatingManager.prototype = new EE();
@@ -52,12 +54,12 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, ratings.infoUser[mode].rank);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) {
-            if (column == 'ratingElo' && order == 'desc') rank = i+1; // set rank on order by rating
+            if (column == 'ratingElo' && order == 'desc') rank = i + 1 + this.count; // set rank on order by rating
             ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
         }
-        setTimeout(function(){
-            this.$container.append(this.ratingView.render(ratings, mode, column, order).$el);
-        }.bind(this),200);
+
+        this.$container.append(this.ratingView.render(ratings, mode, column, order, this.count != 0, ratings.allUsers.length == this.maxCount).$el);
+        this.count += ratings.allUsers.length;
     };
 
 
@@ -83,12 +85,15 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     };
 
 
-    RatingManager.prototype.getRatings = function(mode, column, order){
+    RatingManager.prototype.getRatings = function(mode, column, order, showMore){
+        if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
         this.client.send('rating_manager', 'ratings', 'server', {
-            mode:mode||this.client.currentMode,
-            column : column,
-            order : order
+            mode: mode||this.client.currentMode,
+            column: column,
+            order: order,
+            count: this.maxCount,
+            offset: this.count
         });
     };
 

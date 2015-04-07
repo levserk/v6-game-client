@@ -21,7 +21,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 'click .headTitles th': 'thClicked',
                 'click .headIcons th': 'thClicked',
                 'click .filterPanel span': 'tabClicked',
-                'click .ratingTable .userName': 'userClicked'
+                'click .ratingTable .userName': 'userClicked',
+                'click #ratingShowMore': 'showMore'
             },
 
             thClicked: function(e){
@@ -53,6 +54,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.manager.client.onShowProfile(userId, userName);
             },
 
+            showMore: function() {
+                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', true);
+            },
+
             initialize: function(_conf, _manager) {
                 this.conf = _conf;
                 this.manager = _manager;
@@ -66,6 +71,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.$icons = this.$el.find('.headIcons');
                 this.$head = this.$icons.parent();
                 this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
+                this.$showMore = $(this.$el.find('#ratingShowMore'));
+
 
                 this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
                 this.IMG_BOTH = '<img src="' + _conf.images.sortBoth + '">';
@@ -220,9 +227,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 }
             },
 
-            render: function(ratings, mode, column, order) {
+            render: function(ratings, mode, column, order, append, showMore) {
                 this.$el.show();
                 this.setColumnOrder(column, order);
+                if (!showMore) this.$showMore.hide(); else this.$showMore.show();
                 if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {
                     this.isClosed = false;
@@ -231,7 +239,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 else {
                     this.$el.find('.loading').hide();
                     this.$head.find('.'+this.HEAD_USER_CLASS).remove();
-                    this.$tbody.children().remove();
+                    if (!append) this.$tbody.children().remove();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);
                 }

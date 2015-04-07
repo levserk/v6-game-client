@@ -22,7 +22,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         this.isCancel = false;
         this.userId = false;
         this.currentMode = false;
-        this.maxCount = 50;
+        this.maxCount = 100;
         this.count = 0;
         this.history = [];
     };

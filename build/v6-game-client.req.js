@@ -89,11 +89,10 @@ define('modules/game_manager',['EE'], function(EE) {
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.client.opts.turnTime * 1000;
+        var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
+
         this.emit('round_start', {
-            players: [
-                this.getPlayer(data.players[0]),
-                this.getPlayer(data.players[1])
-            ],
+            players: players,
             first: this.getPlayer(data.first),
             id: data.id,
             inviteData: data.inviteData,
@@ -2365,7 +2364,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
     return ChatManager;
 });
 
-define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader"><img class="closeIcon" src="<%= close %>" title="Закрыть окно истории"></div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader"><img class="closeIcon" src="<%= close %>" title="Закрыть окно истории"></div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div id="showMore">Показать еще</div>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-historyHeaderTD.ejs',[],function () { return '<td class="sessionHeader historyDate" rowspan="<%= rows %>"> <%= date %> </td>\r\n<td class="sessionHeader historyName" rowspan="<%= rows %>">\r\n    <span class="userName" data-userid="<%= userId %>"><%= userName %></span>\r\n    <span class="userRank">(<%= rank %>)</span>\r\n    <span class="userScore"><%= score %></span>\r\n    <div class="eloDiff <%= (eloDiff>-1?\'diffPositive\':\'diffNegative\')%>"><%= eloDiff ===\'\'?\'\':(eloDiff>-1?\'+\'+eloDiff:eloDiff)%></div>\r\n</td>';});
@@ -2396,7 +2395,8 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                 'click .closeIcon': 'close',
                 'click .historyTable tr': 'trClicked',
                 'click .historyTable .userName': 'userClicked',
-                'click .historyHeader span': 'tabClicked'
+                'click .historyHeader span': 'tabClicked',
+                'click #showMore': 'showMore'
             },
             initialize: function(_conf, manager) {
                 this.conf = _conf;
@@ -2409,6 +2409,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
                 this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
                 this.$noHistory = $(this.$el.find('.noHistory'));
+                this.$showMore = $(this.$el.find('#showMore'));
 
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
@@ -2444,6 +2445,10 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             close: function () {
                 this.$el.hide();
                 this.isClosed = true;
+            },
+
+            showMore:function () {
+                this._manager.getHistory(false, true, null, true);
             },
 
             renderTabs: function() {
@@ -2513,12 +2518,12 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                 return columns;
             },
 
-            render: function(mode, history, hideClose) {
-                this.$tbody.children().remove();
+            render: function(mode, history, hideClose, showMore) {
                 this.$el.show();
                 this.setActiveTab(mode);
                 if (hideClose === true) this.$el.find('.closeIcon').hide();
                 if (hideClose === false) this.$el.find('.closeIcon').show();
+                if (!showMore) this.$showMore.hide(); else this.$showMore.show();
 
                 if (!history) {
                     this.isClosed = false;
@@ -2526,6 +2531,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                     this.$noHistory.hide();
                 }
                 else {
+                    this.$tbody.children().remove();
                     if (history.length == 0) this.$noHistory.show();
                     this.$el.find('.loading').hide();
                     console.log('render history', history);
@@ -2576,6 +2582,9 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         this.isCancel = false;
         this.userId = false;
         this.currentMode = false;
+        this.maxCount = 100;
+        this.count = 0;
+        this.history = [];
     };
 
     HistoryManager.prototype = new EE();
@@ -2606,10 +2615,11 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
                 var histTable = [];
                 this.userId = userId;
                 this.currentMode = mode;
-                for (var i = history.length-1; i > -1; i--){
-                    this.formatHistoryRow(history[i], histTable, mode, history.length - i, userId);
+                this.history = this.history.concat(history);
+                for (var i = this.history.length-1; i > -1; i--){
+                    this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
                 }
-                this.$container.append(this.historyView.render(mode, histTable).$el);
+                this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
             }
         }.bind(this),200);
     };
@@ -2692,18 +2702,33 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     };
 
 
-    HistoryManager.prototype.getHistory = function(mode, isUpdate, hideClose){
+    HistoryManager.prototype.getHistory = function(mode, isUpdate, hideClose, append){
+        if (!append) {
+            this.count = 0;
+            this.history = [];
+        }
         if (!isUpdate) this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
         this.$container.append(this.historyView.render(mode||this.client.currentMode, false, hideClose).$el);
-        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:(isUpdate?this.userId:false)});
+        this.client.send('history_manager', 'history', 'server', {
+            mode:mode||this.client.currentMode,
+            userId:(isUpdate?this.userId:false),
+            count: this.maxCount,
+            offset: this.history.length
+        });
     };
 
     HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
+        this.history = [];
         if (blockId) this.$container = $('#'+blockId);
         if (!this.$container) throw new Error('wrong history container id! ' + blockId);
         this.$container.append(this.historyView.render(mode, false, true).$el);
         this.userId = userId;
-        this.client.send('history_manager', 'history', 'server', {mode:mode||this.client.currentMode, userId:userId});
+        this.client.send('history_manager', 'history', 'server', {
+            mode:mode||this.client.currentMode,
+            userId:userId,
+            count: this.maxCount,
+            offset: this.history.length
+        });
     };
 
 
@@ -2785,7 +2810,8 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 'click .headTitles th': 'thClicked',
                 'click .headIcons th': 'thClicked',
                 'click .filterPanel span': 'tabClicked',
-                'click .ratingTable .userName': 'userClicked'
+                'click .ratingTable .userName': 'userClicked',
+                'click #ratingShowMore': 'showMore'
             },
 
             thClicked: function(e){
@@ -2817,6 +2843,10 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 this.manager.client.onShowProfile(userId, userName);
             },
 
+            showMore: function() {
+                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', true);
+            },
+
             initialize: function(_conf, _manager) {
                 this.conf = _conf;
                 this.manager = _manager;
@@ -2830,6 +2860,8 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 this.$icons = this.$el.find('.headIcons');
                 this.$head = this.$icons.parent();
                 this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
+                this.$showMore = $(this.$el.find('#ratingShowMore'));
+
 
                 this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
                 this.IMG_BOTH = '<img src="' + _conf.images.sortBoth + '">';
@@ -2984,9 +3016,10 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 }
             },
 
-            render: function(ratings, mode, column, order) {
+            render: function(ratings, mode, column, order, append, showMore) {
                 this.$el.show();
                 this.setColumnOrder(column, order);
+                if (!showMore) this.$showMore.hide(); else this.$showMore.show();
                 if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {
                     this.isClosed = false;
@@ -2995,7 +3028,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 else {
                     this.$el.find('.loading').hide();
                     this.$head.find('.'+this.HEAD_USER_CLASS).remove();
-                    this.$tbody.children().remove();
+                    if (!append) this.$tbody.children().remove();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);
                 }
@@ -3032,6 +3065,8 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
         this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
+        this.maxCount = 500;
+        this.count = 0;
     };
 
     RatingManager.prototype = new EE();
@@ -3061,12 +3096,12 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
             ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, ratings.infoUser[mode].rank);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) {
-            if (column == 'ratingElo' && order == 'desc') rank = i+1; // set rank on order by rating
+            if (column == 'ratingElo' && order == 'desc') rank = i + 1 + this.count; // set rank on order by rating
             ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
         }
-        setTimeout(function(){
-            this.$container.append(this.ratingView.render(ratings, mode, column, order).$el);
-        }.bind(this),200);
+
+        this.$container.append(this.ratingView.render(ratings, mode, column, order, this.count != 0, ratings.allUsers.length == this.maxCount).$el);
+        this.count += ratings.allUsers.length;
     };
 
 
@@ -3092,12 +3127,15 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
     };
 
 
-    RatingManager.prototype.getRatings = function(mode, column, order){
+    RatingManager.prototype.getRatings = function(mode, column, order, showMore){
+        if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
         this.client.send('rating_manager', 'ratings', 'server', {
-            mode:mode||this.client.currentMode,
-            column : column,
-            order : order
+            mode: mode||this.client.currentMode,
+            column: column,
+            order: order,
+            count: this.maxCount,
+            offset: this.count
         });
     };
 
@@ -3299,10 +3337,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         user.userId = user.userId || window._userId;
         user.userName = user.userName || window._userName;
         user.sign = user.sign || window._sign || '';
-        //if (!user.userName || !user.userId || !user.sign){
-        //    throw new Error('Client init error, wrong user parameters'
-        //                    + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
-        //}
+        if (!user.userName || !user.userId || !user.sign){
+            throw new Error('Client init error, wrong user parameters'
+                            + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
+        }
         document.cookie = '_userId=' + user.userId + "; path=/;";
         document.cookie = '_userName=' + user.userName + "; path=/;";
         document.cookie = '_sign=' + user.sign + "; path=/;";

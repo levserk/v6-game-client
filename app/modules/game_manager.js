@@ -400,7 +400,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.inGame = function (){
-        return this.currentRoom != null && this.getPlayer(this.client.getPlayer().userId);
+        return this.currentRoom != null && !this.currentRoom.isClosed && this.getPlayer(this.client.getPlayer().userId);
     };
 
 

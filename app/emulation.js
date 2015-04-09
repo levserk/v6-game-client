@@ -80,7 +80,7 @@ Emulation.prototype.onRoundEnd = function(data) {
             if (!this.leaveGame())
                 this.client.gameManager.sendReady();
         }
-    }.bind(this),1000 + Math.random() * 4000);
+    }.bind(this),1000 + Math.random() * 2000);
     //this.refresh(0.01)
 };
 
@@ -91,7 +91,7 @@ Emulation.prototype.onGameLeave = function(data) {
         console.log('emulation;','game leave, play again');
         this.refresh();
         this.client.inviteManager.playRandom();
-    }.bind(this), 1000 + 10000*Math.random());
+    }.bind(this), 1000 + 5000*Math.random());
 };
 
 Emulation.prototype.doTurn = function(r) {

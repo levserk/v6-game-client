@@ -127,18 +127,7 @@ define(['EE'], function(EE) {
         this.emit('game_load', history);
 
         // switch player
-        data.nextPlayer = this.getPlayer(data.nextPlayer);
-        if (data.nextPlayer){
-            this.currentRoom.current = data.nextPlayer;
-            this.currentRoom.userTime = this.client.opts.turnTime * 1000 - data.userTime;
-            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
-            this.emit('switch_player', this.currentRoom.current);
-            this.emitTime();
-            if (!this.timeInterval){
-                this.prevTime = null;
-                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
-            }
-        }
+        this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
     };
 
 
@@ -173,18 +162,8 @@ define(['EE'], function(EE) {
         this.emit('game_load', history);
 
         // switch player
-        data.nextPlayer = this.getPlayer(data.nextPlayer);
-        if (data.nextPlayer){
-            this.currentRoom.current = data.nextPlayer;
-            this.currentRoom.userTime = this.client.opts.turnTime * 1000 - data.userTime;
-            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
-            this.emit('switch_player', this.currentRoom.current);
-            this.emitTime();
-            if ( data.userTime != null && !this.timeInterval){
-                this.prevTime = null;
-                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
-            }
-        }
+        if (data.userTime != null)
+            this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
     };
 
 
@@ -237,16 +216,7 @@ define(['EE'], function(EE) {
             delete data.turn.nextPlayer;
         }
         this.emit('turn', data);
-        if (data.nextPlayer){
-            this.currentRoom.current = data.nextPlayer;
-            this.currentRoom.userTime = this.client.opts.turnTime * 1000;
-            this.emit('switch_player', this.currentRoom.current);
-            this.emitTime();
-            if (!this.timeInterval){
-                this.prevTime = null;
-                this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
-            }
-        }
+        this.switchPlayer(data.nextPlayer);
     };
 
 
@@ -265,16 +235,33 @@ define(['EE'], function(EE) {
                 break;
             case 'timeout':
                 if (event.nextPlayer) {
-                    event.nextPlayer =  this.getPlayer(event.nextPlayer);
                     event.user = this.getPlayer(event.user);
                     this.emit('timeout', event);
-                    this.currentRoom.current = event.nextPlayer;
-                    this.emit('switch_player', this.currentRoom.current);
+                    this.switchPlayer(this.getPlayer(event.nextPlayer));
                 }
                 break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
                 this.emit('event', event);
+        }
+    };
+
+
+    GameManager.prototype.switchPlayer = function(nextPlayer, userTime){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'switchPlayer', 'game not started!');
+            return;
+        }
+        if (!nextPlayer)  return;
+        userTime = userTime || 0;
+        this.currentRoom.current = nextPlayer;
+        this.currentRoom.userTime = this.client.opts.turnTime * 1000 - userTime;
+        if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+        this.emit('switch_player', this.currentRoom.current);
+        this.emitTime();
+        if (!this.timeInterval) {
+            this.prevTime = null;
+            this.timeInterval = setInterval(this.onTimeTick.bind(this), 100);
         }
     };
 

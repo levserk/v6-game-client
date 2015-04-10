@@ -88,7 +88,7 @@ define(['EE'], function(EE) {
     GameManager.prototype.onRoundStart = function (data){
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
-        this.currentRoom.userTime = this.client.opts.turnTime * 1000;
+        this.currentRoom.userTime = this.currentRoom.turnTime;
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
         this.emit('round_start', {
@@ -255,7 +255,7 @@ define(['EE'], function(EE) {
         if (!nextPlayer)  return;
         userTime = userTime || 0;
         this.currentRoom.current = nextPlayer;
-        this.currentRoom.userTime = this.client.opts.turnTime * 1000 - userTime;
+        this.currentRoom.userTime = this.currentRoom.turnTime - userTime;
         if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
         this.emit('switch_player', this.currentRoom.current);
         this.emitTime();
@@ -421,19 +421,24 @@ define(['EE'], function(EE) {
             user:this.currentRoom.current,
             userTimeMS: this.currentRoom.userTime,
             userTimeS: Math.floor(this.currentRoom.userTime/ 1000),
-            userTimePer: this.currentRoom.userTime / this.client.opts.turnTime / 1000,
+            userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
             userTimeFormat: minutes + ':' + seconds
         });
     };
 
 
     function Room(room, client){
-        this.data = room;
+        this.data = room; //deprecated
+        this.inviteData = room.data;
         this.id = room.room;
         this.owner = client.getUser(room.owner);
         this.players = [];
         this.spectators = [];
         this.isPlayer = false;
+        this.mode = room.mode;
+        this.turnTime = room.turnTime || client.opts.turnTime * 1000;
+
+        console.log('TEST!', room.data);
 
         // init players
         if (typeof room.players[0] == "object") this.players = room.players;

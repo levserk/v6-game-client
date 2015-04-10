@@ -22,7 +22,14 @@ require(['require-cnf'], function () {
                 port: 8078,
                 resultDialogDelay: 1000,
                 reload: true,
-                getUserParams: function(){return {gameType:'Main Mode'}},
+                getUserParams: function(){
+                    var inviteData = {
+                        gameType:'Main Mode',
+                        val: Math.random()* 1000 ^ 0
+                    };
+                    console.log('TEST!', inviteData);
+                    return inviteData
+                },
                 generateInviteText: function(invite){
                     return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
                         + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);

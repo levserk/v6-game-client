@@ -23,7 +23,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
-        this.defaultSettings = $.extend({}, defaultSettings, opts.settings || {});
+        this.defaultSettings = $.extend(true, {}, defaultSettings, opts.settings || {});
+        this.settings = $.extend(true, {}, this.defaultSettings);
         this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);

@@ -139,7 +139,7 @@ define(['EE'], function(EE) {
                     br = 100000000;
                 }
             }
-            return +(ar >br)
+            return ar - br;
         });
         return userList;
     };

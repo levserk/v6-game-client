@@ -527,7 +527,7 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.onRoundStart = function (data){
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
-        this.currentRoom.userTime = this.client.opts.turnTime * 1000;
+        this.currentRoom.userTime = this.currentRoom.turnTime;
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
         this.emit('round_start', {
@@ -694,7 +694,7 @@ define('modules/game_manager',['EE'], function(EE) {
         if (!nextPlayer)  return;
         userTime = userTime || 0;
         this.currentRoom.current = nextPlayer;
-        this.currentRoom.userTime = this.client.opts.turnTime * 1000 - userTime;
+        this.currentRoom.userTime = this.currentRoom.turnTime - userTime;
         if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
         this.emit('switch_player', this.currentRoom.current);
         this.emitTime();
@@ -860,19 +860,24 @@ define('modules/game_manager',['EE'], function(EE) {
             user:this.currentRoom.current,
             userTimeMS: this.currentRoom.userTime,
             userTimeS: Math.floor(this.currentRoom.userTime/ 1000),
-            userTimePer: this.currentRoom.userTime / this.client.opts.turnTime / 1000,
+            userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
             userTimeFormat: minutes + ':' + seconds
         });
     };
 
 
     function Room(room, client){
-        this.data = room;
+        this.data = room; //deprecated
+        this.inviteData = room.data;
         this.id = room.room;
         this.owner = client.getUser(room.owner);
         this.players = [];
         this.spectators = [];
         this.isPlayer = false;
+        this.mode = room.mode;
+        this.turnTime = room.turnTime || client.opts.turnTime * 1000;
+
+        console.log('TEST!', room.data);
 
         // init players
         if (typeof room.players[0] == "object") this.players = room.players;
@@ -1223,7 +1228,7 @@ define('modules/user_list',['EE'], function(EE) {
                     br = 100000000;
                 }
             }
-            return +(ar >br)
+            return ar - br;
         });
         return userList;
     };
@@ -1865,7 +1870,9 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             } else {
                 // send invite
                 this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
-                this.client.inviteManager.sendInvite(userId, (typeof this.client.opts.getUserParams == 'function'?this.client.opts.getUserParams():{}));
+                var params = (typeof this.client.opts.getUserParams == 'function' ? this.client.opts.getUserParams() : {});
+                params = $.extend(true, {}, params);
+                this.client.inviteManager.sendInvite(userId, params);
                 target.addClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Отмена');
             }
@@ -2225,7 +2232,7 @@ define('views/dialogs',[],function() {
 });
 
 
-define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
+define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Ваш ход!</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
 
 
 define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>" title="<%= msg.userName %>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение" style="background-image: url(<%= imgDel %>);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
@@ -3445,21 +3452,22 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     HistoryManager.prototype.onGameLoad = function (mode, game){
         console.log('history_manager;', 'game load', game);
         //TODO initGame, gameManager
-        game.history = '['+game.history+']';
-        game.history = game.history.replace(new RegExp('@', 'g'),',');
-        game.history = JSON.parse(game.history);
-        game.initData = JSON.parse(game.initData);
-        game.userData = JSON.parse(game.userData);
-        var players = [];
-        for (var i = 0; i < game.players.length; i++){
-            players.push(this.client.userList.createUser(game.userData[game.players[i]]));
+        if (game) {
+            game.history = '[' + game.history + ']';
+
+            game.history = game.history.replace(new RegExp('@', 'g'), ',');
+            game.history = JSON.parse(game.history);
+            game.initData = JSON.parse(game.initData);
+            game.userData = JSON.parse(game.userData);
+            var players = [];
+            for (var i = 0; i < game.players.length; i++) {
+                players.push(this.client.userList.createUser(game.userData[game.players[i]]));
+            }
+            if (players.length != players.length) throw new Error('UserData and players are different!');
+            game.players = players;
+            console.log('history_manager;', 'game parsed', game);
         }
-        if (players.length != players.length) throw new Error('UserData and players are different!');
-        game.players = players;
-        console.log('history_manager;', 'game parsed', game);
-        setTimeout(function(){
-            if (!this.isCancel) this.emit('game_load', game);
-        }.bind(this),200);
+        if (!this.isCancel) this.emit('game_load', game);
     };
 
 
@@ -4085,7 +4093,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.2";
+        this.version = "0.8.3";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4105,7 +4113,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.opts = opts;
         this.game = opts.game || 'test';
-        this.defaultSettings = $.extend({}, defaultSettings, opts.settings || {});
+        this.defaultSettings = $.extend(true, {}, defaultSettings, opts.settings || {});
+        this.settings = $.extend(true, {}, this.defaultSettings);
         this.modesAlias = {};
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);

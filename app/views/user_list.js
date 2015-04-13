@@ -74,7 +74,9 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             } else {
                 // send invite
                 this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
-                this.client.inviteManager.sendInvite(userId, (typeof this.client.opts.getUserParams == 'function'?this.client.opts.getUserParams():{}));
+                var params = (typeof this.client.opts.getUserParams == 'function' ? this.client.opts.getUserParams() : {});
+                params = $.extend(true, {}, params);
+                this.client.inviteManager.sendInvite(userId, params);
                 target.addClass(this.ACTIVE_INVITE_CLASS);
                 target.html('Отмена');
             }

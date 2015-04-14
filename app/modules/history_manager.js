@@ -70,7 +70,6 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         //TODO initGame, gameManager
         if (game) {
             game.history = '[' + game.history + ']';
-
             game.history = game.history.replace(new RegExp('@', 'g'), ',');
             game.history = JSON.parse(game.history);
             game.initData = JSON.parse(game.initData);

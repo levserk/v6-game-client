@@ -544,27 +544,14 @@ define('modules/game_manager',['EE'], function(EE) {
 
     GameManager.prototype.onGameRestart = function (data) {
         console.log('game_manager;', 'game restart', data);
-
         //start game
         var room = new Room(data['roomInfo'], this.client);
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
         this.emit('game_start', room);
-
         this.onRoundStart(data['initData']);
-
-        // load game history
-        data.history = '['+data.history+']';
-        data.history = data.history.replace(new RegExp('@', 'g'),',');
-        var history = JSON.parse(data.history);
-        if (data.playerTurns.length != 0){
-            if (data.playerTurns.length == 1)
-                data.playerTurns = data.playerTurns[0];
-            history.push(data.playerTurns);
-        }
-        this.emit('game_load', history);
-
+        this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
         // switch player
         this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
     };
@@ -572,34 +559,20 @@ define('modules/game_manager',['EE'], function(EE) {
 
     GameManager.prototype.onSpectateStart = function(data){
         console.log('game_manager;', 'spectate restart', data);
-
         //start game
         var room = new Room(data['roomInfo'], this.client);
         // TODO: server send spectators
         room.spectators.push(this.client.getPlayer().userId);
-
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
         this.emit('game_start', room);
-
         if (data.state == 'waiting'){
             console.log('game_manager', 'start spectate', 'waiting players ready to play');
             return;
         }
         this.onRoundStart(data['initData']);
-
-        // load game history
-        data.history = '['+data.history+']';
-        data.history = data.history.replace(new RegExp('@', 'g'),',');
-        var history = JSON.parse(data.history);
-        if (data.playerTurns.length != 0){
-            if (data.playerTurns.length == 1)
-                data.playerTurns = data.playerTurns[0];
-            history.push(data.playerTurns);
-        }
-        this.emit('game_load', history);
-
+        this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
         // switch player
         if (data.userTime != null)
             this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
@@ -682,7 +655,8 @@ define('modules/game_manager',['EE'], function(EE) {
             case 'back':
                 switch (event.action){
                     case 'take':
-                        this.emit('take_back', user);
+                        this.switchPlayer(user);
+                        this.emit('take_back', {user: user, history: GameManager.parseHistory(event.history)});
                         break;
                 }
                 break;
@@ -879,6 +853,19 @@ define('modules/game_manager',['EE'], function(EE) {
             userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
             userTimeFormat: minutes + ':' + seconds
         });
+    };
+
+
+    GameManager.parseHistory = function(shistory, playerTurns){
+        shistory = '['+shistory+']';
+        shistory = shistory.replace(new RegExp('@', 'g'),',');
+        var history = JSON.parse(shistory);
+        if (playerTurns && playerTurns.length != 0){
+            if (playerTurns.length == 1)
+                playerTurns = playerTurns[0];
+            history.push(playerTurns);
+        }
+        return history;
     };
 
 
@@ -3470,7 +3457,6 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         //TODO initGame, gameManager
         if (game) {
             game.history = '[' + game.history + ']';
-
             game.history = game.history.replace(new RegExp('@', 'g'), ',');
             game.history = JSON.parse(game.history);
             game.initData = JSON.parse(game.initData);
@@ -4109,7 +4095,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.4";
+        this.version = "0.8.5";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

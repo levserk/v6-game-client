@@ -726,14 +726,18 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.sendTurn = function(turn){
         if (!this.currentRoom){
             console.error('game_manager;', 'sendTurn', 'game not started!');
-            return
+            return false
         }
-        if (this.currentRoom.userTime < 1000) {
+        if (this.currentRoom.current != this.client.getPlayer()){
+            console.warn('game_manager;', 'not your turn!');
+            return false;
+        }
+        if (this.currentRoom.userTime < 300) {
             console.warn('game_manager;', 'your time is out!');
-            return;
+            return false;
         }
         this.client.send('game_manager', 'turn', 'server', turn);
-
+        return true;
     };
 
 

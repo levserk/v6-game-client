@@ -89,6 +89,7 @@ define(['EE'], function(EE) {
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
+        this.currentRoom.userTakeBacks = 0;
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
         this.emit('round_start', {
@@ -287,14 +288,18 @@ define(['EE'], function(EE) {
     GameManager.prototype.sendTurn = function(turn){
         if (!this.currentRoom){
             console.error('game_manager;', 'sendTurn', 'game not started!');
-            return
+            return false
         }
-        if (this.currentRoom.userTime < 1000) {
+        if (this.currentRoom.current != this.client.getPlayer()){
+            console.warn('game_manager;', 'not your turn!');
+            return false;
+        }
+        if (this.currentRoom.userTime < 300) {
             console.warn('game_manager;', 'your time is out!');
-            return;
+            return false;
         }
         this.client.send('game_manager', 'turn', 'server', turn);
-
+        return true;
     };
 
 
@@ -440,6 +445,7 @@ define(['EE'], function(EE) {
         this.isPlayer = false;
         this.mode = room.mode;
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
+        this.takeBacks = room.takeBacks;
 
         console.log('TEST!', room.data);
 

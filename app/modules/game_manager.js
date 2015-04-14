@@ -240,6 +240,13 @@ define(['EE'], function(EE) {
                     this.switchPlayer(this.getPlayer(event.nextPlayer));
                 }
                 break;
+            case 'back':
+                switch (event.action){
+                    case 'take':
+                        this.emit('take_back', user);
+                        break;
+                }
+                break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
                 this.emit('event', event);
@@ -345,6 +352,15 @@ define(['EE'], function(EE) {
         if (target) event.target = target;
         else target = 'server';
         this.client.send('game_manager', 'event', target, event);
+    };
+
+
+    GameManager.prototype.sendTakeBack = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'sendTakeBack', 'game not started!');
+            return;
+        }
+        this.client.send('game_manager', 'event', 'server', {type:'back', action:'take'});
     };
 
 

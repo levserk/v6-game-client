@@ -240,6 +240,13 @@ define('modules/game_manager',['EE'], function(EE) {
                     this.switchPlayer(this.getPlayer(event.nextPlayer));
                 }
                 break;
+            case 'back':
+                switch (event.action){
+                    case 'take':
+                        this.emit('take_back', user);
+                        break;
+                }
+                break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
                 this.emit('event', event);
@@ -345,6 +352,15 @@ define('modules/game_manager',['EE'], function(EE) {
         if (target) event.target = target;
         else target = 'server';
         this.client.send('game_manager', 'event', target, event);
+    };
+
+
+    GameManager.prototype.sendTakeBack = function(){
+        if (!this.currentRoom){
+            console.error('game_manager;', 'sendTakeBack', 'game not started!');
+            return;
+        }
+        this.client.send('game_manager', 'event', 'server', {type:'back', action:'take'});
     };
 
 
@@ -3263,7 +3279,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.3";
+        this.version = "0.8.4";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

@@ -243,6 +243,7 @@ define(['EE'], function(EE) {
             case 'back':
                 switch (event.action){
                     case 'take':
+                        this.switchPlayer(user);
                         this.emit('take_back', user);
                         break;
                 }

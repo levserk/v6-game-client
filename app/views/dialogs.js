@@ -115,7 +115,7 @@ define(function() {
 
         function askTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь ' + user.userName + ' просить отменить ход. Разрешить ему?';
+            var html = 'Пользователь ' + user.userName + ' просит отменить ход. Разрешить ему?';
             var div = showDialog(html,{
                 buttons: {
                     "Да": function() {

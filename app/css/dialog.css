@@ -9,3 +9,10 @@
 .ui-dialog .dialog-buttonset {
     font-size: 10pt;
 }
+
+.ui-dialog .dialogDraggable {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: pointer;
+}

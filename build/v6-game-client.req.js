@@ -89,6 +89,7 @@ define('modules/game_manager',['EE'], function(EE) {
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
+        this.currentRoom.userTakeBacks = 0;
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
         this.emit('round_start', {
@@ -113,6 +114,7 @@ define('modules/game_manager',['EE'], function(EE) {
         this.emit('game_start', room);
         this.onRoundStart(data['initData']);
         this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
+        this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
         this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
     };
@@ -216,8 +218,18 @@ define('modules/game_manager',['EE'], function(EE) {
             case 'back':
                 switch (event.action){
                     case 'take':
+                        if (user == this.client.getPlayer()){
+                            this.currentRoom.userTakeBacks++;
+                        }
                         this.switchPlayer(user);
                         this.emit('take_back', {user: user, history: GameManager.parseHistory(event.history)});
+                        break;
+                    case 'ask':
+                        if (user != this.client.getPlayer())
+                            this.emit('ask_back', user);
+                        break;
+                    case 'cancel':
+                        this.emit('cancel_back', user);
                         break;
                 }
                 break;
@@ -338,7 +350,18 @@ define('modules/game_manager',['EE'], function(EE) {
             console.error('game_manager;', 'sendTakeBack', 'game not started!');
             return;
         }
+        this.client.viewsManager.dialogsView.cancelTakeBack();
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'take'});
+    };
+
+
+    GameManager.prototype.acceptTakeBack = function() {
+        this.client.send('game_manager', 'event', 'server', {type:'back', action:'accept'});
+    };
+
+
+    GameManager.prototype.cancelTakeBack = function() {
+        this.client.send('game_manager', 'event', 'server', {type:'back', action:'cancel'});
     };
 
 
@@ -444,6 +467,7 @@ define('modules/game_manager',['EE'], function(EE) {
         this.isPlayer = false;
         this.mode = room.mode;
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
+        this.takeBacks = room.takeBacks;
 
         console.log('TEST!', room.data);
 
@@ -1163,39 +1187,40 @@ define('views/dialogs',[],function() {
     
     var dialogs = (function() {
         var NOTIFICATION_CLASS = 'dialogNotification';
+        var HIDEONCLICK_CLASS = 'dialogClickHide';
         var INVITE_CLASS = 'dialogInvite';
+        var DRAGGABLE_CLASS = 'dialogDraggable';
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
+        var TAKEBACK_CLASS = 'dialogTakeBack';
         var client;
         var dialogTimeout;
 
         function _subscribe(_client) {
             client = _client;
-            client.inviteManager.on('new_invite', _newInvite);
-            client.inviteManager.on('reject_invite', _rejectInvite);
-            client.inviteManager.on('cancel_invite', _cancelInvite);
-            client.inviteManager.on('remove_invite', _removeInvite);
-            client.gameManager.on('user_leave', _userLeave);
-            client.gameManager.on('game_start', _hideDialogs);
-            client.gameManager.on('round_end', _roundEnd);
-            client.gameManager.on('game_leave', _hideDialogs);
-            client.gameManager.on('ask_draw', _askDraw);
-            client.gameManager.on('cancel_draw', _cancelDraw);
-            client.chatManager.on('show_ban', _showBan);
-            client.on('login_error', _loginError);
+            client.inviteManager.on('new_invite', newInvite);
+            client.inviteManager.on('reject_invite', rejectInvite);
+            client.inviteManager.on('cancel_invite', cancelInvite);
+            client.inviteManager.on('remove_invite', removeInvite);
+            client.gameManager.on('user_leave', userLeave);
+            client.gameManager.on('game_start', hideDialogs);
+            client.gameManager.on('round_end', roundEnd);
+            client.gameManager.on('game_leave', hideDialogs);
+            client.gameManager.on('ask_draw', askDraw);
+            client.gameManager.on('cancel_draw', cancelDraw);
+            client.gameManager.on('ask_back', askTakeBack);
+            client.gameManager.on('cancel_back', cancelTakeBack);
+            client.chatManager.on('show_ban', showBan);
+            client.on('login_error', loginError);
+            $(document).on("click", hideOnClick);
         }
 
-        function _newInvite(invite) {
-            var div = $('<div>');
-            div.addClass(INVITE_CLASS);
-            div.attr('data-userId', invite.from.userId);
-            var text = 'Вас пригласил в игру пользователь ' + invite.from.userName;
+        function newInvite(invite) {
+            var html = 'Вас пригласил в игру пользователь ' + invite.from.userName;
             if (typeof this.client.opts.generateInviteText == "function")
-                text = this.client.opts.generateInviteText(invite);
-            div.html(text).dialog({
-                resizable: true,
-                draggable: false,
-                modal: false,
+                html = this.client.opts.generateInviteText(invite);
+
+            var div = showDialog(html, {
                 buttons: {
                     "Принять": function() {
                         client.inviteManager.accept($(this).attr('data-userId'));
@@ -1210,63 +1235,46 @@ define('views/dialogs',[],function() {
                     client.inviteManager.reject($(this).attr('data-userId'));
                     $(this).remove();
                 }
-            }).parent().draggable();
-        }
-
-        function _rejectInvite(invite) {
-            var div = $('<div>');
+            }, true, false, false);
+            div.attr('data-userId', invite.from.userId);
             div.addClass(INVITE_CLASS);
-            div.addClass(NOTIFICATION_CLASS);
-
-            div.html('Пользователь ' + invite.user.userName + ' отклонил ваше приглашение').dialog({
-                resizable: false,
-                modal: false,
-                buttons: {
-                    "Ок": function() {
-                        $(this).remove();
-                    }
-                }
-            }).parent().draggable();
         }
 
-        function _cancelInvite(opt) {
-            console.log('cancel invite', opt);
+        function rejectInvite(invite) {
+            var html = 'Пользователь ' + invite.user.userName + ' отклонил ваше приглашение';
+            var div = showDialog(html, {}, true, true, true);
         }
 
-        function _removeInvite(invite) {
+        function cancelInvite(opt) {
+            console.log('dialogs; cancel invite', opt);
+        }
+
+        function removeInvite(invite) {
             var userId = invite.from;
-            console.log('remove invite', userId);
             $('.' + INVITE_CLASS + '[data-userId="' + userId + '"]').remove();
         }
 
-        function _userLeave(user) {
-            _hideDialogs();
-
-            var div = $('<div>');
-            div.addClass(INVITE_CLASS);
-            div.addClass(NOTIFICATION_CLASS);
-
-            div.html('Пользователь ' + user.userName + ' покинул игру').dialog({
-                resizable: false,
-                modal: false,
+        function userLeave(user) {
+            hideDialogs();
+            var html = 'Пользователь ' + user.userName + ' покинул игру';
+            var div = showDialog(html, {
                 buttons: {
                     "Ок": function() {
                         $(this).remove();
                         client.gameManager.leaveRoom();
                     }
+                },
+                close: function() {
+                    client.gameManager.leaveRoom();
+                    $(this).remove();
                 }
-            }).parent().draggable();
+            }, true, true, true);
         }
 
-        function _askDraw(user) {
+        function askDraw(user) {
             if (!this.client.gameManager.inGame()) return;
-            console.log('ask draw', user);
-            var div = $('<div>');
-            div.addClass(NOTIFICATION_CLASS);
-
-            div.html('Пользователь ' + user.userName + ' предлагает ничью').dialog({
-                resizable: false,
-                modal: false,
+            var html = 'Пользователь ' + user.userName + ' предлагает ничью';
+            var div = showDialog(html,{
                 buttons: {
                     "Принять": function() {
                         client.gameManager.acceptDraw();
@@ -1281,34 +1289,50 @@ define('views/dialogs',[],function() {
                     client.gameManager.cancelDraw();
                     $(this).remove();
                 }
-            }).parent().draggable();
+            }, true, true, false);
         }
 
-        function _cancelDraw(user) {
-            console.log('cancel draw', user);
-            var div = $('<div>');
-            div.addClass(NOTIFICATION_CLASS);
+        function cancelDraw(user) {
+            var html = 'Пользователь ' + user.userName + ' отклонил ваше предложение о ничье';
+            var div = showDialog(html, {}, true, true, true);
+        }
 
-            div.html('Пользователь ' + user.userName + ' отклонил ваше предложение о ничье').dialog({
-                resizable: false,
-                modal: false,
+
+        function askTakeBack(user) {
+            if (!this.client.gameManager.inGame()) return;
+            var html = 'Пользователь ' + user.userName + ' просить отменить ход. Разрешить ему?';
+            var div = showDialog(html,{
                 buttons: {
-                    "Ок": function() {
+                    "Да": function() {
+                        client.gameManager.acceptTakeBack();
+                        $(this).remove();
+                    },
+                    "Нет": function() {
+                        client.gameManager.cancelTakeBack();
                         $(this).remove();
                     }
+                },
+                close: function() {
+                    client.gameManager.cancelTakeBack();
+                    $(this).remove();
                 }
-            }).parent().draggable();
+            }, true, true, false);
+            div.addClass(TAKEBACK_CLASS);
         }
 
-        function _roundEnd(data) {
+
+        function cancelTakeBack(user) {
+            if (!this.client.gameManager.inGame()) return;
+            var html = 'Пользователь ' + user.userName + ' отклонил ваше просьбу отменить ход';
+            var div = showDialog(html, {}, true, true, true);
+        }
+
+
+        function roundEnd(data) {
             if (!data.isPlayer) {
                 return;
             }
-            _hideDialogs();
-
-            var div = $('<div>');
-            div.addClass(ROUNDRESULT_CLASS);
-
+            hideDialogs();
             var result = "";
             switch (data.result){
                 case 'win': result = 'Победа'; break;
@@ -1316,12 +1340,9 @@ define('views/dialogs',[],function() {
                 case 'draw': result = 'Ничья'; break;
                 default : result = 'игра окночена';
             }
-            // TODO: get opponent name;
-
+            var html = result + '<br><br> Сыграть с соперником еще раз?';
             dialogTimeout = setTimeout(function(){
-                div.html(result + '<br><br> Сыграть с соперником еще раз?').dialog({
-                    resizable: false,
-                    modal: false,
+                var div = showDialog(html, {
                     width: 350,
                     buttons: {
                         "Да, начать новую игру": function() {
@@ -1337,51 +1358,66 @@ define('views/dialogs',[],function() {
                         $(this).remove();
                         client.gameManager.leaveGame();
                     }
-                }).parent().draggable();
+                }, true, false);
+                div.addClass(ROUNDRESULT_CLASS);
             }, client.opts.resultDialogDelay);
-
         }
 
-        function _loginError() {
-            var div = $('<div>');
-            div.addClass(NOTIFICATION_CLASS);
-
-            div.html('Ошибка авторизации. Обновите страницу').dialog({
-                resizable: false,
-                modal: false,
-                buttons: {
-                    "Ок": function() {
-                        $(this).remove();
-                    }
-                }
-            });
+        function loginError() {
+            var html = 'Ошибка авторизации. Обновите страницу';
+            var div = showDialog(html, {}, false, false, false);
         }
 
-        function _showBan(ban) {
-            var div = $('<div>');
-            div.addClass(NOTIFICATION_CLASS);
+        function showBan(ban) {
             var html = 'Вы не можете писать сообщения в чате, т.к. добавлены в черный список ';
             if (ban.reason && ban.reason != '') html += 'за ' + ban.reason;
             else html += 'за употребление нецензурных выражений и/или спам ';
             if (ban.timeEnd) {
                 html += (ban.timeEnd > 2280000000000 ? ' навсегда' : ' до ' + formatDate(ban.timeEnd));
             }
-            div.html(html).dialog({
-                resizable: false,
-                modal: false,
-                buttons: {
-                    "Ок": function() {
-                        $(this).remove();
-                    }
-                }
-            });
+            var div = showDialog(html, {}, false, false, false);
         }
 
-        function _hideDialogs() { //TODO: hide all dialogs and messages
-            $('.' + NOTIFICATION_CLASS).remove();
-            $('.' + ROUNDRESULT_CLASS).remove();
-            $('.' + INVITE_CLASS).remove();
+
+        function showDialog(html, options, draggable, notification, clickHide) {
+            options = options || {};
+            options.resizable = options.resizable || false;
+            options.modal = options.modal || false;
+            options.draggable = options.draggable || false;
+            options.buttons = options.buttons || {
+                "Ок": function() {
+                    $(this).remove();
+                }
+            };
+            var div = $('<div>');
+            div.html(html).dialog(options);
+            if (draggable) {
+                div.parent().draggable();
+                div.addClass(DRAGGABLE_CLASS);
+            }
+            if (notification) {
+                div.addClass(NOTIFICATION_CLASS);
+            }
+            if (clickHide) {
+                div.addClass(HIDEONCLICK_CLASS);
+            }
+            return div;
+        }
+
+
+        function hideDialogs() {
+            $('.' + NOTIFICATION_CLASS).dialog("close");
+            $('.' + ROUNDRESULT_CLASS).dialog("close");
+            $('.' + INVITE_CLASS).dialog("close");
             clearTimeout(dialogTimeout);
+        }
+
+        function hideNotification() {
+            $('.' + NOTIFICATION_CLASS).dialog("close");
+        }
+
+        function hideOnClick() {
+            $('.' + HIDEONCLICK_CLASS).dialog("close");
         }
 
         function formatDate(time) {
@@ -1401,7 +1437,13 @@ define('views/dialogs',[],function() {
         }
 
         return {
-            init: _subscribe
+            init: _subscribe,
+            showDialog: showDialog,
+            hideDialogs: hideDialogs,
+            hideNotification: hideNotification,
+            cancelTakeBack: function(){
+                $('.' + TAKEBACK_CLASS).dialog("close");
+            }
         };
     }());
 
@@ -3269,7 +3311,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.5";
+        this.version = "0.8.6";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

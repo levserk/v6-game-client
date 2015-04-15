@@ -114,6 +114,7 @@ define(['EE'], function(EE) {
         this.emit('game_start', room);
         this.onRoundStart(data['initData']);
         this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
+        this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
         this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
     };
@@ -217,8 +218,18 @@ define(['EE'], function(EE) {
             case 'back':
                 switch (event.action){
                     case 'take':
+                        if (user == this.client.getPlayer()){
+                            this.currentRoom.userTakeBacks++;
+                        }
                         this.switchPlayer(user);
                         this.emit('take_back', {user: user, history: GameManager.parseHistory(event.history)});
+                        break;
+                    case 'ask':
+                        if (user != this.client.getPlayer())
+                            this.emit('ask_back', user);
+                        break;
+                    case 'cancel':
+                        this.emit('cancel_back', user);
                         break;
                 }
                 break;
@@ -339,7 +350,18 @@ define(['EE'], function(EE) {
             console.error('game_manager;', 'sendTakeBack', 'game not started!');
             return;
         }
+        this.client.viewsManager.dialogsView.cancelTakeBack();
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'take'});
+    };
+
+
+    GameManager.prototype.acceptTakeBack = function() {
+        this.client.send('game_manager', 'event', 'server', {type:'back', action:'accept'});
+    };
+
+
+    GameManager.prototype.cancelTakeBack = function() {
+        this.client.send('game_manager', 'event', 'server', {type:'back', action:'cancel'});
     };
 
 

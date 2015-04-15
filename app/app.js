@@ -136,7 +136,7 @@ require(['require-cnf'], function () {
             });
 
             _client.gameManager.on('time', _.throttle(function(data){
-               console.log('main;','time user:', data);
+               //console.log('main;','time user:', data);
             }, 1000, {trailing: false}));
 
             _client.historyManager.on('game_load', function(game){

@@ -4,6 +4,7 @@ define(['EE'], function(EE) {
     var GameManager = function(client){
         this.client = client;
         this.currentRoom = null;
+        this.enableGames = true;
         this.client.on('disconnected', function(){
             // TODO: save or close current room
         });

@@ -443,6 +443,7 @@ define('modules/game_manager',['EE'], function(EE) {
     var GameManager = function(client){
         this.client = client;
         this.currentRoom = null;
+        this.enableGames = true;
         this.client.on('disconnected', function(){
             // TODO: save or close current room
         });
@@ -701,6 +702,10 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.leaveGame = function(){
         if (!this.currentRoom){
             console.error('game_manager;', 'leaveGame', 'game not started!');
+            return;
+        }
+        if (this.currentRoom.isClosed){
+            console.error('game_manager;', 'leaveGame', 'game already ended');
             return;
         }
         // TODO: send to server leave game, block game and wait leave message
@@ -1019,6 +1024,10 @@ define('modules/invite_manager',['EE'], function(EE) {
 
 
     InviteManager.prototype.sendInvite = function(userId, params) {
+        if (!this.client.gameManager.enableGames){
+            this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
+            return;
+        }
         // find user, get current params, send invite and emit event invite sand // params.gameType;
         if (this.client.gameManager.inGame()){
             console.warn('You are already in game!');
@@ -1093,6 +1102,10 @@ define('modules/invite_manager',['EE'], function(EE) {
 
 
     InviteManager.prototype.playRandom = function(cancel){
+        if (!this.client.gameManager.enableGames){
+            this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
+            return;
+        }
         if (this.client.gameManager.inGame()){
             console.warn('You are already in game!');
             return;
@@ -4165,12 +4178,44 @@ define('modules/sound_manager',['EE', 'underscore'], function(EE, _) {
 
     return SoundManager;
 });
+define('modules/admin_manager',['EE'], function(EE) {
+    var AdminManager = function(client){
+        this.client = client;
+
+    };
+
+    AdminManager.prototype  = new EE();
+
+    AdminManager.prototype.onMessage = function(message) {
+        var data = message.data;
+        console.log('admin_manager;', 'message', message);
+        switch (message.type) {
+            case 'message':
+                this.client.viewsManager.dialogsView.showDialog(data,{}, true, false, false);
+                break;
+            case 'enable_games':
+                this.client.gameManager.enableGames = data['flag'];
+                break;
+            case 'reload': location.reload(); break;
+
+        }
+    };
+
+
+    AdminManager.prototype.send = function(type, data, pass){
+        this.client.send('admin', type, 'server', {pass: pass, data:data})
+    };
+
+
+    return AdminManager;
+});
+
 define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
-        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'EE'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
+        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.6";
+        this.version = "0.8.7";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4201,6 +4246,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.historyManager = new HistoryManager(this);
         this.ratingManager = new RatingManager(this);
         this.soundManager = new SoundManager(this);
+        this.adminManager = new AdminManager(this);
 
         this.currentMode = null;
 
@@ -4268,6 +4314,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             case 'chat_manager': this.chatManager.onMessage(message); break;
             case 'history_manager': this.historyManager.onMessage(message); break;
             case 'rating_manager': this.ratingManager.onMessage(message); break;
+            case 'admin': this.adminManager.onMessage(message); break;
         }
     };
 

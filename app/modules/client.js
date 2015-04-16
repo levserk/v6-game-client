@@ -1,9 +1,9 @@
 define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
-        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'EE'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager,  EE) {
+        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager', 'EE'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.8.6";
+        this.version = "0.8.7";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -34,6 +34,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.historyManager = new HistoryManager(this);
         this.ratingManager = new RatingManager(this);
         this.soundManager = new SoundManager(this);
+        this.adminManager = new AdminManager(this);
 
         this.currentMode = null;
 
@@ -101,6 +102,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             case 'chat_manager': this.chatManager.onMessage(message); break;
             case 'history_manager': this.historyManager.onMessage(message); break;
             case 'rating_manager': this.ratingManager.onMessage(message); break;
+            case 'admin': this.adminManager.onMessage(message); break;
         }
     };
 

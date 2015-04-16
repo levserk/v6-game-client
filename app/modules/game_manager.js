@@ -264,6 +264,10 @@ define(['EE'], function(EE) {
             console.error('game_manager;', 'leaveGame', 'game not started!');
             return;
         }
+        if (this.currentRoom.isClosed){
+            console.error('game_manager;', 'leaveGame', 'game already ended');
+            return;
+        }
         // TODO: send to server leave game, block game and wait leave message
         this.client.send('game_manager', 'leave', 'server', true);
     };

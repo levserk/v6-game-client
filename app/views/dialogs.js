@@ -8,8 +8,10 @@ define(function() {
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var TAKEBACK_CLASS = 'dialogTakeBack';
+        var TIMEDIV = '<div class="inviteTime">Осталось: <span>30</span> секунд</div>';
         var client;
         var dialogTimeout;
+        var inviteTimeout = 30;
 
         function _subscribe(_client) {
             client = _client;
@@ -34,25 +36,34 @@ define(function() {
             var html = 'Вас пригласил в игру пользователь ' + invite.from.userName;
             if (typeof this.client.opts.generateInviteText == "function")
                 html = this.client.opts.generateInviteText(invite);
-
+                html += TIMEDIV;
             var div = showDialog(html, {
                 buttons: {
                     "Принять": function() {
+                        clearInterval(div.timeInterval);
                         client.inviteManager.accept($(this).attr('data-userId'));
                         $(this).remove();
                     },
                     "Отклонить": function(){
+                        clearInterval(div.timeInterval);
                         client.inviteManager.reject($(this).attr('data-userId'));
                         $(this).remove();
                     }
                 },
                 close: function() {
+                    clearInterval(div.timeInterval);
                     client.inviteManager.reject($(this).attr('data-userId'));
                     $(this).remove();
                 }
             }, true, false, false);
             div.attr('data-userId', invite.from.userId);
             div.addClass(INVITE_CLASS);
+            div.startTime = div.prevTime = Date.now();
+            div.timeInterval = setInterval(function(){
+                var time = (inviteTimeout * 1000 - (Date.now() - this.startTime)) / 1000 ^0;
+                this.find('.inviteTime span').html(time);
+                if (time < 1) this.dialog('close');
+            }.bind(div), 250);
         }
 
         function rejectInvite(invite) {

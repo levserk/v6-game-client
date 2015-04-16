@@ -1054,12 +1054,8 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             'click #randomPlay': 'playClicked'
         },
         _reconnect: function() {
-            if (this.client.opts.reload) {
-                location.reload(false);
-                return;
-            }
+            this.client.reconnect();
             this.$list.html(this.$loadingTab);
-            this.client.socket.init();
         },
         clickTab: function(e) {
             if (!this.client.socket.isConnected) {
@@ -1235,8 +1231,10 @@ define('views/dialogs',[],function() {
         var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var TAKEBACK_CLASS = 'dialogTakeBack';
+        var TIMEDIV = '<div class="inviteTime">Осталось: <span>30</span> секунд</div>';
         var client;
         var dialogTimeout;
+        var inviteTimeout = 30;
 
         function _subscribe(_client) {
             client = _client;
@@ -1261,25 +1259,34 @@ define('views/dialogs',[],function() {
             var html = 'Вас пригласил в игру пользователь ' + invite.from.userName;
             if (typeof this.client.opts.generateInviteText == "function")
                 html = this.client.opts.generateInviteText(invite);
-
+                html += TIMEDIV;
             var div = showDialog(html, {
                 buttons: {
                     "Принять": function() {
+                        clearInterval(div.timeInterval);
                         client.inviteManager.accept($(this).attr('data-userId'));
                         $(this).remove();
                     },
                     "Отклонить": function(){
+                        clearInterval(div.timeInterval);
                         client.inviteManager.reject($(this).attr('data-userId'));
                         $(this).remove();
                     }
                 },
                 close: function() {
+                    clearInterval(div.timeInterval);
                     client.inviteManager.reject($(this).attr('data-userId'));
                     $(this).remove();
                 }
             }, true, false, false);
             div.attr('data-userId', invite.from.userId);
             div.addClass(INVITE_CLASS);
+            div.startTime = div.prevTime = Date.now();
+            div.timeInterval = setInterval(function(){
+                var time = (inviteTimeout * 1000 - (Date.now() - this.startTime)) / 1000 ^0;
+                this.find('.inviteTime span').html(time);
+                if (time < 1) this.dialog('close');
+            }.bind(div), 250);
         }
 
         function rejectInvite(invite) {
@@ -3393,6 +3400,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.blocks = opts.blocks || {};
         opts.images = opts.images || defaultImages;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
+        opts.autoReconnect = opts.autoReconnect || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -3420,9 +3428,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.currentMode = null;
 
+        this.reconnectTimeout = null;
+
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
             console.log('client;', 'socket connected');
+            clearTimeout(self.reconnectTimeout);
             self.isLogin = false;
             self.socket.send({
                 module:'server',
@@ -3436,11 +3447,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             console.log('client;', 'socket disconnected');
             self.isLogin = false;
             self.emit('disconnected');
+            if (!self.closedByServer && self.opts.autoReconnect){
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), 3000);
+            }
         });
 
         this.socket.on("failed", function() {
             console.log('client;', 'socket connection failed');
             self.emit('disconnected');
+            if (!self.closedByServer && self.opts.autoReconnect){
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), 30000);
+            }
         });
 
         this.socket.on("message", function(message) {
@@ -3473,6 +3490,20 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.viewsManager.init();
         console.log('client;', 'init version:', this.version);
         return this;
+    };
+
+
+    Client.prototype.reconnect = function(force){
+        clearTimeout(this.reconnectTimeout);
+        if (this.isLogin && !force){
+            console.log('client;', 'connected!');
+            return;
+        }
+        if (this.opts.reload) {
+            location.reload(false);
+            return;
+        }
+        this.socket.init();
     };
 
 
@@ -3605,9 +3636,18 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.onError = function (error) {
         console.error('client;', 'server error', error);
+        switch (error){
+            case 'login_error':
+                this.emit('login_error');
+                this.socket.ws.close();
+                break;
+            case 'new_connection':
+                this.viewsManager.dialogsView.showDialog('Запущена еще одна копия игры', {});
+                this.closedByServer = true;
+                break;
+        }
         if (error == 'login_error') {
-            this.emit('login_error');
-            this.socket.ws.close();
+
         }
     };
 

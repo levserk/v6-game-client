@@ -6,6 +6,10 @@
     font-size: 10pt;
 }
 
+.ui-dialog .ui-dialog-content{
+    line-height: 20px;
+}
+
 .ui-dialog .dialog-buttonset {
     font-size: 10pt;
 }
@@ -15,4 +19,12 @@
     -moz-user-select: none;
     -ms-user-select: none;
     cursor: pointer;
+
+}
+
+.ui-dialog .inviteTime {
+     margin-top: 10px;
+}
+.ui-dialog .inviteTime span{
+    font-weight: bold;
 }

@@ -60,7 +60,7 @@ define(['EE'], function(EE) {
                 return;
             }
         }
-        console.warn('user_list;', 'no user in list', userId);
+        console.warn('user_list;', 'onUserLeave; no user in list', userId);
     };
 
 
@@ -89,7 +89,19 @@ define(['EE'], function(EE) {
                 return;
             }
         }
-        console.warn('user_list;', 'no room in list', roomId, players);
+        console.warn('user_list;', 'onGameEnd; no room in list', roomId, players);
+    };
+
+
+    UserList.prototype.onUserChanged = function(userData){
+        for (var i = 0; i < this.users.length; i++){
+            if (this.users[i].userId == userData.userId){
+                this.users[i].update(userData);
+                this.emit('user_changed', this.users[i]);
+                return;
+            }
+        }
+        console.warn('user_list;', 'onUserChanged; no user in list', userData)
     };
 
 
@@ -122,7 +134,7 @@ define(['EE'], function(EE) {
             if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
-            if (!user.isInRoom) userList.push(user);
+            if (!user.isInRoom && (!user.disableInvite || user.isPlayer)) userList.push(user);
         }
         userList.sort(function(a, b){
             var ar = a.getRank();
@@ -182,10 +194,21 @@ define(['EE'], function(EE) {
         for (var key in data){
             if (data.hasOwnProperty(key)) this[key] = data[key];
         }
+
         this.isPlayer = fIsPlayer || false;
+        this.disableInvite = data.disableInvite || false;
+
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
         };
+
+        this.update = function(data) {
+            for (var key in data){
+                if (data.hasOwnProperty(key)) this[key] = data[key];
+            }
+            this.disableInvite = data.disableInvite || false;
+        };
+
         this._client = client;
     }
 

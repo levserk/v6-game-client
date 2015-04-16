@@ -543,6 +543,11 @@ define('modules/invite_manager',['EE'], function(EE) {
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
 
+        if (this.client.settings.disableInvite){
+            this.reject(invite.from);
+            return;
+        }
+
         if (this.isPlayRandom && this.client.currentMode == invite.mode) {
             console.log('invite_manager;', 'auto accept invite', invite);
             this.accept(invite.from);
@@ -741,7 +746,7 @@ define('modules/user_list',['EE'], function(EE) {
                 return;
             }
         }
-        console.warn('user_list;', 'no user in list', userId);
+        console.warn('user_list;', 'onUserLeave; no user in list', userId);
     };
 
 
@@ -770,7 +775,19 @@ define('modules/user_list',['EE'], function(EE) {
                 return;
             }
         }
-        console.warn('user_list;', 'no room in list', roomId, players);
+        console.warn('user_list;', 'onGameEnd; no room in list', roomId, players);
+    };
+
+
+    UserList.prototype.onUserChanged = function(userData){
+        for (var i = 0; i < this.users.length; i++){
+            if (this.users[i].userId == userData.userId){
+                this.users[i].update(userData);
+                this.emit('user_changed', this.users[i]);
+                return;
+            }
+        }
+        console.warn('user_list;', 'onUserChanged; no user in list', userData)
     };
 
 
@@ -803,7 +820,7 @@ define('modules/user_list',['EE'], function(EE) {
             if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
-            if (!user.isInRoom) userList.push(user);
+            if (!user.isInRoom && (!user.disableInvite || user.isPlayer)) userList.push(user);
         }
         userList.sort(function(a, b){
             var ar = a.getRank();
@@ -863,10 +880,21 @@ define('modules/user_list',['EE'], function(EE) {
         for (var key in data){
             if (data.hasOwnProperty(key)) this[key] = data[key];
         }
+
         this.isPlayer = fIsPlayer || false;
+        this.disableInvite = data.disableInvite || false;
+
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
         };
+
+        this.update = function(data) {
+            for (var key in data){
+                if (data.hasOwnProperty(key)) this[key] = data[key];
+            }
+            this.disableInvite = data.disableInvite || false;
+        };
+
         this._client = client;
     }
 
@@ -1119,6 +1147,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
             this.listenTo(this.client.userList, 'new_room', bindedRender);
             this.listenTo(this.client.userList, 'close_room', bindedRender);
+            this.listenTo(this.client.userList, 'user_changed', bindedRender);
             this.listenTo(this.client, 'disconnected', bindedRender);
             this.listenTo(this.client, 'user_relogin', bindedRender);
 
@@ -3430,6 +3459,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             case 'user_leave':
                 this.userList.onUserLeave(data);
                 break;
+            case 'user_changed':
+                this.userList.onUserChanged(data);
+                break;
             case 'new_game':
                 this.userList.onGameStart(data.room, data.players);
                 this.gameManager.onMessage(message);
@@ -3566,7 +3598,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
         console.log('client;', 'save settings:', saveSettings);
         this.send('server', 'settings', 'server', saveSettings);
-        this.emit('settings_saved', settings)
+        this.emit('settings_saved', settings);
+        if (this.viewsManager.settingsView.changedProperties.indexOf('disableInvite' != -1)) { // user enable/disable invites
+            this.send('server', 'changed', 'server', true);
+        }
     };
 
 

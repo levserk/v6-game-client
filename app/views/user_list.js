@@ -122,6 +122,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.listenTo(this.client.inviteManager, 'reject_invite', this.onRejectInvite.bind(this));
             this.listenTo(this.client.userList, 'new_room', bindedRender);
             this.listenTo(this.client.userList, 'close_room', bindedRender);
+            this.listenTo(this.client.userList, 'user_changed', bindedRender);
             this.listenTo(this.client, 'disconnected', bindedRender);
             this.listenTo(this.client, 'user_relogin', bindedRender);
 

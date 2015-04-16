@@ -122,6 +122,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             case 'user_leave':
                 this.userList.onUserLeave(data);
                 break;
+            case 'user_changed':
+                this.userList.onUserChanged(data);
+                break;
             case 'new_game':
                 this.userList.onGameStart(data.room, data.players);
                 this.gameManager.onMessage(message);
@@ -258,7 +261,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
         console.log('client;', 'save settings:', saveSettings);
         this.send('server', 'settings', 'server', saveSettings);
-        this.emit('settings_saved', settings)
+        this.emit('settings_saved', settings);
+        if (this.viewsManager.settingsView.changedProperties.indexOf('disableInvite' != -1)) { // user enable/disable invites
+            this.send('server', 'changed', 'server', true);
+        }
     };
 
 

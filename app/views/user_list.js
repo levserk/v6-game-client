@@ -16,12 +16,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             'click #randomPlay': 'playClicked'
         },
         _reconnect: function() {
-            if (this.client.opts.reload) {
-                location.reload(false);
-                return;
-            }
+            this.client.reconnect();
             this.$list.html(this.$loadingTab);
-            this.client.socket.init();
         },
         clickTab: function(e) {
             if (!this.client.socket.isConnected) {

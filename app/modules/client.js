@@ -11,6 +11,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.blocks = opts.blocks || {};
         opts.images = opts.images || defaultImages;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
+        opts.autoReconnect = opts.autoReconnect || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -38,9 +39,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.currentMode = null;
 
+        this.reconnectTimeout = null;
+
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
             console.log('client;', 'socket connected');
+            clearTimeout(self.reconnectTimeout);
             self.isLogin = false;
             self.socket.send({
                 module:'server',
@@ -54,11 +58,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             console.log('client;', 'socket disconnected');
             self.isLogin = false;
             self.emit('disconnected');
+            if (!self.closedByServer && self.opts.autoReconnect){
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), 3000);
+            }
         });
 
         this.socket.on("failed", function() {
             console.log('client;', 'socket connection failed');
             self.emit('disconnected');
+            if (!self.closedByServer && self.opts.autoReconnect){
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), 30000);
+            }
         });
 
         this.socket.on("message", function(message) {
@@ -91,6 +101,20 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.viewsManager.init();
         console.log('client;', 'init version:', this.version);
         return this;
+    };
+
+
+    Client.prototype.reconnect = function(force){
+        clearTimeout(this.reconnectTimeout);
+        if (this.isLogin && !force){
+            console.log('client;', 'connected!');
+            return;
+        }
+        if (this.opts.reload) {
+            location.reload(false);
+            return;
+        }
+        this.socket.init();
     };
 
 
@@ -223,9 +247,18 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.onError = function (error) {
         console.error('client;', 'server error', error);
+        switch (error){
+            case 'login_error':
+                this.emit('login_error');
+                this.socket.ws.close();
+                break;
+            case 'new_connection':
+                this.viewsManager.dialogsView.showDialog('Запущена еще одна копия игры', {});
+                this.closedByServer = true;
+                break;
+        }
         if (error == 'login_error') {
-            this.emit('login_error');
-            this.socket.ws.close();
+
         }
     };
 

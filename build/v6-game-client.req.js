@@ -501,6 +501,8 @@ define('modules/invite_manager',['EE'], function(EE) {
         this.client = client;
         this.invites = {}; // userId : invite
         this.invite = null;
+        this.inviteTimeout = 30;
+        this.inviteInterval = null;
 
         client.userList.on('leave_user', function (user) {
             if (self.invite && self.invite.target == user.userId) {
@@ -568,6 +570,7 @@ define('modules/invite_manager',['EE'], function(EE) {
 
     InviteManager.prototype.onReject = function(userId, senderId, reason){
         if (this.invite.target == userId && this.client.getPlayer().userId == senderId){
+            if ((Date.now() - this.inviteTime)/1000 > this.inviteTimeout - 1) reason = 'timeout';
             this.emit('reject_invite', {user:this.client.userList.getUser(userId), reason:reason});
             this.invite = null;
         } else {
@@ -609,6 +612,7 @@ define('modules/invite_manager',['EE'], function(EE) {
         params.mode = this.client.currentMode;
         params.target = userId;
         this.invite = params;
+        this.inviteTime = Date.now();
         this.client.send('invite_manager', 'invite', userId, this.invite);
     };
 
@@ -1253,10 +1257,11 @@ define('views/dialogs',[],function() {
             client.chatManager.on('show_ban', showBan);
             client.on('login_error', loginError);
             $(document).on("click", hideOnClick);
+            inviteTimeout = client.inviteManager.inviteTimeout;
         }
 
         function newInvite(invite) {
-            var html = 'Вас пригласил в игру пользователь ' + invite.from.userName;
+            var html = 'Вас пригласил в игру пользователь <b>' + invite.from.userName + '</b>';
             if (typeof this.client.opts.generateInviteText == "function")
                 html = this.client.opts.generateInviteText(invite);
                 html += TIMEDIV;
@@ -1290,7 +1295,10 @@ define('views/dialogs',[],function() {
         }
 
         function rejectInvite(invite) {
-            var html = 'Пользователь ' + invite.user.userName + ' отклонил ваше приглашение';
+            var html = 'Пользователь <b>' + invite.user.userName + '</b>';
+            if (invite.reason != 'timeout')
+                html += ' отклонил ваше приглашение';
+            else html += ' превысил лимит ожидания в 30 секунд';
             var div = showDialog(html, {}, true, true, true);
         }
 
@@ -1305,7 +1313,7 @@ define('views/dialogs',[],function() {
 
         function userLeave(user) {
             hideDialogs();
-            var html = 'Пользователь ' + user.userName + ' покинул игру';
+            var html = 'Пользователь <b>' + user.userName + '</b> покинул игру';
             var div = showDialog(html, {
                 buttons: {
                     "Ок": function() {
@@ -1322,7 +1330,7 @@ define('views/dialogs',[],function() {
 
         function askDraw(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь ' + user.userName + ' предлагает ничью';
+            var html = 'Пользователь <b>' + user.userName + '</b> предлагает ничью';
             var div = showDialog(html,{
                 buttons: {
                     "Принять": function() {
@@ -1342,14 +1350,14 @@ define('views/dialogs',[],function() {
         }
 
         function cancelDraw(user) {
-            var html = 'Пользователь ' + user.userName + ' отклонил ваше предложение о ничье';
+            var html = 'Пользователь <b>' + user.userName + '</b> отклонил ваше предложение о ничье';
             var div = showDialog(html, {}, true, true, true);
         }
 
 
         function askTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь ' + user.userName + ' просит отменить ход. Разрешить ему?';
+            var html = 'Пользователь <b>' + user.userName + '</b> просит отменить ход. Разрешить ему?';
             var div = showDialog(html,{
                 buttons: {
                     "Да": function() {
@@ -1372,7 +1380,7 @@ define('views/dialogs',[],function() {
 
         function cancelTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь ' + user.userName + ' отклонил ваше просьбу отменить ход';
+            var html = 'Пользователь <b>' + user.userName + '</b> отклонил ваше просьбу отменить ход';
             var div = showDialog(html, {}, true, true, true);
         }
 
@@ -3392,7 +3400,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.7";
+        this.version = "0.8.8";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

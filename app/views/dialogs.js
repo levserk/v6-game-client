@@ -30,10 +30,11 @@ define(function() {
             client.chatManager.on('show_ban', showBan);
             client.on('login_error', loginError);
             $(document).on("click", hideOnClick);
+            inviteTimeout = client.inviteManager.inviteTimeout;
         }
 
         function newInvite(invite) {
-            var html = 'Вас пригласил в игру пользователь ' + invite.from.userName;
+            var html = 'Вас пригласил в игру пользователь <b>' + invite.from.userName + '</b>';
             if (typeof this.client.opts.generateInviteText == "function")
                 html = this.client.opts.generateInviteText(invite);
                 html += TIMEDIV;
@@ -67,7 +68,10 @@ define(function() {
         }
 
         function rejectInvite(invite) {
-            var html = 'Пользователь ' + invite.user.userName + ' отклонил ваше приглашение';
+            var html = 'Пользователь <b>' + invite.user.userName + '</b>';
+            if (invite.reason != 'timeout')
+                html += ' отклонил ваше приглашение';
+            else html += ' превысил лимит ожидания в 30 секунд';
             var div = showDialog(html, {}, true, true, true);
         }
 
@@ -82,7 +86,7 @@ define(function() {
 
         function userLeave(user) {
             hideDialogs();
-            var html = 'Пользователь ' + user.userName + ' покинул игру';
+            var html = 'Пользователь <b>' + user.userName + '</b> покинул игру';
             var div = showDialog(html, {
                 buttons: {
                     "Ок": function() {
@@ -99,7 +103,7 @@ define(function() {
 
         function askDraw(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь ' + user.userName + ' предлагает ничью';
+            var html = 'Пользователь <b>' + user.userName + '</b> предлагает ничью';
             var div = showDialog(html,{
                 buttons: {
                     "Принять": function() {
@@ -119,14 +123,14 @@ define(function() {
         }
 
         function cancelDraw(user) {
-            var html = 'Пользователь ' + user.userName + ' отклонил ваше предложение о ничье';
+            var html = 'Пользователь <b>' + user.userName + '</b> отклонил ваше предложение о ничье';
             var div = showDialog(html, {}, true, true, true);
         }
 
 
         function askTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь ' + user.userName + ' просит отменить ход. Разрешить ему?';
+            var html = 'Пользователь <b>' + user.userName + '</b> просит отменить ход. Разрешить ему?';
             var div = showDialog(html,{
                 buttons: {
                     "Да": function() {
@@ -149,7 +153,7 @@ define(function() {
 
         function cancelTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь ' + user.userName + ' отклонил ваше просьбу отменить ход';
+            var html = 'Пользователь <b>' + user.userName + '</b> отклонил ваше просьбу отменить ход';
             var div = showDialog(html, {}, true, true, true);
         }
 

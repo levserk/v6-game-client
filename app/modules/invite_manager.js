@@ -7,6 +7,8 @@ define(['EE'], function(EE) {
         this.client = client;
         this.invites = {}; // userId : invite
         this.invite = null;
+        this.inviteTimeout = 30;
+        this.inviteInterval = null;
 
         client.userList.on('leave_user', function (user) {
             if (self.invite && self.invite.target == user.userId) {
@@ -74,6 +76,7 @@ define(['EE'], function(EE) {
 
     InviteManager.prototype.onReject = function(userId, senderId, reason){
         if (this.invite.target == userId && this.client.getPlayer().userId == senderId){
+            if ((Date.now() - this.inviteTime)/1000 > this.inviteTimeout - 1) reason = 'timeout';
             this.emit('reject_invite', {user:this.client.userList.getUser(userId), reason:reason});
             this.invite = null;
         } else {
@@ -115,6 +118,7 @@ define(['EE'], function(EE) {
         params.mode = this.client.currentMode;
         params.target = userId;
         this.invite = params;
+        this.inviteTime = Date.now();
         this.client.send('invite_manager', 'invite', userId, this.invite);
     };
 

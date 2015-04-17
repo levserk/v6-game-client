@@ -266,7 +266,7 @@ define(['EE'], function(EE) {
             return;
         }
         if (this.currentRoom.isClosed){
-            console.error('game_manager;', 'leaveGame', 'game already ended');
+            console.warn('game_manager;', 'leaveGame', 'game already ended');
             return;
         }
         // TODO: send to server leave game, block game and wait leave message

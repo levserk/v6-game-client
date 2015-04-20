@@ -28,3 +28,82 @@
 .ui-dialog .inviteTime span{
     font-weight: bold;
 }
+
+/* disable images */
+.ui-widget-content {
+    background: #ffffff;
+}
+.ui-widget-header {
+    background: #cccccc;
+}
+.ui-widget-header .ui-state-default {
+    background: #e6e6e6;
+}
+
+.ui-state-hover,
+.ui-widget-content .ui-state-hover,
+.ui-widget-header .ui-state-hover,
+.ui-state-focus,
+.ui-widget-content .ui-state-focus,
+.ui-widget-header .ui-state-focus {
+    background: #dadada;
+}
+
+
+.ui-state-default,
+.ui-widget-content .ui-state-default,
+.ui-widget-header .ui-state-default {
+    background: #e6e6e6;
+}
+
+.ui-state-hover,
+.ui-widget-content .ui-state-hover,
+.ui-widget-header .ui-state-hover,
+.ui-state-focus,
+.ui-widget-content .ui-state-focus,
+.ui-widget-header .ui-state-focus {
+    background: #dadada;
+}
+
+.ui-state-active,
+.ui-widget-content .ui-state-active,
+.ui-widget-header .ui-state-active {
+    background: #ffffff;
+}
+
+.ui-state-highlight,
+.ui-widget-content .ui-state-highlight,
+.ui-widget-header .ui-state-highlight {
+    background: #fbf9ee;
+}
+
+.ui-state-error,
+.ui-widget-content .ui-state-error,
+.ui-widget-header .ui-state-error {
+    background: #fef1ec;
+}
+
+.ui-icon,
+.ui-widget-content .ui-icon {
+    background-image: none;
+}
+.ui-widget-header .ui-icon {
+    background-image: none;
+}
+.ui-state-default .ui-icon {
+    background-image: none;
+}
+.ui-state-hover .ui-icon,
+.ui-state-focus .ui-icon {
+    background-image: none;
+}
+.ui-state-active .ui-icon {
+    background-image: none;
+}
+.ui-state-highlight .ui-icon {
+    background-image: none;
+}
+.ui-state-error .ui-icon,
+.ui-state-error-text .ui-icon {
+    background-image: none;
+}

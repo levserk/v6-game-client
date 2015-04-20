@@ -126,6 +126,10 @@
     cursor: pointer;
 }
 
+.ratingTable #ratingAutoComplete {
+    width: 75%;
+}
+
 .ratingTable .userName:hover{
     text-decoration: underline;
 }

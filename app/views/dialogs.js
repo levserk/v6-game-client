@@ -160,13 +160,13 @@ define(function() {
             }
             result += '<b> (' + (eloDif >= 0 ? '+':'') + eloDif + ' очков) </b>';
             switch (data.action){
-                case 'timeout': result +=  (data.result == 'win' ? 'У соперника ' : ', У вас ') + ' закончилось время';
+                case 'timeout': result +=  (data.result == 'win' ? 'У соперника ' : 'У Вас ') + ' закончилось время';
                     break;
                 case 'throw': result +=  (data.result == 'win' ? 'Соперник сдался ' : 'Вы сдались ');
                     break;
             }
             var rankResult = '';
-            if (oldRank > 0 && newRank < oldRank) {
+            if (result == 'win' && oldRank > 0 && newRank < oldRank) {
                 rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
             } else rankResult = 'Вы занимаете ' +  newRank + ' место в общем рейтинге.';
             var html = '<p>' + result + '</p><p>' + rankResult +'</p><br>' +

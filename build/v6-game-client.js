@@ -2217,13 +2217,13 @@ define('views/dialogs',[],function() {
             }
             result += '<b> (' + (eloDif >= 0 ? '+':'') + eloDif + ' очков) </b>';
             switch (data.action){
-                case 'timeout': result +=  (data.result == 'win' ? 'У соперника ' : ', У вас ') + ' закончилось время';
+                case 'timeout': result +=  (data.result == 'win' ? 'У соперника ' : 'У Вас ') + ' закончилось время';
                     break;
                 case 'throw': result +=  (data.result == 'win' ? 'Соперник сдался ' : 'Вы сдались ');
                     break;
             }
             var rankResult = '';
-            if (oldRank > 0 && newRank < oldRank) {
+            if (result == 'win' && oldRank > 0 && newRank < oldRank) {
                 rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
             } else rankResult = 'Вы занимаете ' +  newRank + ' место в общем рейтинге.';
             var html = '<p>' + result + '</p><p>' + rankResult +'</p><br>' +
@@ -2380,7 +2380,7 @@ define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" d
 define('text!tpls/v6-chatDay.ejs',[],function () { return '<li class="chatDay" data-day-msgId="<%= time %>">\r\n    <div>\r\n        <%= d %>\r\n    </div>\r\n</li>';});
 
 
-define('text!tpls/v6-chatRules.ejs',[],function () { return '<div id="chat-rules" class="aboutPanel">\r\n    <img class="closeIcon" src="<%= close %>">\r\n\r\n    <div style="padding: 10px 12px 15px 25px;">\r\n        <h2>Правила чата</h2>\r\n        <p style="line-height: 16px;">В чате запрещено:<br>\r\n            <span style="margin-left:5px;">1. использование ненормативной лексики и оскорбительных выражений</span><br>\r\n            <span style="margin-left:5px;">2. хамское и некорректное общение с другими участниками</span><br>\r\n            <span style="margin-left:5px;">3. многократная публикация бессмысленных, несодержательных или одинаковых сообщений.</span>\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Баны</span> выносятся: на 1 день, на 3 дня, на 7 дней,на\r\n            месяц или навсегда, в зависимости от степени тяжести нарушения.\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Бан</span> снимается автоматически по истечении срока.\r\n        </p>\r\n\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-chatRules.ejs',[],function () { return '<div id="chat-rules" class="aboutPanel">\r\n    <img class="closeIcon" src="<%= close %>">\r\n\r\n    <div style="padding: 10px 12px 15px 25px;">\r\n        <h2>Правила чата</h2>\r\n        <p style="line-height: 16px;">В чате запрещено:<br>\r\n            <span style="margin-left:5px;">1. использование ненормативной лексики и оскорбительных выражений;</span><br>\r\n            <span style="margin-left:5px;">2. хамское и некорректное общение с другими участниками;</span><br>\r\n            <span style="margin-left:5px;">3. многократная публикация бессмысленных, несодержательных или одинаковых сообщений.</span>\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Баны</span> выносятся: на 1 день, на 3 дня, на 7 дней,на\r\n            месяц или навсегда, в зависимости от степени тяжести нарушения.\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Бан</span> снимается автоматически по истечении срока.\r\n        </p>\r\n\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-chatBan.ejs',[],function () { return '<div>\r\n    <span class="ban-username" style="font-weight:bold;">Бан игрока <i><%= userName%></i></span><br><br>\r\n    <span>Причина бана:</span>\r\n    <br>\r\n    <div class="inputTextField" id="ban-reason" contenteditable="true" style="height:54px; border: 1px solid #aaaaaa;"></div><br>\r\n\r\n    <span>Длительность бана:</span><br>\r\n    <select id="ban-duration">\r\n        <option value="1">1 день</option>\r\n        <option value="3">3 дня</option>\r\n        <option value="7" selected="">7 дней</option>\r\n        <option value="30">30 дней</option>\r\n        <option value="9999">Навсегда</option>\r\n    </select>\r\n\r\n</div>';});

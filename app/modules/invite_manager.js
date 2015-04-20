@@ -7,8 +7,8 @@ define(['EE'], function(EE) {
         this.client = client;
         this.invites = {}; // userId : invite
         this.invite = null;
-        this.inviteTimeout = 30;
-        this.inviteInterval = null;
+        this.inviteTimeoutTime = 30;
+        this.inviteTimeout = null;
 
         client.userList.on('leave_user', function (user) {
             if (self.invite && self.invite.target == user.userId) {
@@ -75,10 +75,12 @@ define(['EE'], function(EE) {
 
 
     InviteManager.prototype.onReject = function(userId, senderId, reason){
+        console.log('invite_manger;', 'onReject', this.invite, 'reason');
         if (this.invite.target == userId && this.client.getPlayer().userId == senderId){
-            if ((Date.now() - this.inviteTime)/1000 > this.inviteTimeout - 1) reason = 'timeout';
+            if ((Date.now() - this.inviteTime)/1000 > this.inviteTimeoutTime - 1) reason = 'timeout';
             this.emit('reject_invite', {user:this.client.userList.getUser(userId), reason:reason});
             this.invite = null;
+            clearTimeout(this.inviteTimeout);
         } else {
             console.warn('invite_manager; ', 'wrong user reject invite', userId, senderId);
         }
@@ -86,6 +88,7 @@ define(['EE'], function(EE) {
 
 
     InviteManager.prototype.onCancel = function(invite){
+        console.log('invite_manger;', 'onCancel', invite);
         if (this.invites[invite.from]){
             this.emit('cancel_invite', this.invites[invite.from]);
             this.removeInvite(invite.from);
@@ -120,6 +123,12 @@ define(['EE'], function(EE) {
         this.invite = params;
         this.inviteTime = Date.now();
         this.client.send('invite_manager', 'invite', userId, this.invite);
+        this.inviteTimeout = setTimeout(function(){
+            if (this.invite) {
+                this.client.send('invite_manager', 'cancel', this.invite.target, this.invite);
+                this.onReject(this.invite.target, this.client.getPlayer().userId, 'timeout');
+            }
+        }.bind(this), this.inviteTimeoutTime * 1000);
     };
 
 
@@ -156,9 +165,11 @@ define(['EE'], function(EE) {
 
 
     InviteManager.prototype.cancel = function(){
+        console.log('invite_manger;', 'cancel', this.invite);
         if (this.invite) {
             this.client.send('invite_manager', 'cancel', this.invite.target, this.invite);
             this.invite = null;
+            clearTimeout(this.inviteTimeout);
         }
     };
 
@@ -167,6 +178,7 @@ define(['EE'], function(EE) {
         console.log('invite_manger;', 'removeInvite', userId);
         if (this.invites[userId]){
             this.emit('remove_invite', this.invites[userId]);
+            clearInterval(this.invites[userId]);
             delete this.invites[userId];
         }
     };

@@ -9,10 +9,10 @@ define(function() {
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var TAKEBACK_CLASS = 'dialogTakeBack';
         var ACTION_CLASS = 'dialogGameAction';
-        var TIMEDIV = '<div class="inviteTime">Осталось: <span>30</span> секунд</div>';
         var client;
         var dialogTimeout;
         var inviteTimeout = 30;
+        var TIMEDIV = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
 
         function _subscribe(_client) {
             client = _client;
@@ -31,7 +31,8 @@ define(function() {
             client.chatManager.on('show_ban', showBan);
             client.on('login_error', loginError);
             $(document).on("click", hideOnClick);
-            inviteTimeout = client.inviteManager.inviteTimeout;
+            inviteTimeout = client.inviteManager.inviteTimeoutTime;
+            TIMEDIV = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
         }
 
         function newInvite(invite) {
@@ -42,47 +43,51 @@ define(function() {
             var div = showDialog(html, {
                 buttons: {
                     "Принять": function() {
-                        clearInterval(div.timeInterval);
+                        clearInterval(invite.data.timeInterval);
                         client.inviteManager.accept($(this).attr('data-userId'));
                         $(this).remove();
                     },
                     "Отклонить": function(){
-                        clearInterval(div.timeInterval);
+                        clearInterval(invite.data.timeInterval);
                         client.inviteManager.reject($(this).attr('data-userId'));
                         $(this).remove();
                     }
                 },
                 close: function() {
-                    clearInterval(div.timeInterval);
+                    clearInterval(invite.data.timeInterval);
                     client.inviteManager.reject($(this).attr('data-userId'));
                     $(this).remove();
                 }
             }, true, false, false);
             div.attr('data-userId', invite.from.userId);
             div.addClass(INVITE_CLASS);
-            div.startTime = div.prevTime = Date.now();
-            div.timeInterval = setInterval(function(){
-                var time = (inviteTimeout * 1000 - (Date.now() - this.startTime)) / 1000 ^0;
+            invite.data.startTime = Date.now();
+            invite.data.timeInterval = setInterval(function(){
+                var time = (inviteTimeout * 1000 - (Date.now() - invite.data.startTime)) / 1000 ^0;
                 this.find('.inviteTime span').html(time);
                 if (time < 1) this.dialog('close');
             }.bind(div), 250);
         }
 
         function rejectInvite(invite) {
+            console.log('dialogs; rejectInvite invite', invite);
             var html = 'Пользователь <b>' + invite.user.userName + '</b>';
             if (invite.reason != 'timeout')
                 html += ' отклонил ваше приглашение';
-            else html += ' превысил лимит ожидания в 30 секунд';
+            else html += ' превысил лимит ожидания в '+inviteTimeout+' секунд';
             var div = showDialog(html, {}, true, true, true);
         }
 
-        function cancelInvite(opt) {
-            console.log('dialogs; cancel invite', opt);
+        function cancelInvite(invite) {
+            console.log('dialogs; cancel invite', invite);
+            clearInterval(invite.timeInterval);
         }
 
         function removeInvite(invite) {
+            console.log('dialogs; removeInvite invite', invite);
             var userId = invite.from;
             $('.' + INVITE_CLASS + '[data-userId="' + userId + '"]').remove();
+            clearInterval(invite.timeInterval);
         }
 
         function askDraw(user) {

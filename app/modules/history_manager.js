@@ -185,7 +185,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     };
 
     function formatDate(time) {
-        var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'сен', 'окт', 'ноя', 'дек'];
+        var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
         var date = new Date(time);
         var day = date.getDate();
         var month = months[date.getMonth()];

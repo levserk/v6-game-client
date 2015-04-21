@@ -85,13 +85,14 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     };
 
 
-    RatingManager.prototype.getRatings = function(mode, column, order, showMore){
+    RatingManager.prototype.getRatings = function(mode, column, order, filter, showMore){
         if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
         this.client.send('rating_manager', 'ratings', 'server', {
             mode: mode||this.client.currentMode,
             column: column,
             order: order,
+            filter: filter,
             count: this.maxCount,
             offset: this.count
         });

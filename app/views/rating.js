@@ -22,7 +22,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 'click .headIcons th': 'thClicked',
                 'click .filterPanel span': 'tabClicked',
                 'click .ratingTable .userName': 'userClicked',
-                'click #ratingShowMore': 'showMore'
+                'click #ratingShowMore': 'showMore',
+                'keyup #ratingAutoComplete': 'filterChanged'
             },
 
             thClicked: function(e){
@@ -31,7 +32,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     if (this.columns[i].id == id && this.columns[i].canOrder){
                         this.setColumnOrder(id);
                         console.log('log; rating col clicked',this.columns[i]);
-                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        this.getRatings();
                         break;
                     }
                 }
@@ -42,7 +43,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 for (var i = 0; i < this.subTabs.length; i++){
                     if (this.subTabs[i].id == id){
                         this.setActiveSubTab(id);
-                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        this.getRatings();
                         return;
                     }
                 }
@@ -55,7 +56,18 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             },
 
             showMore: function() {
-                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', true);
+                this.getRatings(true);
+            },
+
+            filterChanged: function(e) {
+                if (e.type === 'keyup' && e.keyCode !== 13) {
+                    return;
+                }
+                this.getRatings(false, e.target.value);
+            },
+
+            getRatings: function(showmore, filter) {
+                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', filter, !!showmore);
             },
 
             initialize: function(_conf, _manager) {

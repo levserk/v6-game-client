@@ -2907,7 +2907,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     };
 
     function formatDate(time) {
-        var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'сен', 'окт', 'ноя', 'дек'];
+        var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
         var date = new Date(time);
         var day = date.getDate();
         var month = months[date.getMonth()];
@@ -2973,7 +2973,8 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 'click .headIcons th': 'thClicked',
                 'click .filterPanel span': 'tabClicked',
                 'click .ratingTable .userName': 'userClicked',
-                'click #ratingShowMore': 'showMore'
+                'click #ratingShowMore': 'showMore',
+                'keyup #ratingAutoComplete': 'filterChanged'
             },
 
             thClicked: function(e){
@@ -2982,7 +2983,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                     if (this.columns[i].id == id && this.columns[i].canOrder){
                         this.setColumnOrder(id);
                         console.log('log; rating col clicked',this.columns[i]);
-                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        this.getRatings();
                         break;
                     }
                 }
@@ -2993,7 +2994,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 for (var i = 0; i < this.subTabs.length; i++){
                     if (this.subTabs[i].id == id){
                         this.setActiveSubTab(id);
-                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        this.getRatings();
                         return;
                     }
                 }
@@ -3006,7 +3007,18 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             },
 
             showMore: function() {
-                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', true);
+                this.getRatings(true);
+            },
+
+            filterChanged: function(e) {
+                if (e.type === 'keyup' && e.keyCode !== 13) {
+                    return;
+                }
+                this.getRatings(false, e.target.value);
+            },
+
+            getRatings: function(showmore, filter) {
+                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', filter, !!showmore);
             },
 
             initialize: function(_conf, _manager) {
@@ -3289,13 +3301,14 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
     };
 
 
-    RatingManager.prototype.getRatings = function(mode, column, order, showMore){
+    RatingManager.prototype.getRatings = function(mode, column, order, filter, showMore){
         if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
         this.client.send('rating_manager', 'ratings', 'server', {
             mode: mode||this.client.currentMode,
             column: column,
             order: order,
+            filter: filter,
             count: this.maxCount,
             offset: this.count
         });

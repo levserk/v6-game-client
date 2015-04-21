@@ -50,24 +50,21 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
 
     HistoryManager.prototype.onHistoryLoad = function (mode, history, userId){
         console.log('history_manager;', 'history load', userId, history);
-        setTimeout(function(){
-            if (!this.historyView.isClosed){
-                var histTable = [];
-                this.userId = userId;
-                this.currentMode = mode;
-                this.history = this.history.concat(history);
-                for (var i = this.history.length-1; i > -1; i--){
-                    this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
-                }
-                this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
+        if (!this.historyView.isClosed) {
+            var histTable = [];
+            this.userId = userId;
+            this.currentMode = mode;
+            this.history = this.history.concat(history);
+            for (var i = this.history.length - 1; i > -1; i--) {
+                this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
             }
-        }.bind(this),200);
+            this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
+        }
     };
 
 
     HistoryManager.prototype.onGameLoad = function (mode, game){
-        console.log('history_manager;', 'game load', game);
-        //TODO initGame, gameManager
+        console.log('history_manager;', 'game load', game, 'time:', Date.now() - this.startTime);
         if (game) {
             game.history = '[' + game.history + ']';
             game.history = game.history.replace(new RegExp('@', 'g'), ',');
@@ -169,6 +166,8 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             count: this.maxCount,
             offset: this.history.length
         });
+        this.historyView.delegateEvents();
+        this.startTime = Date.now();
     };
 
 
@@ -177,6 +176,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;
         this.client.send('history_manager', 'game', 'server', {mode:mode, id:id, userId: userId});
+        this.startTime = Date.now();
     };
 
 

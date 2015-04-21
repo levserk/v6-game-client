@@ -9,6 +9,7 @@ define(['EE'], function(EE) {
         this.invite = null;
         this.inviteTimeoutTime = 30;
         this.inviteTimeout = null;
+        this.isPlayRandom = false;
 
         client.userList.on('leave_user', function (user) {
             if (self.invite && self.invite.target == user.userId) {
@@ -36,6 +37,11 @@ define(['EE'], function(EE) {
                 if (self.invites.hasOwnProperty(userId)){
                     self.removeInvite(userId);
                 }
+        });
+        client.on('mode_switch', function(){
+            if (self.isPlayRandom){
+                self.playRandom(true);
+            }
         });
     };
 
@@ -185,7 +191,7 @@ define(['EE'], function(EE) {
 
 
     InviteManager.prototype.playRandom = function(cancel){
-        if (!this.client.gameManager.enableGames){
+        if (!this.client.gameManager.enableGames && !cancel){
             this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
             return;
         }
@@ -213,7 +219,8 @@ define(['EE'], function(EE) {
             this.client.send('invite_manager', 'random', 'server', params);
         } else {
             this.isPlayRandom = false;
-            this.client.send('invite_manager', 'random', 'server', true);
+            this.client.send('invite_manager', 'random', 'server', 'off');
+            this.client.viewsManager.userListView._setRandomPlay();
         }
     };
 

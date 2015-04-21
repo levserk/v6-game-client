@@ -942,6 +942,7 @@ define('modules/invite_manager',['EE'], function(EE) {
         this.invite = null;
         this.inviteTimeoutTime = 30;
         this.inviteTimeout = null;
+        this.isPlayRandom = false;
 
         client.userList.on('leave_user', function (user) {
             if (self.invite && self.invite.target == user.userId) {
@@ -969,6 +970,11 @@ define('modules/invite_manager',['EE'], function(EE) {
                 if (self.invites.hasOwnProperty(userId)){
                     self.removeInvite(userId);
                 }
+        });
+        client.on('mode_switch', function(){
+            if (self.isPlayRandom){
+                self.playRandom(true);
+            }
         });
     };
 
@@ -1118,7 +1124,7 @@ define('modules/invite_manager',['EE'], function(EE) {
 
 
     InviteManager.prototype.playRandom = function(cancel){
-        if (!this.client.gameManager.enableGames){
+        if (!this.client.gameManager.enableGames && !cancel){
             this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
             return;
         }
@@ -1146,7 +1152,8 @@ define('modules/invite_manager',['EE'], function(EE) {
             this.client.send('invite_manager', 'random', 'server', params);
         } else {
             this.isPlayRandom = false;
-            this.client.send('invite_manager', 'random', 'server', true);
+            this.client.send('invite_manager', 'random', 'server', 'off');
+            this.client.viewsManager.userListView._setRandomPlay();
         }
     };
 
@@ -1251,6 +1258,7 @@ define('modules/user_list',['EE'], function(EE) {
         for (var i = 0; i < this.users.length; i++){
             if (this.users[i].userId == userData.userId){
                 this.users[i].update(userData);
+                if (!this.users[i].isPlayer) console.log('user_changed!', userData.isActive, userData);
                 this.emit('user_changed', this.users[i]);
                 return;
             }
@@ -1288,7 +1296,9 @@ define('modules/user_list',['EE'], function(EE) {
             if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
-            if (!user.isInRoom && (!user.disableInvite || user.isPlayer)) userList.push(user);
+            if (user.isInRoom) continue;
+            if (!user.isPlayer && (user.disableInvite || !user.isActive)) continue;
+            else userList.push(user);
         }
         userList.sort(function(a, b){
             var ar = a.getRank();
@@ -1351,6 +1361,7 @@ define('modules/user_list',['EE'], function(EE) {
 
         this.isPlayer = fIsPlayer || false;
         this.disableInvite = data.disableInvite || false;
+        this.isActive  = (typeof data.isActive == 'boolean' ? data.isActive : true); // true default
 
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
@@ -1361,6 +1372,7 @@ define('modules/user_list',['EE'], function(EE) {
                 if (data.hasOwnProperty(key)) this[key] = data[key];
             }
             this.disableInvite = data.disableInvite || false;
+            if (typeof data.isActive == 'boolean') this.isActive  = data.isActive;
         };
 
         this._client = client;
@@ -3590,24 +3602,21 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
 
     HistoryManager.prototype.onHistoryLoad = function (mode, history, userId){
         console.log('history_manager;', 'history load', userId, history);
-        setTimeout(function(){
-            if (!this.historyView.isClosed){
-                var histTable = [];
-                this.userId = userId;
-                this.currentMode = mode;
-                this.history = this.history.concat(history);
-                for (var i = this.history.length-1; i > -1; i--){
-                    this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
-                }
-                this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
+        if (!this.historyView.isClosed) {
+            var histTable = [];
+            this.userId = userId;
+            this.currentMode = mode;
+            this.history = this.history.concat(history);
+            for (var i = this.history.length - 1; i > -1; i--) {
+                this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
             }
-        }.bind(this),200);
+            this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
+        }
     };
 
 
     HistoryManager.prototype.onGameLoad = function (mode, game){
-        console.log('history_manager;', 'game load', game);
-        //TODO initGame, gameManager
+        console.log('history_manager;', 'game load', game, 'time:', Date.now() - this.startTime);
         if (game) {
             game.history = '[' + game.history + ']';
             game.history = game.history.replace(new RegExp('@', 'g'), ',');
@@ -3709,6 +3718,8 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
             count: this.maxCount,
             offset: this.history.length
         });
+        this.historyView.delegateEvents();
+        this.startTime = Date.now();
     };
 
 
@@ -3717,6 +3728,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;
         this.client.send('history_manager', 'game', 'server', {mode:mode, id:id, userId: userId});
+        this.startTime = Date.now();
     };
 
 
@@ -4275,12 +4287,16 @@ define('modules/admin_manager',['EE'], function(EE) {
     return AdminManager;
 });
 
+/*! Idle Timer v1.0.1 2014-03-21 | https://github.com/thorst/jquery-idletimer | (c) 2014 Paul Irish | Licensed MIT */
+!function(a){a.idleTimer=function(b,c){var d;"object"==typeof b?(d=b,b=null):"number"==typeof b&&(d={timeout:b},b=null),c=c||document,d=a.extend({idle:!1,timeout:3e4,events:"mousemove keydown wheel DOMMouseScroll mousewheel mousedown touchstart touchmove MSPointerDown MSPointerMove"},d);var e=a(c),f=e.data("idleTimerObj")||{},g=function(b){var d=a.data(c,"idleTimerObj")||{};d.idle=!d.idle,d.olddate=+new Date;var e=a.Event((d.idle?"idle":"active")+".idleTimer");a(c).trigger(e,[c,a.extend({},d),b])},h=function(b){var d=a.data(c,"idleTimerObj")||{};if(null==d.remaining){if("mousemove"===b.type){if(b.pageX===d.pageX&&b.pageY===d.pageY)return;if("undefined"==typeof b.pageX&&"undefined"==typeof b.pageY)return;var e=+new Date-d.olddate;if(200>e)return}clearTimeout(d.tId),d.idle&&g(b),d.lastActive=+new Date,d.pageX=b.pageX,d.pageY=b.pageY,d.tId=setTimeout(g,d.timeout)}},i=function(){var b=a.data(c,"idleTimerObj")||{};b.idle=b.idleBackup,b.olddate=+new Date,b.lastActive=b.olddate,b.remaining=null,clearTimeout(b.tId),b.idle||(b.tId=setTimeout(g,b.timeout))},j=function(){var b=a.data(c,"idleTimerObj")||{};null==b.remaining&&(b.remaining=b.timeout-(+new Date-b.olddate),clearTimeout(b.tId))},k=function(){var b=a.data(c,"idleTimerObj")||{};null!=b.remaining&&(b.idle||(b.tId=setTimeout(g,b.remaining)),b.remaining=null)},l=function(){var b=a.data(c,"idleTimerObj")||{};clearTimeout(b.tId),e.removeData("idleTimerObj"),e.off("._idleTimer")},m=function(){var b=a.data(c,"idleTimerObj")||{};if(b.idle)return 0;if(null!=b.remaining)return b.remaining;var d=b.timeout-(+new Date-b.lastActive);return 0>d&&(d=0),d};if(null===b&&"undefined"!=typeof f.idle)return i(),e;if(null===b);else{if(null!==b&&"undefined"==typeof f.idle)return!1;if("destroy"===b)return l(),e;if("pause"===b)return j(),e;if("resume"===b)return k(),e;if("reset"===b)return i(),e;if("getRemainingTime"===b)return m();if("getElapsedTime"===b)return+new Date-f.olddate;if("getLastActiveTime"===b)return f.lastActive;if("isIdle"===b)return f.idle}return e.on(a.trim((d.events+" ").split(" ").join("._idleTimer ")),function(a){h(a)}),f=a.extend({},{olddate:+new Date,lastActive:+new Date,idle:d.idle,idleBackup:d.idle,timeout:d.timeout,remaining:null,tId:null,pageX:null,pageY:null}),f.idle||(f.tId=setTimeout(g,f.timeout)),a.data(c,"idleTimerObj",f),e},a.fn.idleTimer=function(b){return this[0]?a.idleTimer(b,this[0]):this}}(jQuery);
+define("idleTimer", function(){});
+
 define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
-        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager', 'EE'],
+        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager', 'EE', 'idleTimer'],
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.9";
+        this.version = "0.8.12";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4289,6 +4305,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.images = opts.images || defaultImages;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
         opts.autoReconnect = opts.autoReconnect || false;
+        opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -4317,6 +4334,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.currentMode = null;
 
         this.reconnectTimeout = null;
+
+        this.timeoutUserChanged = null;
+        this.lastTimeUserChanged = 0;
 
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
@@ -4359,6 +4379,19 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.onbeforeunload = function(){
             self.unload = true;
         };
+
+        // idle timer // fire when user become idle or active
+        $( document ).idleTimer(opts.idleTimeout);
+        $( document ).on( "idle.idleTimer", function(){
+            console.log('client;', 'idle');
+            self.isActive = false;
+            self.sendChanged();
+        });
+        $( document ).on( "active.idleTimer", function(){
+            console.log('client;', 'active');
+            self.isActive = true;
+            self.sendChanged();
+        });
     };
 
     Client.prototype  = new EE();
@@ -4505,7 +4538,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             console.error('Client can set mode, no modes!');
             return;
         }
-        if (this.modes[mode]) {
+        if (this.modes[mode] &&  this.currentMode != this.modes[mode]) {
             this.currentMode = this.modes[mode];
             this.emit('mode_switch', this.currentMode);
             return
@@ -4575,7 +4608,21 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.send('server', 'settings', 'server', saveSettings);
         this.emit('settings_saved', settings);
         if (this.viewsManager.settingsView.changedProperties.indexOf('disableInvite' != -1)) { // user enable/disable invites
-            this.send('server', 'changed', 'server', true);
+            this.sendChanged();
+        }
+    };
+
+
+    Client.prototype.sendChanged = function(){
+        if (Date.now() - this.lastTimeUserChanged > 1000) {
+            clearTimeout(this.timeoutUserChanged);
+            this.lastTimeUserChanged = Date.now();
+            this.send('server', 'changed', 'server', {
+                isActive: this.isActive
+            });
+        } else {
+            console.log('client;','user_changed!', 'to fast to send user changed!');
+            setTimeout(this.sendChanged.bind(this), 1100 - (Date.now() - this.lastTimeUserChanged))
         }
     };
 

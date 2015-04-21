@@ -8,6 +8,14 @@ define(['EE'], function(EE) {
         this.client.on('disconnected', function(){
             // TODO: save or close current room
         });
+        window.addEventListener('blur', function(){
+            console.log('user lost focus');
+            this.onUserFocusChanged(false);
+        }.bind(this));
+        window.addEventListener('focus', function(){
+            console.log('user has focus');
+            this.onUserFocusChanged(true);
+        }.bind(this));
     };
 
     GameManager.prototype  = new EE();
@@ -234,9 +242,22 @@ define(['EE'], function(EE) {
                         break;
                 }
                 break;
+            case 'focus':
+                this.emit('focus', {user: user, windowHasFocus: event.action == 'has'});
+                break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
                 this.emit('event', event);
+        }
+    };
+
+
+    GameManager.prototype.onUserFocusChanged = function(windowHasFocus){
+        if (this.inGame()) {
+            this.client.send('game_manager', 'event', 'server', {
+                type: 'focus',
+                action: windowHasFocus ? 'has' : 'lost'
+            });
         }
     };
 

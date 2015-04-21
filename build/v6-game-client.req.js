@@ -8,6 +8,14 @@ define('modules/game_manager',['EE'], function(EE) {
         this.client.on('disconnected', function(){
             // TODO: save or close current room
         });
+        window.addEventListener('blur', function(){
+            console.log('user lost focus');
+            this.onUserFocusChanged(false);
+        }.bind(this));
+        window.addEventListener('focus', function(){
+            console.log('user has focus');
+            this.onUserFocusChanged(true);
+        }.bind(this));
     };
 
     GameManager.prototype  = new EE();
@@ -234,9 +242,22 @@ define('modules/game_manager',['EE'], function(EE) {
                         break;
                 }
                 break;
+            case 'focus':
+                this.emit('focus', {user: user, windowHasFocus: event.action == 'has'});
+                break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
                 this.emit('event', event);
+        }
+    };
+
+
+    GameManager.prototype.onUserFocusChanged = function(windowHasFocus){
+        if (this.inGame()) {
+            this.client.send('game_manager', 'event', 'server', {
+                type: 'focus',
+                action: windowHasFocus ? 'has' : 'lost'
+            });
         }
     };
 
@@ -3479,7 +3500,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.12";
+        this.version = "0.8.13";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

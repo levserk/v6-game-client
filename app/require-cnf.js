@@ -10,6 +10,7 @@ define(function() {
             tpls: 'templates',
             client: 'modules/client',
             EE: 'lib/EventEmitter.min',
+            idleTimer: 'lib/idle-timer.min',
             'jquery-ui': 'lib/jquery-ui',
             'antimat': 'lib/antimat'
         },

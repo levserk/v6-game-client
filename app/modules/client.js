@@ -1,9 +1,9 @@
 define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
-        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager', 'EE'],
+        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager', 'EE', 'idleTimer'],
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.8.9";
+        this.version = "0.8.12";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -12,6 +12,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.images = opts.images || defaultImages;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
         opts.autoReconnect = opts.autoReconnect || false;
+        opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -40,6 +41,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.currentMode = null;
 
         this.reconnectTimeout = null;
+
+        this.timeoutUserChanged = null;
+        this.lastTimeUserChanged = 0;
 
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
@@ -82,6 +86,19 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.onbeforeunload = function(){
             self.unload = true;
         };
+
+        // idle timer // fire when user become idle or active
+        $( document ).idleTimer(opts.idleTimeout);
+        $( document ).on( "idle.idleTimer", function(){
+            console.log('client;', 'idle');
+            self.isActive = false;
+            self.sendChanged();
+        });
+        $( document ).on( "active.idleTimer", function(){
+            console.log('client;', 'active');
+            self.isActive = true;
+            self.sendChanged();
+        });
     };
 
     Client.prototype  = new EE();
@@ -228,7 +245,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             console.error('Client can set mode, no modes!');
             return;
         }
-        if (this.modes[mode]) {
+        if (this.modes[mode] &&  this.currentMode != this.modes[mode]) {
             this.currentMode = this.modes[mode];
             this.emit('mode_switch', this.currentMode);
             return
@@ -298,7 +315,21 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.send('server', 'settings', 'server', saveSettings);
         this.emit('settings_saved', settings);
         if (this.viewsManager.settingsView.changedProperties.indexOf('disableInvite' != -1)) { // user enable/disable invites
-            this.send('server', 'changed', 'server', true);
+            this.sendChanged();
+        }
+    };
+
+
+    Client.prototype.sendChanged = function(){
+        if (Date.now() - this.lastTimeUserChanged > 1000) {
+            clearTimeout(this.timeoutUserChanged);
+            this.lastTimeUserChanged = Date.now();
+            this.send('server', 'changed', 'server', {
+                isActive: this.isActive
+            });
+        } else {
+            console.log('client;','user_changed!', 'to fast to send user changed!');
+            setTimeout(this.sendChanged.bind(this), 1100 - (Date.now() - this.lastTimeUserChanged))
         }
     };
 

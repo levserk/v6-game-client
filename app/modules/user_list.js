@@ -97,6 +97,7 @@ define(['EE'], function(EE) {
         for (var i = 0; i < this.users.length; i++){
             if (this.users[i].userId == userData.userId){
                 this.users[i].update(userData);
+                if (!this.users[i].isPlayer) console.log('user_changed!', userData.isActive, userData);
                 this.emit('user_changed', this.users[i]);
                 return;
             }
@@ -134,7 +135,9 @@ define(['EE'], function(EE) {
             if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
-            if (!user.isInRoom && (!user.disableInvite || user.isPlayer)) userList.push(user);
+            if (user.isInRoom) continue;
+            if (!user.isPlayer && (user.disableInvite || !user.isActive)) continue;
+            else userList.push(user);
         }
         userList.sort(function(a, b){
             var ar = a.getRank();
@@ -197,6 +200,7 @@ define(['EE'], function(EE) {
 
         this.isPlayer = fIsPlayer || false;
         this.disableInvite = data.disableInvite || false;
+        this.isActive  = (typeof data.isActive == 'boolean' ? data.isActive : true); // true default
 
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
@@ -207,6 +211,7 @@ define(['EE'], function(EE) {
                 if (data.hasOwnProperty(key)) this[key] = data[key];
             }
             this.disableInvite = data.disableInvite || false;
+            if (typeof data.isActive == 'boolean') this.isActive  = data.isActive;
         };
 
         this._client = client;

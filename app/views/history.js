@@ -90,8 +90,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             renderTabs: function() {
                 for (var i = this.tabs.length - 1; i >= 0; i--){
                     this.$head.prepend(this.tplTab(this.tabs[i]));
+                    this.setActiveTab(this.tabs[0].id);
                 }
-                this.setActiveTab(this.tabs[0].id);
+                if (!this.tabs || this.tabs.length == 0) {
+                    this.currentTab = {
+                        id: this._manager.client.currentMode
+                    }
+                }
             },
 
             renderHead:function() {

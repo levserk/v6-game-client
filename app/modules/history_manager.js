@@ -139,35 +139,68 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     };
 
 
-    HistoryManager.prototype.getHistory = function(mode, isUpdate, hideClose, append){
+    HistoryManager.prototype.getHistory = function(mode){
+        this.historyView.clearHistory();
+        var gm = this.client.gameManager;
+        if (this.client.gameManager.inGame()){
+            var filter = gm.currentRoom.players[0].isPlayer ? gm.currentRoom.players[1].userName :  gm.currentRoom.players[0].userName;
+            if (filter) this.historyView.setFilter(filter);
+        }
+
+        this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
+
+        this.userId = this.client.getPlayer().userId;
+
+        this._getHistory(mode);
+
+        //this.$container.append(this.historyView.render(mode, false, false).$el);
+        //
+        //this.client.send('history_manager', 'history', 'server', {
+        //    mode: mode,
+        //    userId: this.userId,
+        //    count: this.maxCount,
+        //    offset: this.history.length,
+        //    filter: this.historyView.getFilter()
+        //});
+    };
+
+    HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
+        this.historyView.clearHistory();
+        this.historyView.setFilter('');
+        if (blockId) this.$container = $('#'+blockId);
+        if (!this.$container) throw new Error('wrong history container id! ' + blockId);
+
+        this.userId = userId;
+
+        this._getHistory(mode, true);
+
+        //this.$container.append(this.historyView.render(mode, false, true).$el);
+        //
+        //this.client.send('history_manager', 'history', 'server', {
+        //    mode:mode,
+        //    userId:userId,
+        //    count: this.maxCount,
+        //    offset: this.history.length
+        //});
+
+        this.historyView.delegateEvents();
+    };
+
+
+    HistoryManager.prototype._getHistory = function(mode, hideClose, append){
         if (!append) {
             this.count = 0;
             this.history = [];
         }
-        if (!isUpdate) this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
-        this.$container.append(this.historyView.render(mode||this.client.currentMode, false, hideClose).$el);
+        mode = mode || this.client.currentMode;
+        this.$container.append(this.historyView.render(mode, false, hideClose).$el);
         this.client.send('history_manager', 'history', 'server', {
-            mode:mode||this.client.currentMode,
-            userId:(isUpdate?this.userId:false),
-            count: this.maxCount,
-            offset: this.history.length
+            mode:   mode,
+            userId: this.userId,
+            count:  this.maxCount,
+            offset: this.history.length,
+            filter: this.historyView.getFilter()
         });
-    };
-
-    HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
-        this.history = [];
-        if (blockId) this.$container = $('#'+blockId);
-        if (!this.$container) throw new Error('wrong history container id! ' + blockId);
-        this.$container.append(this.historyView.render(mode, false, true).$el);
-        this.userId = userId;
-        this.client.send('history_manager', 'history', 'server', {
-            mode:mode||this.client.currentMode,
-            userId:userId,
-            count: this.maxCount,
-            offset: this.history.length
-        });
-        this.historyView.delegateEvents();
-        this.startTime = Date.now();
     };
 
 

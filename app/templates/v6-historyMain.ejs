@@ -1,5 +1,11 @@
 <div id="v6-history">
-    <div class="historyHeader"><img class="closeIcon" src="<%= close %>" title="Закрыть окно истории"></div>
+    <div class="historyHeader">
+        <div class="historyFilter">
+            <input type="text" placeholder="Поиск по имени" id="historyAutoComplete" value="">
+            <div class="delete" style="background-image: url(<%= imgDel %>)"></div>
+        </div>
+        <img class="closeIcon" src="<%= close %>" title="Закрыть окно истории">
+    </div>
     <div class="historyWrapper">
         <table class="historyTable">
             <thead>

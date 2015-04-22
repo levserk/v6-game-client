@@ -189,13 +189,10 @@
 }
 
 #v6Chat .delete {
-    float: right;
     display: none;
-    cursor: pointer;
+    float: right;
     width: 15px;
     height: 15px;
-    background-repeat: no-repeat;
-    background-position: center;
 }
 
 #v6Chat .chatMsg:hover .delete {

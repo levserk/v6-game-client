@@ -51,3 +51,14 @@
     line-height: 20px;
     cursor: pointer;
 }
+
+.delete {
+    cursor: pointer;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.5;
+}
+
+.delete:hover {
+    opacity: 1;
+}

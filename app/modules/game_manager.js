@@ -9,11 +9,9 @@ define(['EE'], function(EE) {
             // TODO: save or close current room
         });
         window.addEventListener('blur', function(){
-            console.log('user lost focus');
             this.onUserFocusChanged(false);
         }.bind(this));
         window.addEventListener('focus', function(){
-            console.log('user has focus');
             this.onUserFocusChanged(true);
         }.bind(this));
     };

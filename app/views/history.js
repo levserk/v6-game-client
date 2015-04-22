@@ -16,20 +16,23 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 'click .historyTable tr': 'trClicked',
                 'click .historyTable .userName': 'userClicked',
                 'click .historyHeader span': 'tabClicked',
-                'click #showMore': 'showMore'
+                'click #showMore': 'showMore',
+                'keyup #historyAutoComplete': 'filterChanged',
+                'click .delete': 'clearFilter'
             },
             initialize: function(_conf, manager) {
                 this.conf = _conf;
                 this._manager = manager;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain({close: _conf.images.close, spin: _conf.images.spin}));
+                this.$el.html(this.tplMain({close: _conf.images.close, imgDel: _conf.images.del, spin: _conf.images.spin}));
 
                 this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
                 this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
                 this.$noHistory = $(this.$el.find('.noHistory'));
                 this.$showMore = $(this.$el.find('#showMore'));
+                this.$filter = $(this.$el.find('#historyAutoComplete'));
 
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
@@ -59,23 +62,36 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             tabClicked: function(e){
                 var id  = $(e.currentTarget).attr('data-idtab');
                 this.setActiveTab(id);
-                this._manager.getHistory(id, true);
+                this._manager._getHistory(id, null, false);
+            },
+
+            filterChanged: function(e) {
+                if (e.type === 'keyup')
+                    if (e.keyCode == 13 || e.target.value.length == 0) {
+                        this._manager._getHistory(this.currentTab.id, null, false);
+                }
+            },
+
+            clearFilter: function() {
+                this.setFilter('');
+                this._manager._getHistory(this.currentTab.id, null, false);
             },
 
             close: function () {
                 this.$el.hide();
                 this.isClosed = true;
+                this.setFilter('');
             },
 
             showMore:function () {
-                this._manager.getHistory(false, true, null, true);
+                this._manager._getHistory(this.currentTab.id, null, true);
             },
 
             renderTabs: function() {
-                for (var i in this.tabs){
-                    this.$head.append(this.tplTab(this.tabs[i]));
-                    this.setActiveTab(this.tabs[0].id);
+                for (var i = this.tabs.length - 1; i >= 0; i--){
+                    this.$head.prepend(this.tplTab(this.tabs[i]));
                 }
+                this.setActiveTab(this.tabs[0].id);
             },
 
             renderHead:function() {
@@ -141,6 +157,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             render: function(mode, history, hideClose, showMore) {
                 this.$el.show();
                 this.setActiveTab(mode);
+
+                if (this.$filter.val().length > 0) this.$filter.parent().find('.delete').show();
+                else this.$filter.parent().find('.delete').hide();
+
                 if (hideClose === true) this.$el.find('.closeIcon').hide();
                 if (hideClose === false) this.$el.find('.closeIcon').show();
                 if (!showMore) this.$showMore.hide(); else this.$showMore.show();
@@ -151,7 +171,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                     this.$noHistory.hide();
                 }
                 else {
-                    this.$tbody.children().remove();
+                    this.clearHistory();
                     if (history.length == 0) this.$noHistory.show();
                     this.$el.find('.loading').hide();
                     console.log('render history', history);
@@ -159,6 +179,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 }
 
                 return this;
+            },
+
+            clearHistory: function() {
+                this.$tbody.children().remove();
             },
 
             setActiveTab: function(id){
@@ -172,8 +196,16 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                         this.currentTab = this.tabs[i];
                     }
                 }
-            }
+            },
 
+
+            setFilter: function(filter) {
+                this.$filter.val(filter);
+            },
+
+            getFilter: function() {
+                return this.$filter.val();
+            }
 
         });
         return HistoryView;

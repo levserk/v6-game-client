@@ -70,6 +70,20 @@
     border-left: 1px solid #dcdcdc;
     border-right: 1px solid #dcdcdc;
     padding: 4px;
+
+}
+#v6-history .historyFilter{
+     margin-right: 5px;
+     display: inline-block;
+     position: relative;
+}
+#v6-history .delete{
+    display: inline-block;
+    width: 18px;
+    height: 20px;
+    right: 0px;
+    position: absolute;
+    top: 0px;
 }
 
 .historyTable thead{

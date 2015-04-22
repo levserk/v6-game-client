@@ -13,6 +13,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
         opts.autoReconnect = opts.autoReconnect || false;
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
+        opts.loadRanksInRating = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -188,6 +189,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
         this.opts.turnTime = opts.turnTime;
+        this.opts.loadRanksInRating = !!opts.loadRanksInRating;
         this.chatManager.ban = ban;
         this.currentMode = this.modes[0];
         this.settings = $.extend({},this.defaultSettings, settings);

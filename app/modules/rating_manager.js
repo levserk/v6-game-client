@@ -54,7 +54,13 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, ratings.infoUser[mode].rank);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) {
-            if (column == 'ratingElo' && order == 'desc') rank = i + 1 + this.count; // set rank on order by rating
+            if (!this.filter && column == 'ratingElo' && order == 'desc') {
+                rank = i + 1 + this.count;
+            } else {
+                if (this.client.opts.loadRanksInRating){
+                    rank =  ratings.allUsers[i][mode]['rank'] || false;
+                }
+            }
             ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
         }
 
@@ -88,6 +94,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     RatingManager.prototype.getRatings = function(mode, column, order, filter, showMore){
         if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
+        this.filter = filter;
         this.client.send('rating_manager', 'ratings', 'server', {
             mode: mode||this.client.currentMode,
             column: column,

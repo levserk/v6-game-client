@@ -171,9 +171,11 @@ define(function() {
                     break;
             }
             var rankResult = '';
-            if (result == 'win' && oldRank > 0 && newRank < oldRank) {
-                rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
-            } else rankResult = 'Вы занимаете ' +  newRank + ' место в общем рейтинге.';
+            if (newRank > 0) {
+                if (result == 'win' && oldRank > 0 && newRank < oldRank) {
+                    rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
+                } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
+            }
             var html = '<p>' + result + '</p><p>' + rankResult +'</p><br>' +
                 '<span class="'+ACTION_CLASS+'">Сыграть с соперником еще раз?</span>';
 

@@ -47,6 +47,15 @@
     background-color: #D7FACF
 }
 
+#v6-rating .delete{
+    display: inline-block;
+    width: 18px;
+    height: 20px;
+    right: 5px;
+    position: absolute;
+    top: 0px;
+}
+
 .ratingTable thead {
     background-color: #EEE;
     border-bottom: 1px solid #dcdcdc;

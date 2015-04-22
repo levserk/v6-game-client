@@ -9,11 +9,9 @@ define('modules/game_manager',['EE'], function(EE) {
             // TODO: save or close current room
         });
         window.addEventListener('blur', function(){
-            console.log('user lost focus');
             this.onUserFocusChanged(false);
         }.bind(this));
         window.addEventListener('focus', function(){
-            console.log('user has focus');
             this.onUserFocusChanged(true);
         }.bind(this));
     };
@@ -1443,9 +1441,11 @@ define('views/dialogs',[],function() {
                     break;
             }
             var rankResult = '';
-            if (result == 'win' && oldRank > 0 && newRank < oldRank) {
-                rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
-            } else rankResult = 'Вы занимаете ' +  newRank + ' место в общем рейтинге.';
+            if (newRank > 0) {
+                if (result == 'win' && oldRank > 0 && newRank < oldRank) {
+                    rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
+                } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
+            }
             var html = '<p>' + result + '</p><p>' + rankResult +'</p><br>' +
                 '<span class="'+ACTION_CLASS+'">Сыграть с соперником еще раз?</span>';
 
@@ -2547,7 +2547,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
     return ChatManager;
 });
 
-define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader"><img class="closeIcon" src="<%= close %>" title="Закрыть окно истории"></div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div id="showMore">Показать еще</div>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader">\r\n        <div class="historyFilter">\r\n            <input type="text" placeholder="Поиск по имени" id="historyAutoComplete" value="">\r\n            <div class="delete" style="background-image: url(<%= imgDel %>)"></div>\r\n        </div>\r\n        <img class="closeIcon" src="<%= close %>" title="Закрыть окно истории">\r\n    </div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div id="showMore">Показать еще</div>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-historyHeaderTD.ejs',[],function () { return '<td class="sessionHeader historyDate" rowspan="<%= rows %>"> <%= date %> </td>\r\n<td class="sessionHeader historyName" rowspan="<%= rows %>">\r\n    <span class="userName" data-userid="<%= userId %>"><%= userName %></span>\r\n    <span class="userRank">(<%= rank %>)</span>\r\n    <span class="userScore"><%= score %></span>\r\n    <div class="eloDiff <%= (eloDiff>-1?\'diffPositive\':\'diffNegative\')%>"><%= eloDiff ===\'\'?\'\':(eloDiff>-1?\'+\'+eloDiff:eloDiff)%></div>\r\n</td>';});
@@ -2579,20 +2579,23 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                 'click .historyTable tr': 'trClicked',
                 'click .historyTable .userName': 'userClicked',
                 'click .historyHeader span': 'tabClicked',
-                'click #showMore': 'showMore'
+                'click #showMore': 'showMore',
+                'keyup #historyAutoComplete': 'filterChanged',
+                'click .delete': 'clearFilter'
             },
             initialize: function(_conf, manager) {
                 this.conf = _conf;
                 this._manager = manager;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain({close: _conf.images.close, spin: _conf.images.spin}));
+                this.$el.html(this.tplMain({close: _conf.images.close, imgDel: _conf.images.del, spin: _conf.images.spin}));
 
                 this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);
                 this.$tbody = $(this.$el.find('.historyTable tbody')[0]);
                 this.$noHistory = $(this.$el.find('.noHistory'));
                 this.$showMore = $(this.$el.find('#showMore'));
+                this.$filter = $(this.$el.find('#historyAutoComplete'));
 
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
@@ -2622,23 +2625,36 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             tabClicked: function(e){
                 var id  = $(e.currentTarget).attr('data-idtab');
                 this.setActiveTab(id);
-                this._manager.getHistory(id, true);
+                this._manager._getHistory(id, null, false);
+            },
+
+            filterChanged: function(e) {
+                if (e.type === 'keyup')
+                    if (e.keyCode == 13 || e.target.value.length == 0) {
+                        this._manager._getHistory(this.currentTab.id, null, false);
+                }
+            },
+
+            clearFilter: function() {
+                this.setFilter('');
+                this._manager._getHistory(this.currentTab.id, null, false);
             },
 
             close: function () {
                 this.$el.hide();
                 this.isClosed = true;
+                this.setFilter('');
             },
 
             showMore:function () {
-                this._manager.getHistory(false, true, null, true);
+                this._manager._getHistory(this.currentTab.id, null, true);
             },
 
             renderTabs: function() {
-                for (var i in this.tabs){
-                    this.$head.append(this.tplTab(this.tabs[i]));
-                    this.setActiveTab(this.tabs[0].id);
+                for (var i = this.tabs.length - 1; i >= 0; i--){
+                    this.$head.prepend(this.tplTab(this.tabs[i]));
                 }
+                this.setActiveTab(this.tabs[0].id);
             },
 
             renderHead:function() {
@@ -2704,6 +2720,10 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             render: function(mode, history, hideClose, showMore) {
                 this.$el.show();
                 this.setActiveTab(mode);
+
+                if (this.$filter.val().length > 0) this.$filter.parent().find('.delete').show();
+                else this.$filter.parent().find('.delete').hide();
+
                 if (hideClose === true) this.$el.find('.closeIcon').hide();
                 if (hideClose === false) this.$el.find('.closeIcon').show();
                 if (!showMore) this.$showMore.hide(); else this.$showMore.show();
@@ -2714,7 +2734,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                     this.$noHistory.hide();
                 }
                 else {
-                    this.$tbody.children().remove();
+                    this.clearHistory();
                     if (history.length == 0) this.$noHistory.show();
                     this.$el.find('.loading').hide();
                     console.log('render history', history);
@@ -2722,6 +2742,10 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                 }
 
                 return this;
+            },
+
+            clearHistory: function() {
+                this.$tbody.children().remove();
             },
 
             setActiveTab: function(id){
@@ -2735,8 +2759,16 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                         this.currentTab = this.tabs[i];
                     }
                 }
-            }
+            },
 
+
+            setFilter: function(filter) {
+                this.$filter.val(filter);
+            },
+
+            getFilter: function() {
+                return this.$filter.val();
+            }
 
         });
         return HistoryView;
@@ -2882,35 +2914,68 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
     };
 
 
-    HistoryManager.prototype.getHistory = function(mode, isUpdate, hideClose, append){
+    HistoryManager.prototype.getHistory = function(mode){
+        this.historyView.clearHistory();
+        var gm = this.client.gameManager;
+        if (this.client.gameManager.inGame()){
+            var filter = gm.currentRoom.players[0].isPlayer ? gm.currentRoom.players[1].userName :  gm.currentRoom.players[0].userName;
+            if (filter) this.historyView.setFilter(filter);
+        }
+
+        this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
+
+        this.userId = this.client.getPlayer().userId;
+
+        this._getHistory(mode);
+
+        //this.$container.append(this.historyView.render(mode, false, false).$el);
+        //
+        //this.client.send('history_manager', 'history', 'server', {
+        //    mode: mode,
+        //    userId: this.userId,
+        //    count: this.maxCount,
+        //    offset: this.history.length,
+        //    filter: this.historyView.getFilter()
+        //});
+    };
+
+    HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
+        this.historyView.clearHistory();
+        this.historyView.setFilter('');
+        if (blockId) this.$container = $('#'+blockId);
+        if (!this.$container) throw new Error('wrong history container id! ' + blockId);
+
+        this.userId = userId;
+
+        this._getHistory(mode, true);
+
+        //this.$container.append(this.historyView.render(mode, false, true).$el);
+        //
+        //this.client.send('history_manager', 'history', 'server', {
+        //    mode:mode,
+        //    userId:userId,
+        //    count: this.maxCount,
+        //    offset: this.history.length
+        //});
+
+        this.historyView.delegateEvents();
+    };
+
+
+    HistoryManager.prototype._getHistory = function(mode, hideClose, append){
         if (!append) {
             this.count = 0;
             this.history = [];
         }
-        if (!isUpdate) this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
-        this.$container.append(this.historyView.render(mode||this.client.currentMode, false, hideClose).$el);
+        mode = mode || this.client.currentMode;
+        this.$container.append(this.historyView.render(mode, false, hideClose).$el);
         this.client.send('history_manager', 'history', 'server', {
-            mode:mode||this.client.currentMode,
-            userId:(isUpdate?this.userId:false),
-            count: this.maxCount,
-            offset: this.history.length
+            mode:   mode,
+            userId: this.userId,
+            count:  this.maxCount,
+            offset: this.history.length,
+            filter: this.historyView.getFilter()
         });
-    };
-
-    HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
-        this.history = [];
-        if (blockId) this.$container = $('#'+blockId);
-        if (!this.$container) throw new Error('wrong history container id! ' + blockId);
-        this.$container.append(this.historyView.render(mode, false, true).$el);
-        this.userId = userId;
-        this.client.send('history_manager', 'history', 'server', {
-            mode:mode||this.client.currentMode,
-            userId:userId,
-            count: this.maxCount,
-            offset: this.history.length
-        });
-        this.historyView.delegateEvents();
-        this.startTime = Date.now();
     };
 
 
@@ -2962,7 +3027,7 @@ define('text!tpls/v6-ratingTH.ejs',[],function () { return '<th data-idcol="<%= 
 define('text!tpls/v6-ratingTR.ejs',[],function () { return '<tr class="<%= trclass %>" data-userId="<%= userId %>" data-userName="<%= userName %>"><%= value %></tr>';});
 
 
-define('text!tpls/v6-ratingSearch.ejs',[],function () { return '<div style="padding-bottom:2px;">\r\n    <div style="float:left;margin-top:4px;">Поиск:</div>\r\n    <input type="text" placeholder="Поиск по имени" id="ratingAutoComplete" value="">\r\n</div>';});
+define('text!tpls/v6-ratingSearch.ejs',[],function () { return '<div style="padding-bottom:2px; position: relative;">\r\n    <div style="float:left;margin-top:4px;">Поиск:</div>\r\n    <input type="text" placeholder="Поиск по имени" id="ratingAutoComplete" value="">\r\n    <div class="delete" style="background-image: url(<%= imgDel %>)"></div>\r\n</div>';});
 
 
 define('text!tpls/v6-ratingPhoto.ejs',[],function () { return '<div style="float:right;margin-top:2px;">\r\n    <a href="<%= photo %>" rel="lightbox" data-lightbox="<%= photo %>"><img src="i/camera.png"></a>\r\n</div>';});
@@ -2995,7 +3060,8 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 'click .filterPanel span': 'tabClicked',
                 'click .ratingTable .userName': 'userClicked',
                 'click #ratingShowMore': 'showMore',
-                'keyup #ratingAutoComplete': 'filterChanged'
+                'keyup #ratingAutoComplete': 'filterChanged',
+                'click .delete': 'clearFilter'
             },
 
             thClicked: function(e){
@@ -3032,14 +3098,20 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             },
 
             filterChanged: function(e) {
-                if (e.type === 'keyup' && e.keyCode !== 13) {
-                    return;
-                }
-                this.getRatings(false, e.target.value);
+                if (e.type === 'keyup')
+                    if (e.keyCode == 13 || e.target.value.length == 0) {
+                        this.getRatings();
+                    }
             },
 
-            getRatings: function(showmore, filter) {
-                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', filter, !!showmore);
+            clearFilter: function() {
+                this.$filter.val('');
+                this.getRatings();
+            },
+
+            getRatings: function(showmore) {
+                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id,
+                    this.currentCollumn.order < 0? 'desc':'asc', this.$filter.val(), !!showmore);
             },
 
             initialize: function(_conf, _manager) {
@@ -3111,10 +3183,11 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                     this.$titles.append(this.tplTH(th));
                     th.value = col.canOrder?this.IMG_BOTH:'';
                     if (col.id == 'rank') th.value= "";
-                    if (col.id == 'userName') th.value = this.tplSearch();
+                    if (col.id == 'userName') th.value = this.tplSearch({imgDel: this.conf.images.del});
                     this.$icons.append(this.tplTH(th));
                 }
                 this.setColumnOrder('ratingElo');
+                this.$filter = $(this.$el.find('#ratingAutoComplete'));
             },
 
             renderRatings: function (ratings) {
@@ -3214,6 +3287,10 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             render: function(ratings, mode, column, order, append, showMore) {
                 this.$el.show();
                 this.setColumnOrder(column, order);
+
+                if (this.$filter.val() && this.$filter.val().length > 0) this.$filter.parent().find('.delete').show();
+                else this.$filter.parent().find('.delete').hide();
+
                 if (!showMore) this.$showMore.hide(); else this.$showMore.show();
                 if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {
@@ -3500,7 +3577,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.13";
+        this.version = "0.8.14";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

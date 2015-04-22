@@ -200,7 +200,7 @@ require(['require-cnf'], function () {
                 div.attr('id', 'historyButton');
                 div.html('<span>Показать историю</span>');
                 div.on('click', function () {
-                    window._client.historyManager.getHistory(false, false, false);
+                    window._client.historyManager.getHistory();
                 });
                 $('body').append(div);
             }

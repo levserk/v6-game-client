@@ -23,7 +23,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 'click .filterPanel span': 'tabClicked',
                 'click .ratingTable .userName': 'userClicked',
                 'click #ratingShowMore': 'showMore',
-                'keyup #ratingAutoComplete': 'filterChanged'
+                'keyup #ratingAutoComplete': 'filterChanged',
+                'click .delete': 'clearFilter'
             },
 
             thClicked: function(e){
@@ -60,14 +61,20 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             },
 
             filterChanged: function(e) {
-                if (e.type === 'keyup' && e.keyCode !== 13) {
-                    return;
-                }
-                this.getRatings(false, e.target.value);
+                if (e.type === 'keyup')
+                    if (e.keyCode == 13 || e.target.value.length == 0) {
+                        this.getRatings();
+                    }
             },
 
-            getRatings: function(showmore, filter) {
-                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc', filter, !!showmore);
+            clearFilter: function() {
+                this.$filter.val('');
+                this.getRatings();
+            },
+
+            getRatings: function(showmore) {
+                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id,
+                    this.currentCollumn.order < 0? 'desc':'asc', this.$filter.val(), !!showmore);
             },
 
             initialize: function(_conf, _manager) {
@@ -139,10 +146,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     this.$titles.append(this.tplTH(th));
                     th.value = col.canOrder?this.IMG_BOTH:'';
                     if (col.id == 'rank') th.value= "";
-                    if (col.id == 'userName') th.value = this.tplSearch();
+                    if (col.id == 'userName') th.value = this.tplSearch({imgDel: this.conf.images.del});
                     this.$icons.append(this.tplTH(th));
                 }
                 this.setColumnOrder('ratingElo');
+                this.$filter = $(this.$el.find('#ratingAutoComplete'));
             },
 
             renderRatings: function (ratings) {
@@ -242,6 +250,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             render: function(ratings, mode, column, order, append, showMore) {
                 this.$el.show();
                 this.setColumnOrder(column, order);
+
+                if (this.$filter.val() && this.$filter.val().length > 0) this.$filter.parent().find('.delete').show();
+                else this.$filter.parent().find('.delete').hide();
+
                 if (!showMore) this.$showMore.hide(); else this.$showMore.show();
                 if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {

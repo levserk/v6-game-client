@@ -119,12 +119,13 @@ define(['EE'], function(EE) {
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
+        var timeStart = Date.now();
         this.emit('game_start', room);
         this.onRoundStart(data['initData']);
         this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
-        this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
+        this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart));
     };
 
 
@@ -137,6 +138,7 @@ define(['EE'], function(EE) {
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
+        var timeStart = Date.now();
         this.emit('game_start', room);
         if (data.state == 'waiting'){
             console.log('game_manager', 'start spectate', 'waiting players ready to play');
@@ -146,7 +148,7 @@ define(['EE'], function(EE) {
         this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
         // switch player
         if (data.userTime != null)
-            this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime);
+            this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart));
     };
 
 

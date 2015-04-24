@@ -2382,7 +2382,11 @@ define('views/dialogs',[],function() {
                 }
             };
             var div = $('<div>');
+            var prevFocus = document.activeElement || document;
             div.html(html).dialog(options);
+            div.parent().find(':button').attr('tabindex', '-1');
+            document.activeElement.blur();
+            $(prevFocus).focus();
             if (draggable) {
                 div.parent().draggable();
                 div.addClass(DRAGGABLE_CLASS);
@@ -2473,7 +2477,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 'click .chatMsg': '_deleteMsg',
                 'click .tab': 'clickTab',
                 'blur .inputMsg': 'blurInputMsg',
-                'click .inputMsg': 'clickInputMsg',
+                'focus .inputMsg': 'clickInputMsg',
                 'click .sendMsgBtn': 'sendMsgEvent',
                 'keyup .inputMsg': 'sendMsgEvent',
                 'change #chat-select': 'changeChatSelect',
@@ -2583,6 +2587,14 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 }
             },
 
+            bodyScroll: function (e) {
+                e.deltaY =  e.deltaY ||  e.originalEvent.wheelDeltaY || -e.originalEvent.detail;
+                if ((this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() === 0) && e.deltaY < 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            },
+
             _sendMsg: function(text) {
                 if (text === '' || typeof text !== 'string') {
                     return;
@@ -2687,6 +2699,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.listenTo(this.client.chatManager, 'open_dialog', this._openDialog.bind(this));
                 this.listenTo(this.client.chatManager, 'close_dialog', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
+                this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
             },
 
             setPublicTab: function(tabName){
@@ -4416,7 +4429,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.15";
+        this.version = "0.8.16";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

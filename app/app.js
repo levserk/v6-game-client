@@ -139,9 +139,11 @@ require(['require-cnf'], function () {
                //console.log('main;','time user:', data);
             }, 1000, {trailing: false}));
 
+
             _client.gameManager.on('focus', function(data){
                //console.log('main;', 'user changed window focus, window has focus:', data.windowHasFocus, ' user: ', data.user);
             });
+
 
             _client.historyManager.on('game_load', function(game){
                 console.log('main;','history game loaded, game:', game);
@@ -200,7 +202,7 @@ require(['require-cnf'], function () {
                 div.attr('id', 'historyButton');
                 div.html('<span>Показать историю</span>');
                 div.on('click', function () {
-                    window._client.historyManager.getHistory();
+                    window._client.historyManager.getHistory(false, false, false);
                 });
                 $('body').append(div);
             }

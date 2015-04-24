@@ -124,6 +124,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 }
             },
 
+            bodyScroll: function (e) {
+                e.deltaY =  e.deltaY ||  e.originalEvent.wheelDeltaY || -e.originalEvent.detail;
+                if ((this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() === 0) && e.deltaY < 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            },
+
             _sendMsg: function(text) {
                 if (text === '' || typeof text !== 'string') {
                     return;
@@ -228,6 +236,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.listenTo(this.client.chatManager, 'open_dialog', this._openDialog.bind(this));
                 this.listenTo(this.client.chatManager, 'close_dialog', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
+                this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
             },
 
             setPublicTab: function(tabName){

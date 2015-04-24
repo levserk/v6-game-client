@@ -3,7 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.8.16";
+        this.version = "0.8.17";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -89,7 +89,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         };
 
         // idle timer // fire when user become idle or active
-        $( document ).idleTimer(opts.idleTimeout);
+        if (opts.idleTimeout > 0)
+            $( document ).idleTimer(opts.idleTimeout);
         $( document ).on( "idle.idleTimer", function(){
             console.log('client;', 'idle');
             self.isActive = false;

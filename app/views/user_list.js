@@ -13,7 +13,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             'click .userListGame': 'roomClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
-            'click #randomPlay': 'playClicked'
+            'click #randomPlay': 'playClicked',
+            'keyup #filterUserList': 'filter'
         },
         _reconnect: function() {
             this.client.reconnect();
@@ -81,6 +82,9 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.client.inviteManager.playRandom(this.client.inviteManager.isPlayRandom);
             this._setRandomPlay();
         },
+        filter: function () {
+            this.render();
+        },
         initialize: function(_client) {
             var bindedRender = this.render.bind(this);
 
@@ -110,6 +114,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
             this.$btnPlay = this.$el.find('#randomPlay');
+            this.$filter = this.$el.find('#filterUserList');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
             this.listenTo(this.client, 'mode_switch', bindedRender);
@@ -160,12 +165,12 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
 
             if (this.currentActiveTabName === 'free') {
                 this.$list.html(this.tplFree({
-                    users: this.client.userList.getUserList()
+                    users: this.client.userList.getUserList(this.getFilter())
                 }));
             }
             else if (this.currentActiveTabName === 'inGame') {
                 this.$list.html(this.tplInGame({
-                    rooms: this.client.userList.getRoomList()
+                    rooms: this.client.userList.getRoomList(this.getFilter())
                 }));
             } else {
                 console.warn('unknown tab', this.currentActiveTabName);
@@ -179,6 +184,11 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;
+        },
+        getFilter: function() {
+            var filter = this.$filter.val().toLowerCase().trim();
+            if (filter.length == 0) filter = false;
+            return filter;
         }
     });
     return UserListView;

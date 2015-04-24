@@ -128,7 +128,7 @@ define(['EE'], function(EE) {
     };
 
 
-    UserList.prototype.getUserList = function() {
+    UserList.prototype.getUserList = function(filter) {
         var userList = [], invite = this.client.inviteManager.invite, user;
         for (var i = 0; i < this.users.length; i++){
             user = this.users[i];
@@ -137,6 +137,7 @@ define(['EE'], function(EE) {
             } else delete user.isInvited;
             if (user.isInRoom) continue;
             if (!user.isPlayer && (user.disableInvite || !user.isActive)) continue;
+            if (filter && user.userName.toLowerCase().indexOf(filter) == -1) continue;
             else userList.push(user);
         }
         userList.sort(function(a, b){
@@ -179,8 +180,21 @@ define(['EE'], function(EE) {
     };
 
 
-    UserList.prototype.getRoomList = function() {
-        return this.rooms;
+    UserList.prototype.getRoomList = function(filter) {
+        if (!filter) return this.rooms;
+        else {
+            var rooms = [], room;
+            for (var i = 0; i < this.rooms.length; i++){
+                room = this.rooms[i];
+                for (var j = 0; j < room.players.length; j++){
+                    if (room.players[j].userName.toLowerCase().indexOf(filter) != -1){
+                        rooms.push(room);
+                        break;
+                    }
+                }
+            }
+            return rooms;
+        }
     };
 
 

@@ -891,7 +891,7 @@ define('modules/user_list',['EE'], function(EE) {
     };
 
 
-    UserList.prototype.getUserList = function() {
+    UserList.prototype.getUserList = function(filter) {
         var userList = [], invite = this.client.inviteManager.invite, user;
         for (var i = 0; i < this.users.length; i++){
             user = this.users[i];
@@ -900,6 +900,7 @@ define('modules/user_list',['EE'], function(EE) {
             } else delete user.isInvited;
             if (user.isInRoom) continue;
             if (!user.isPlayer && (user.disableInvite || !user.isActive)) continue;
+            if (filter && user.userName.toLowerCase().indexOf(filter) == -1) continue;
             else userList.push(user);
         }
         userList.sort(function(a, b){
@@ -942,8 +943,21 @@ define('modules/user_list',['EE'], function(EE) {
     };
 
 
-    UserList.prototype.getRoomList = function() {
-        return this.rooms;
+    UserList.prototype.getRoomList = function(filter) {
+        if (!filter) return this.rooms;
+        else {
+            var rooms = [], room;
+            for (var i = 0; i < this.rooms.length; i++){
+                room = this.rooms[i];
+                for (var j = 0; j < room.players.length; j++){
+                    if (room.players[j].userName.toLowerCase().indexOf(filter) != -1){
+                        rooms.push(room);
+                        break;
+                    }
+                }
+            }
+            return rooms;
+        }
     };
 
 
@@ -1103,7 +1117,7 @@ define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, fu
 define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr class="userListGame" data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td>:</td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="userListSearch"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table cellspacing="0" class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span>Играть с любым</span>\r\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="filterUserList"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table cellspacing="0" class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span>Играть с любым</span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -1120,7 +1134,8 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             'click .userListGame': 'roomClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
-            'click #randomPlay': 'playClicked'
+            'click #randomPlay': 'playClicked',
+            'keyup #filterUserList': 'filter'
         },
         _reconnect: function() {
             this.client.reconnect();
@@ -1188,6 +1203,9 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.client.inviteManager.playRandom(this.client.inviteManager.isPlayRandom);
             this._setRandomPlay();
         },
+        filter: function () {
+            this.render();
+        },
         initialize: function(_client) {
             var bindedRender = this.render.bind(this);
 
@@ -1217,6 +1235,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
             this.$btnPlay = this.$el.find('#randomPlay');
+            this.$filter = this.$el.find('#filterUserList');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
             this.listenTo(this.client, 'mode_switch', bindedRender);
@@ -1267,12 +1286,12 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
 
             if (this.currentActiveTabName === 'free') {
                 this.$list.html(this.tplFree({
-                    users: this.client.userList.getUserList()
+                    users: this.client.userList.getUserList(this.getFilter())
                 }));
             }
             else if (this.currentActiveTabName === 'inGame') {
                 this.$list.html(this.tplInGame({
-                    rooms: this.client.userList.getRoomList()
+                    rooms: this.client.userList.getRoomList(this.getFilter())
                 }));
             } else {
                 console.warn('unknown tab', this.currentActiveTabName);
@@ -1286,6 +1305,11 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;
+        },
+        getFilter: function() {
+            var filter = this.$filter.val().toLowerCase().trim();
+            if (filter.length == 0) filter = false;
+            return filter;
         }
     });
     return UserListView;
@@ -3599,7 +3623,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.16";
+        this.version = "0.8.17";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -3685,7 +3709,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         };
 
         // idle timer // fire when user become idle or active
-        $( document ).idleTimer(opts.idleTimeout);
+        if (opts.idleTimeout > 0)
+            $( document ).idleTimer(opts.idleTimeout);
         $( document ).on( "idle.idleTimer", function(){
             console.log('client;', 'idle');
             self.isActive = false;

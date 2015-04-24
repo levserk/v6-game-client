@@ -22,6 +22,7 @@ require(['require-cnf'], function () {
                 port: 8078,
                 resultDialogDelay: 1000,
                 reload: true,
+                idleTimeout: 0,
                 getUserParams: function(){
                     var inviteData = {
                         gameType:'Main Mode',

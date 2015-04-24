@@ -260,7 +260,11 @@ define(function() {
                 }
             };
             var div = $('<div>');
+            var prevFocus = document.activeElement || document;
             div.html(html).dialog(options);
+            div.parent().find(':button').attr('tabindex', '-1');
+            document.activeElement.blur();
+            $(prevFocus).focus();
             if (draggable) {
                 div.parent().draggable();
                 div.addClass(DRAGGABLE_CLASS);

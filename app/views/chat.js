@@ -14,7 +14,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 'click .chatMsg': '_deleteMsg',
                 'click .tab': 'clickTab',
                 'blur .inputMsg': 'blurInputMsg',
-                'click .inputMsg': 'clickInputMsg',
+                'focus .inputMsg': 'clickInputMsg',
                 'click .sendMsgBtn': 'sendMsgEvent',
                 'keyup .inputMsg': 'sendMsgEvent',
                 'change #chat-select': 'changeChatSelect',

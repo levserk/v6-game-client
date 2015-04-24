@@ -12,6 +12,7 @@ define(['EE'], function(EE) {
             this.onUserFocusChanged(false);
         }.bind(this));
         window.addEventListener('focus', function(){
+
             this.onUserFocusChanged(true);
         }.bind(this));
     };
@@ -132,7 +133,7 @@ define(['EE'], function(EE) {
         //start game
         var room = new Room(data['roomInfo'], this.client);
         // TODO: server send spectators
-        room.spectators.push(this.client.getPlayer().userId);
+        room.spectators.push(this.client.getPlayer());
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
@@ -197,8 +198,8 @@ define(['EE'], function(EE) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
         }
-        this.emit('turn', data);
         this.switchPlayer(data.nextPlayer);
+        this.emit('turn', data);
     };
 
 
@@ -251,7 +252,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.onUserFocusChanged = function(windowHasFocus){
-        if (this.inGame()) {
+        if (this.isPlaying()) {
             this.client.send('game_manager', 'event', 'server', {
                 type: 'focus',
                 action: windowHasFocus ? 'has' : 'lost'
@@ -321,7 +322,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendTurn = function(turn){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendTurn', 'game not started!');
             return false
         }
@@ -339,7 +340,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendThrow = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager', 'sendThrow', 'game not started!');
             return;
         }
@@ -348,7 +349,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendDraw = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendDraw', 'game not started!');
             return;
         }
@@ -357,7 +358,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendEvent = function (type, event, target) {
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendEvent', 'game not started!');
             return;
         }
@@ -370,7 +371,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.sendTakeBack = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendTakeBack', 'game not started!');
             return;
         }
@@ -390,7 +391,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.acceptDraw = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'acceptDraw', 'game not started!');
             return;
         }
@@ -399,7 +400,7 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.cancelDraw = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'cancelDraw', 'game not started!');
             return;
         }
@@ -410,6 +411,9 @@ define(['EE'], function(EE) {
     GameManager.prototype.spectate = function(room){
         if (!room){
             return;
+        }
+        if (this.isSpectating()){
+            this.leaveGame();
         }
         this.client.send('game_manager', 'spectate', 'server', {roomId: room});
     };
@@ -429,6 +433,22 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.inGame = function (){
         return this.currentRoom != null && !this.currentRoom.isClosed && this.getPlayer(this.client.getPlayer().userId);
+    };
+
+
+    GameManager.prototype.isPlaying = function(){
+        return this.currentRoom != null && !this.currentRoom.isClosed
+            && this.getPlayer(this.client.getPlayer().userId) && this.currentRoom.current != null;
+    };
+
+
+    GameManager.prototype.isSpectating = function(){
+        if (this.currentRoom != null && !this.currentRoom.isClosed && this.currentRoom.spectators){
+            for (var i = 0; i < this.currentRoom.spectators.length; i++){
+                if (this.currentRoom.spectators[i] == this.client.getPlayer()) return true;
+            }
+        }
+        return false;
     };
 
 

@@ -451,6 +451,7 @@ define('modules/game_manager',['EE'], function(EE) {
             this.onUserFocusChanged(false);
         }.bind(this));
         window.addEventListener('focus', function(){
+
             this.onUserFocusChanged(true);
         }.bind(this));
     };
@@ -571,7 +572,7 @@ define('modules/game_manager',['EE'], function(EE) {
         //start game
         var room = new Room(data['roomInfo'], this.client);
         // TODO: server send spectators
-        room.spectators.push(this.client.getPlayer().userId);
+        room.spectators.push(this.client.getPlayer());
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
@@ -636,8 +637,8 @@ define('modules/game_manager',['EE'], function(EE) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
         }
-        this.emit('turn', data);
         this.switchPlayer(data.nextPlayer);
+        this.emit('turn', data);
     };
 
 
@@ -690,7 +691,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.onUserFocusChanged = function(windowHasFocus){
-        if (this.inGame()) {
+        if (this.isPlaying()) {
             this.client.send('game_manager', 'event', 'server', {
                 type: 'focus',
                 action: windowHasFocus ? 'has' : 'lost'
@@ -760,7 +761,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.sendTurn = function(turn){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendTurn', 'game not started!');
             return false
         }
@@ -778,7 +779,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.sendThrow = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager', 'sendThrow', 'game not started!');
             return;
         }
@@ -787,7 +788,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.sendDraw = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendDraw', 'game not started!');
             return;
         }
@@ -796,7 +797,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.sendEvent = function (type, event, target) {
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendEvent', 'game not started!');
             return;
         }
@@ -809,7 +810,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.sendTakeBack = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'sendTakeBack', 'game not started!');
             return;
         }
@@ -829,7 +830,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.acceptDraw = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'acceptDraw', 'game not started!');
             return;
         }
@@ -838,7 +839,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.cancelDraw = function(){
-        if (!this.currentRoom){
+        if (!this.isPlaying()){
             console.error('game_manager;', 'cancelDraw', 'game not started!');
             return;
         }
@@ -849,6 +850,9 @@ define('modules/game_manager',['EE'], function(EE) {
     GameManager.prototype.spectate = function(room){
         if (!room){
             return;
+        }
+        if (this.isSpectating()){
+            this.leaveGame();
         }
         this.client.send('game_manager', 'spectate', 'server', {roomId: room});
     };
@@ -868,6 +872,22 @@ define('modules/game_manager',['EE'], function(EE) {
 
     GameManager.prototype.inGame = function (){
         return this.currentRoom != null && !this.currentRoom.isClosed && this.getPlayer(this.client.getPlayer().userId);
+    };
+
+
+    GameManager.prototype.isPlaying = function(){
+        return this.currentRoom != null && !this.currentRoom.isClosed
+            && this.getPlayer(this.client.getPlayer().userId) && this.currentRoom.current != null;
+    };
+
+
+    GameManager.prototype.isSpectating = function(){
+        if (this.currentRoom != null && !this.currentRoom.isClosed && this.currentRoom.spectators){
+            for (var i = 0; i < this.currentRoom.spectators.length; i++){
+                if (this.currentRoom.spectators[i] == this.client.getPlayer()) return true;
+            }
+        }
+        return false;
     };
 
 
@@ -2272,7 +2292,7 @@ define('views/dialogs',[],function() {
             }
             var rankResult = '';
             if (newRank > 0) {
-                if (result == 'win' && oldRank > 0 && newRank < oldRank) {
+                if (data.result == 'win' && oldRank > 0 && newRank < oldRank) {
                     rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
                 } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
             }
@@ -3483,8 +3503,13 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             renderTabs: function() {
                 for (var i = this.tabs.length - 1; i >= 0; i--){
                     this.$head.prepend(this.tplTab(this.tabs[i]));
+                    this.setActiveTab(this.tabs[0].id);
                 }
-                this.setActiveTab(this.tabs[0].id);
+                if (!this.tabs || this.tabs.length == 0) {
+                    this.currentTab = {
+                        id: this._manager.client.currentMode
+                    }
+                }
             },
 
             renderHead:function() {
@@ -3751,22 +3776,9 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
             var filter = gm.currentRoom.players[0].isPlayer ? gm.currentRoom.players[1].userName :  gm.currentRoom.players[0].userName;
             if (filter) this.historyView.setFilter(filter);
         }
-
         this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
-
         this.userId = this.client.getPlayer().userId;
-
-        this._getHistory(mode);
-
-        //this.$container.append(this.historyView.render(mode, false, false).$el);
-        //
-        //this.client.send('history_manager', 'history', 'server', {
-        //    mode: mode,
-        //    userId: this.userId,
-        //    count: this.maxCount,
-        //    offset: this.history.length,
-        //    filter: this.historyView.getFilter()
-        //});
+        this._getHistory(mode, false);
     };
 
     HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
@@ -3774,20 +3786,8 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         this.historyView.setFilter('');
         if (blockId) this.$container = $('#'+blockId);
         if (!this.$container) throw new Error('wrong history container id! ' + blockId);
-
         this.userId = userId;
-
         this._getHistory(mode, true);
-
-        //this.$container.append(this.historyView.render(mode, false, true).$el);
-        //
-        //this.client.send('history_manager', 'history', 'server', {
-        //    mode:mode,
-        //    userId:userId,
-        //    count: this.maxCount,
-        //    offset: this.history.length
-        //});
-
         this.historyView.delegateEvents();
     };
 
@@ -4198,7 +4198,13 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
             ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, ratings.infoUser[mode].rank);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) {
-            if (column == 'ratingElo' && order == 'desc') rank = i + 1 + this.count; // set rank on order by rating
+            if (!this.filter && column == 'ratingElo' && order == 'desc') {
+                rank = i + 1 + this.count;
+            } else {
+                if (this.client.opts.loadRanksInRating){
+                    rank =  ratings.allUsers[i][mode]['rank'] || false;
+                }
+            }
             ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
         }
 
@@ -4232,6 +4238,7 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
     RatingManager.prototype.getRatings = function(mode, column, order, filter, showMore){
         if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
+        this.filter = filter;
         this.client.send('rating_manager', 'ratings', 'server', {
             mode: mode||this.client.currentMode,
             column: column,
@@ -4407,7 +4414,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.14";
+        this.version = "0.8.15";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4417,6 +4424,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
         opts.autoReconnect = opts.autoReconnect || false;
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
+        opts.loadRanksInRating = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -4592,6 +4600,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
         this.opts.turnTime = opts.turnTime;
+        this.opts.loadRanksInRating = !!opts.loadRanksInRating;
         this.chatManager.ban = ban;
         this.currentMode = this.modes[0];
         this.settings = $.extend({},this.defaultSettings, settings);

@@ -172,7 +172,7 @@ define(function() {
             }
             var rankResult = '';
             if (newRank > 0) {
-                if (result == 'win' && oldRank > 0 && newRank < oldRank) {
+                if (data.result == 'win' && oldRank > 0 && newRank < oldRank) {
                     rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
                 } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
             }

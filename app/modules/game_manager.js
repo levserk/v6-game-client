@@ -204,8 +204,8 @@ define(['EE'], function(EE) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
         }
-        this.switchPlayer(data.nextPlayer);
         this.emit('turn', data);
+        this.switchPlayer(data.nextPlayer);
     };
 
 
@@ -325,6 +325,10 @@ define(['EE'], function(EE) {
             console.error('game_manager;', 'sendReady', 'game not started!');
             return;
         }
+        if (!this.enableGames){
+            this.leaveGame();
+            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
+        }
         this.client.send('game_manager', 'ready', 'server', true);
     };
 
@@ -423,6 +427,7 @@ define(['EE'], function(EE) {
 
         if (this.isPlaying()) {
             console.warn('game_manager;', 'spectate', 'you are already playing game!');
+            return;
         }
         if (this.isSpectating()){
             this.leaveGame();

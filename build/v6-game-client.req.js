@@ -204,8 +204,8 @@ define('modules/game_manager',['EE'], function(EE) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
         }
-        this.switchPlayer(data.nextPlayer);
         this.emit('turn', data);
+        this.switchPlayer(data.nextPlayer);
     };
 
 
@@ -325,6 +325,10 @@ define('modules/game_manager',['EE'], function(EE) {
             console.error('game_manager;', 'sendReady', 'game not started!');
             return;
         }
+        if (!this.enableGames){
+            this.leaveGame();
+            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
+        }
         this.client.send('game_manager', 'ready', 'server', true);
     };
 
@@ -423,6 +427,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
         if (this.isPlaying()) {
             console.warn('game_manager;', 'spectate', 'you are already playing game!');
+            return;
         }
         if (this.isSpectating()){
             this.leaveGame();
@@ -650,7 +655,7 @@ define('modules/invite_manager',['EE'], function(EE) {
 
     InviteManager.prototype.sendInvite = function(userId, params) {
         if (!this.client.gameManager.enableGames){
-            this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
+            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
             return;
         }
         // find user, get current params, send invite and emit event invite sand // params.gameType;
@@ -738,7 +743,7 @@ define('modules/invite_manager',['EE'], function(EE) {
 
     InviteManager.prototype.playRandom = function(cancel){
         if (!this.client.gameManager.enableGames && !cancel){
-            this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
+            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
             return;
         }
         if (this.client.gameManager.inGame()){
@@ -3634,7 +3639,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.19";
+        this.version = "0.8.20";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

@@ -104,7 +104,7 @@ define(['EE'], function(EE) {
 
     InviteManager.prototype.sendInvite = function(userId, params) {
         if (!this.client.gameManager.enableGames){
-            this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
+            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
             return;
         }
         // find user, get current params, send invite and emit event invite sand // params.gameType;
@@ -192,7 +192,7 @@ define(['EE'], function(EE) {
 
     InviteManager.prototype.playRandom = function(cancel){
         if (!this.client.gameManager.enableGames && !cancel){
-            this.client.viewsManager.dialogsView.showDialog('новые игры отключены',{}, true, false, false);
+            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
             return;
         }
         if (this.client.gameManager.inGame()){

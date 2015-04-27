@@ -165,6 +165,13 @@
     text-align: center;
 }
 
+.ratingTable tbody .ratinguserName div{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+}
+
 .ratingTable .ratingwin div{
     width: 15px;
     margin: 0 auto;

@@ -537,6 +537,7 @@ define('modules/game_manager',['EE'], function(EE) {
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
         this.currentRoom.userTakeBacks = 0;
+        this.currentRoom.history = [];
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
         this.emit('round_start', {
@@ -561,7 +562,8 @@ define('modules/game_manager',['EE'], function(EE) {
         var timeStart = Date.now();
         this.emit('game_start', room);
         this.onRoundStart(data['initData']);
-        this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
+        this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
+        this.emit('game_load', this.currentRoom.history);
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
         this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart));
@@ -569,7 +571,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.onSpectateStart = function(data){
-        console.log('game_manager;', 'spectate restart', data);
+        console.log('game_manager;', 'spectate start', data);
         //start game
         var room = new Room(data['roomInfo'], this.client);
         // TODO: server send spectators
@@ -584,7 +586,8 @@ define('modules/game_manager',['EE'], function(EE) {
             return;
         }
         this.onRoundStart(data['initData']);
-        this.emit('game_load', GameManager.parseHistory(data.history, data.playerTurns));
+        this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
+        this.emit('game_load', this.currentRoom.history);
         // switch player
         if (data.userTime != null)
             this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart));
@@ -635,6 +638,7 @@ define('modules/game_manager',['EE'], function(EE) {
 
     GameManager.prototype.onTurn = function(data){
         console.log('game_manager;', 'emit turn', data);
+        this.currentRoom.history.push(data.turn);
         if (data.turn.nextPlayer) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
@@ -671,7 +675,8 @@ define('modules/game_manager',['EE'], function(EE) {
                             this.currentRoom.userTakeBacks++;
                         }
                         this.switchPlayer(user);
-                        this.emit('take_back', {user: user, history: GameManager.parseHistory(event.history)});
+                        this.currentRoom.history = GameManager.parseHistory(event.history);
+                        this.emit('take_back', {user: user, history: this.currentRoom.history});
                         break;
                     case 'ask':
                         if (user != this.client.getPlayer())
@@ -687,6 +692,7 @@ define('modules/game_manager',['EE'], function(EE) {
                 break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
+                this.currentRoom.history.push(event);
                 this.emit('event', event);
         }
     };
@@ -853,6 +859,10 @@ define('modules/game_manager',['EE'], function(EE) {
         if (!room){
             return;
         }
+
+        if (this.isPlaying()) {
+            console.warn('game_manager;', 'spectate', 'you are already playing game!');
+        }
         if (this.isSpectating()){
             this.leaveGame();
         }
@@ -953,6 +963,7 @@ define('modules/game_manager',['EE'], function(EE) {
         this.mode = room.mode;
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
         this.takeBacks = room.takeBacks;
+        this.history = [];
 
         console.log('TEST!', room.data);
 
@@ -3445,7 +3456,7 @@ define('text!tpls/v6-historyHeaderTD.ejs',[],function () { return '<td class="se
 define('text!tpls/v6-historyTH.ejs',[],function () { return '<th colspan="<%= colspan %>" title="<%= title %>"><%= value %></th>';});
 
 
-define('text!tpls/v6-historyTR.ejs',[],function () { return '<tr title="<%= title %>" class="<%= trclass %>" data-id="<%= id %>" ><%= value %></tr>';});
+define('text!tpls/v6-historyTR.ejs',[],function () { return '<tr class="<%= trclass %>" data-id="<%= id %>" ><%= value %></tr>';});
 
 
 define('text!tpls/v6-ratingTab.ejs',[],function () { return '<span class="unactiveLink"  data-idtab="<%= id %>"><%= title %></span>&nbsp;&nbsp;';});
@@ -4453,7 +4464,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.17";
+        this.version = "0.8.19";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

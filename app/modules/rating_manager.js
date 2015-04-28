@@ -81,7 +81,11 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         if (rank !== false) row.rank = rank; // set rank on order
         else row.rank = '';
         if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
-        if (this.client.userList.getUser(info.userId)) row.active = true;
+        if (this.client.userList.getUser(info.userId)) {
+            row.online = true;
+            if (this.client.userList.getUser(info.userId).isActive) row.active = true;
+
+        }
         row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);
         if (Date.now() - info.dateCreate < 86400000)
             row.dateCreate = this.ratingView.NOVICE;

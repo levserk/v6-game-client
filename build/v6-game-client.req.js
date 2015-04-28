@@ -2685,7 +2685,6 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             },
 
             trClicked: function(e){
-                if ($(e.target).hasClass('sessionHeader') || $(e.target).hasClass('userName')) return;
                 var id  = $(e.currentTarget).attr('data-id');
                 //TODO save player userId history
                 this._manager.getGame(id);
@@ -3116,7 +3115,8 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                 'click .ratingTable .userName': 'userClicked',
                 'click #ratingShowMore': 'showMore',
                 'keyup #ratingAutoComplete': 'filterChanged',
-                'click .delete': 'clearFilter'
+                'click .delete': 'clearFilter',
+                'click #jumpTop': 'scrollTop'
             },
 
             thClicked: function(e){
@@ -3167,6 +3167,12 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             getRatings: function(showmore) {
                 this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id,
                     this.currentCollumn.order < 0? 'desc':'asc', this.$filter.val(), !!showmore);
+            },
+
+            scrollTop: function(){
+                $('html,body').animate({
+                    scrollTop: this.$el.offset().top
+                }, 300);
             },
 
             initialize: function(_conf, _manager) {
@@ -3262,6 +3268,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                     var trclass = '';
                     if (row.user) trclass += this.USER_CLASS + ' ';
                     if (row.active) trclass += this.ACTIVE_CLASS;
+                    else if (row.online) trclass += this.ONLINE_CLASS;
                     this.$tbody.append(this.tplTR({
                         trclass: trclass,
                         userId: row.userId,
@@ -3450,7 +3457,11 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
         if (rank !== false) row.rank = rank; // set rank on order
         else row.rank = '';
         if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
-        if (this.client.userList.getUser(info.userId)) row.active = true;
+        if (this.client.userList.getUser(info.userId)) {
+            row.online = true;
+            if (this.client.userList.getUser(info.userId).isActive) row.active = true;
+
+        }
         row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);
         if (Date.now() - info.dateCreate < 86400000)
             row.dateCreate = this.ratingView.NOVICE;
@@ -3639,7 +3650,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.20";
+        this.version = "0.8.21";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

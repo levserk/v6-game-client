@@ -24,7 +24,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 'click .ratingTable .userName': 'userClicked',
                 'click #ratingShowMore': 'showMore',
                 'keyup #ratingAutoComplete': 'filterChanged',
-                'click .delete': 'clearFilter'
+                'click .delete': 'clearFilter',
+                'click #jumpTop': 'scrollTop'
             },
 
             thClicked: function(e){
@@ -75,6 +76,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             getRatings: function(showmore) {
                 this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id,
                     this.currentCollumn.order < 0? 'desc':'asc', this.$filter.val(), !!showmore);
+            },
+
+            scrollTop: function(){
+                $('html,body').animate({
+                    scrollTop: this.$el.offset().top
+                }, 300);
             },
 
             initialize: function(_conf, _manager) {
@@ -170,6 +177,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     var trclass = '';
                     if (row.user) trclass += this.USER_CLASS + ' ';
                     if (row.active) trclass += this.ACTIVE_CLASS;
+                    else if (row.online) trclass += this.ONLINE_CLASS;
                     this.$tbody.append(this.tplTR({
                         trclass: trclass,
                         userId: row.userId,

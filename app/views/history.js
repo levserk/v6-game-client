@@ -10,6 +10,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             tplTD: function(value){return '<td>'+value+'</td>'},
             tplTH: _.template(tplTH),
             tplTR: _.template(tplTR),
+            tplTRpenalty: function(date, value, columns){return '<tr class="historyPenalty"><td>'+date+'</td><td colspan="'+columns+'">'+value+'</td></tr>'},
             tplTab: _.template(tplTab),
             events: {
                 'click .closeIcon': 'close',
@@ -117,6 +118,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
 
             renderSession:function(mode, session){
                 var row, trclass;
+                if (session.penalty){
+                    this.$tbody.append(
+                        this.tplTRpenalty(session.date, session.text, this.columns.length)
+                    );
+                }
                 for (var i = 0; i < session.length; i++){
                     row = this.renderRow(mode, session[i], i==0, session.length);
                     if (session[i].result == 'draw') trclass = this.DRAW_CLASS;

@@ -58,6 +58,15 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             for (var i = this.history.length - 1; i > -1; i--) {
                 this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
             }
+            histTable.unshift({
+                penalty: true,
+                time: Date.now(),
+                date: formatDate(Date.now()),
+                type: 1,
+                text: 'penalty 100 points',
+                value: 100,
+                ratingElo: 1600
+            });
             this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
         }
     };
@@ -126,7 +135,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         //TODO: dynamic columns
         row.elo.dynamic = prev ? row.elo.value - prev.elo.value : '';
 
-        if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){
+        if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){ // add new session game
             row.elo.diff = row.elo.dynamic||0;
             rows = [];
             rows.unshift(row);

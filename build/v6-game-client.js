@@ -532,7 +532,7 @@ define('modules/game_manager',['EE'], function(EE) {
     };
 
 
-    GameManager.prototype.onRoundStart = function (data){
+    GameManager.prototype.onRoundStart = function (data, loading){
         console.log('game_manager;', 'emit round_start', data);
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
@@ -546,7 +546,8 @@ define('modules/game_manager',['EE'], function(EE) {
             id: data.id,
             inviteData: data.inviteData,
             score: this.currentRoom.score,
-            isPlayer: this.currentRoom.isPlayer
+            isPlayer: this.currentRoom.isPlayer,
+            loading: !!loading
         });
         this.emitTime();
     };
@@ -561,7 +562,7 @@ define('modules/game_manager',['EE'], function(EE) {
         room.score = data.score || room.score;
         var timeStart = Date.now();
         this.emit('game_start', room);
-        this.onRoundStart(data['initData']);
+        this.onRoundStart(data['initData'], true);
         this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
@@ -585,7 +586,7 @@ define('modules/game_manager',['EE'], function(EE) {
             console.log('game_manager', 'start spectate', 'waiting players ready to play');
             return;
         }
-        this.onRoundStart(data['initData']);
+        this.onRoundStart(data['initData'], true);
         this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         // switch player
@@ -664,6 +665,7 @@ define('modules/game_manager',['EE'], function(EE) {
             case 'timeout':
                 if (event.nextPlayer) {
                     event.user = this.getPlayer(event.user);
+                    this.currentRoom.history.push({user: event.user.userId, action: 'timeout', nextPlayer: event.nextPlayer});
                     this.emit('timeout', event);
                     this.switchPlayer(this.getPlayer(event.nextPlayer));
                 }
@@ -884,6 +886,21 @@ define('modules/game_manager',['EE'], function(EE) {
             for (var i = 0; i < this.currentRoom.players.length; i++)
                 if (this.currentRoom.players[i].userId == id) return this.currentRoom.players[i];
         return null;
+    };
+
+
+    GameManager.prototype.getHistory = function(){
+        if (!this.currentRoom || !this.currentRoom.history) return [];
+        var history = [];
+        for (var i = 0; i < this.currentRoom.history.length; i++) {
+            if (this.currentRoom.history[i].length){
+                for (var j = 0; j < this.currentRoom.history[i].length; j++){
+                    history.push(this.currentRoom.history[i][j]);
+                }
+            }
+            else history.push(this.currentRoom.history[i]);
+        }
+        return history
     };
 
 
@@ -4480,7 +4497,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.21";
+        this.version = "0.8.22";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

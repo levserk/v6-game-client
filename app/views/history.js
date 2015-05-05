@@ -48,6 +48,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             },
 
             trClicked: function(e){
+                if ($(e.target).hasClass('userName')) return;
                 var id  = $(e.currentTarget).attr('data-id');
                 //TODO save player userId history
                 this._manager.getGame(id);

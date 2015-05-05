@@ -42,31 +42,47 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         var data = message.data;
         console.log('history_manager;', 'message', message);
         switch (message.type) {
-            case 'history': this.onHistoryLoad(data.mode, data.history, data.userId); break;
+            case 'history': this.onHistoryLoad(data.mode, data.history, data.penalties, data.userId); break;
             case 'game': this.onGameLoad(data.mode, data.game); break;
         }
     };
 
 
-    HistoryManager.prototype.onHistoryLoad = function (mode, history, userId){
-        console.log('history_manager;', 'history load', userId, history);
+    HistoryManager.prototype.onHistoryLoad = function (mode, history, penalties, userId){
+        console.log('history_manager;', 'history load', userId, history, penalties);
+        penalties = penalties || [];
         if (!this.historyView.isClosed) {
-            var histTable = [];
+            var histTable = [], penalty;
             this.userId = userId;
             this.currentMode = mode;
             this.history = this.history.concat(history);
             for (var i = this.history.length - 1; i > -1; i--) {
+
+                if (i == this.history.length - 1)// first game
+                    for (var j = 0 ; j < penalties.length; j++) { // add penalties
+                        penalty = penalties[j];
+                        if (penalty.time <= this.history[i].timeStart) { // find previous penalties
+                            histTable.push(this.formatPenaltyRow(penalty));
+                            break;
+                        }
+                    }
+
                 this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
+
+                for (j = penalties.length - 1 ; j > -1; j--){ // add penalties
+                    penalty = penalties[j];
+                        if (i == 0) {    // last game
+                            if (penalty.time >= this.history[i].timeStart) { // find next penalties
+                                histTable.unshift(this.formatPenaltyRow(penalty))
+                            }
+                        } else if (i < this.history.length - 1){    // other
+                            if (penalty.time < this.history[i].timeStart && penalty.time >= this.history[i + 1].timeStart) {
+                                histTable.unshift(this.formatPenaltyRow(penalty));
+                            }
+                        }
+
+                }
             }
-            histTable.unshift({
-                penalty: true,
-                time: Date.now(),
-                date: formatDate(Date.now()),
-                type: 1,
-                text: 'penalty 100 points',
-                value: 100,
-                ratingElo: 1600
-            });
             this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
         }
     };
@@ -148,6 +164,21 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
     };
 
 
+    HistoryManager.prototype.formatPenaltyRow = function(penalty){
+        var hpen = {
+            penalty: true,
+            time: penalty.time,
+            date: formatDate(penalty.time),
+            type: penalty.type,
+            text: 'штраф в ' + Math.abs(penalty.value) + ' очков',
+            value: penalty.value,
+            elo: {value: penalty.ratingElo}
+        };
+        console.log(hpen);
+        return hpen
+    };
+
+
     HistoryManager.prototype.getHistory = function(mode){
         this.historyView.clearHistory();
         var gm = this.client.gameManager;
@@ -208,7 +239,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         var month = months[date.getMonth()];
         var year = date.getFullYear();
         if (day < 10) day = '0' + day;
-        return day + " " + month + " "  + year;
+        return day + " " + month + " "  + year + ' ' + formatTime(time);
     }
 
     function formatTime(time) {

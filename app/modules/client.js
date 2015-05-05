@@ -3,7 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.8.22";
+        this.version = "0.8.23";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -110,7 +110,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         user.userId = user.userId || window._userId;
         user.userName = user.userName || window._username;
         user.sign = user.sign || window._sign || '';
-        if (!user.userName || !user.userId || !user.sign){
+        if (!user.userName || !user.userId || !user.sign || user.userName == 'undefined' || user.userId == 'undefined' || user.sign == 'undefined'){
             throw new Error('Client init error, wrong user parameters'
                             + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
         }

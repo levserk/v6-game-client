@@ -47,6 +47,12 @@ require(['require-cnf'], function () {
                     });
                     return conf;
                 },
+                generatePenaltyText: function(penalty){
+                    if (penalty.type == 1){
+                        return 'штраф за отсутствие игр в ' + Math.abs(penalty.value) + ' очков';
+                    }
+                    return '';
+                },
                 blocks:{
                     userListId:'userListDiv',
                     chatId:'chatDiv',

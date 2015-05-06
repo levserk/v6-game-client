@@ -3495,6 +3495,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             tplTD: function(value){return '<td>'+value+'</td>'},
             tplTH: _.template(tplTH),
             tplTR: _.template(tplTR),
+            tplTRpenalty: function(date, value, columns){return '<tr class="historyPenalty"><td>'+date+'</td><td colspan="'+columns+'">'+value+'</td></tr>'},
             tplTab: _.template(tplTab),
             events: {
                 'click .closeIcon': 'close',
@@ -3532,6 +3533,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             },
 
             trClicked: function(e){
+                if ($(e.target).hasClass('userName')) return;
                 var id  = $(e.currentTarget).attr('data-id');
                 //TODO save player userId history
                 this._manager.getGame(id);
@@ -3602,6 +3604,11 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
 
             renderSession:function(mode, session){
                 var row, trclass;
+                if (session.penalty){
+                    this.$tbody.append(
+                        this.tplTRpenalty(session.date, session.text, this.columns.length)
+                    );
+                }
                 for (var i = 0; i < session.length; i++){
                     row = this.renderRow(mode, session[i], i==0, session.length);
                     if (session[i].result == 'draw') trclass = this.DRAW_CLASS;
@@ -3743,21 +3750,46 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         var data = message.data;
         console.log('history_manager;', 'message', message);
         switch (message.type) {
-            case 'history': this.onHistoryLoad(data.mode, data.history, data.userId); break;
+            case 'history': this.onHistoryLoad(data.mode, data.history, data.penalties, data.userId); break;
             case 'game': this.onGameLoad(data.mode, data.game); break;
         }
     };
 
 
-    HistoryManager.prototype.onHistoryLoad = function (mode, history, userId){
-        console.log('history_manager;', 'history load', userId, history);
+    HistoryManager.prototype.onHistoryLoad = function (mode, history, penalties, userId){
+        console.log('history_manager;', 'history load', userId, history, penalties);
+        penalties = penalties || [];
         if (!this.historyView.isClosed) {
-            var histTable = [];
+            var histTable = [], penalty;
             this.userId = userId;
             this.currentMode = mode;
             this.history = this.history.concat(history);
             for (var i = this.history.length - 1; i > -1; i--) {
+
+                if (i == this.history.length - 1)// first game
+                    for (var j = 0 ; j < penalties.length; j++) { // add penalties
+                        penalty = penalties[j];
+                        if (penalty.time <= this.history[i].timeStart) { // find previous penalties
+                            histTable.push(this.formatPenaltyRow(penalty));
+                            break;
+                        }
+                    }
+
                 this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
+
+                for (j = penalties.length - 1 ; j > -1; j--){ // add penalties
+                    penalty = penalties[j];
+                        if (i == 0) {    // last game
+                            if (penalty.time >= this.history[i].timeStart) { // find next penalties
+                                histTable.unshift(this.formatPenaltyRow(penalty))
+                            }
+                        } else if (i < this.history.length - 1){    // other
+                            if (penalty.time < this.history[i].timeStart && penalty.time >= this.history[i + 1].timeStart) {
+                                histTable.unshift(this.formatPenaltyRow(penalty));
+                            }
+                        }
+
+                }
             }
             this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
         }
@@ -3827,7 +3859,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         //TODO: dynamic columns
         row.elo.dynamic = prev ? row.elo.value - prev.elo.value : '';
 
-        if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){
+        if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){ // add new session game
             row.elo.diff = row.elo.dynamic||0;
             rows = [];
             rows.unshift(row);
@@ -3837,6 +3869,21 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
             row.elo.diff = prev.elo.diff + row.elo.dynamic;
             rows.unshift(row);
         }
+    };
+
+
+    HistoryManager.prototype.formatPenaltyRow = function(penalty){
+        var hpen = {
+            penalty: true,
+            time: penalty.time,
+            date: formatDate(penalty.time),
+            type: penalty.type,
+            text: typeof this.client.opts.generatePenaltyText == "function" ? this.client.opts.generatePenaltyText(penalty) : 'штраф в ' + Math.abs(penalty.value) + ' очков',
+            value: penalty.value,
+            elo: {value: penalty.ratingElo}
+        };
+        console.log(hpen);
+        return hpen
     };
 
 
@@ -3900,7 +3947,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         var month = months[date.getMonth()];
         var year = date.getFullYear();
         if (day < 10) day = '0' + day;
-        return day + " " + month + " "  + year;
+        return day + " " + month + " "  + year + ' ' + formatTime(time);
     }
 
     function formatTime(time) {
@@ -3912,8 +3959,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         return  h + ':' + m;
     }
 
-    HistoryManager.prototype.testHistory = [{"timeStart":1424080866344,"timeEnd":1424080868891,"players":["22050161915831","95120799727737"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":4,\"lose\":2,\"draw\":0,\"games\":6,\"rank\":1,\"ratingElo\":1627}},\"95120799727737\":{\"userId\":\"95120799727737\",\"userName\":\"us_95120799727737\",\"dateCreate\":1424080722018,\"default\":{\"win\":1,\"lose\":2,\"draw\":0,\"games\":3,\"rank\":5,\"ratingElo\":1587}}}"},{"timeStart":1424080860196,"timeEnd":1424080862868,"players":["22050161915831","95120799727737"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":3,\"lose\":2,\"draw\":0,\"games\":5,\"rank\":3,\"ratingElo\":1613}},\"95120799727737\":{\"userId\":\"95120799727737\",\"userName\":\"us_95120799727737\",\"dateCreate\":1424080722018,\"default\":{\"win\":1,\"lose\":1,\"draw\":0,\"games\":2,\"rank\":5,\"ratingElo\":1600}}}"},{"timeStart":1424080754813,"timeEnd":1424080762501,"players":["95120799727737","22050161915831"],"mode":"default","winner":"95120799727737","action":"game_over","userData":"{\"95120799727737\":{\"userId\":\"95120799727737\",\"userName\":\"us_95120799727737\",\"dateCreate\":1424080722018,\"default\":{\"win\":1,\"lose\":0,\"draw\":0,\"games\":1,\"rank\":3,\"ratingElo\":1615}},\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":2,\"lose\":2,\"draw\":0,\"games\":4,\"rank\":5,\"ratingElo\":1598}}}"},{"timeStart":1424080713717,"timeEnd":1424080715662,"players":["98637392232194","22050161915831"],"mode":"default","winner":"98637392232194","action":"game_over","userData":"{\"98637392232194\":{\"userId\":\"98637392232194\",\"userName\":\"us_98637392232194\",\"dateCreate\":1424080704161,\"default\":{\"win\":1,\"lose\":0,\"draw\":0,\"games\":1,\"rank\":1,\"ratingElo\":1616}},\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":2,\"lose\":1,\"draw\":0,\"games\":3,\"rank\":3,\"ratingElo\":1612}}}"},{"timeStart":1424080696911,"timeEnd":1424080698325,"players":["22050161915831","21508051152341"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":2,\"lose\":0,\"draw\":0,\"games\":2,\"rank\":1,\"ratingElo\":1627}},\"21508051152341\":{\"userId\":\"21508051152341\",\"userName\":\"us_21508051152341\",\"dateCreate\":1423834457435,\"default\":{\"win\":0,\"lose\":3,\"draw\":0,\"games\":3,\"rank\":4,\"ratingElo\":1561}}}"},{"timeStart":1424080690059,"timeEnd":1424080692709,"players":["22050161915831","21508051152341"],"mode":"default","winner":"22050161915831","action":"game_over","userData":"{\"22050161915831\":{\"userId\":\"22050161915831\",\"userName\":\"us_22050161915831\",\"dateCreate\":1424080636958,\"default\":{\"win\":1,\"lose\":0,\"draw\":0,\"games\":1,\"rank\":2,\"ratingElo\":1614}},\"21508051152341\":{\"userId\":\"21508051152341\",\"userName\":\"us_21508051152341\",\"dateCreate\":1423834457435,\"default\":{\"win\":0,\"lose\":2,\"draw\":0,\"games\":2,\"rank\":4,\"ratingElo\":1573}}}"}]
-    return HistoryManager;
+   return HistoryManager;
 });
 
 define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="<%= close %>" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
@@ -4497,7 +4543,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.22";
+        this.version = "0.8.23";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4604,7 +4650,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         user.userId = user.userId || window._userId;
         user.userName = user.userName || window._username;
         user.sign = user.sign || window._sign || '';
-        if (!user.userName || !user.userId || !user.sign){
+        if (!user.userName || !user.userId || !user.sign || user.userName == 'undefined' || user.userId == 'undefined' || user.sign == 'undefined'){
             throw new Error('Client init error, wrong user parameters'
                             + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
         }

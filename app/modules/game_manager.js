@@ -395,11 +395,19 @@ define(['EE'], function(EE) {
 
 
     GameManager.prototype.acceptTakeBack = function() {
+        if (!this.isPlaying()){
+            console.error('game_manager;', 'acceptTakeBack', 'game not started!');
+            return;
+        }
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'accept'});
     };
 
 
     GameManager.prototype.cancelTakeBack = function() {
+        if (!this.isPlaying()){
+            console.error('game_manager;', 'cancelTakeBack', 'game not started!');
+            return;
+        }
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'cancel'});
     };
 

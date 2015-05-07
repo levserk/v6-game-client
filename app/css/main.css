@@ -1,57 +1,3 @@
-#endGameButton {
-    position: absolute;
-    right: 5px;
-    top: 5px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-
-#drawButton {
-    position: absolute;
-    right: 5px;
-    top: 25px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-
-#winButton {
-    position: absolute;
-    right: 5px;
-    top: 45px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-
-#ratingButton {
-    position: absolute;
-    right: 5px;
-    top: 65px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-#historyButton {
-    position: absolute;
-    right: 5px;
-    top: 85px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-
 .delete {
     cursor: pointer;
     background-repeat: no-repeat;
@@ -61,4 +7,18 @@
 
 .delete:hover {
     opacity: 1;
+}
+
+.v6-buttons {
+    position: absolute;
+    top: 0px;
+    right: 10px;
+}
+
+.v6-buttons div {
+    color: blue;
+    text-align: right;
+    height: 20px;
+    line-height: 20px;
+    cursor: pointer;
 }

@@ -110,7 +110,7 @@
 }
 
 .ratingTable tr td:nth-child(1) {
-    width: 15px;
+    width: 30px;
     text-align: right;
 }
 

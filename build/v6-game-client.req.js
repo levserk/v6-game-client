@@ -395,11 +395,19 @@ define('modules/game_manager',['EE'], function(EE) {
 
 
     GameManager.prototype.acceptTakeBack = function() {
+        if (!this.isPlaying()){
+            console.error('game_manager;', 'acceptTakeBack', 'game not started!');
+            return;
+        }
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'accept'});
     };
 
 
     GameManager.prototype.cancelTakeBack = function() {
+        if (!this.isPlaying()){
+            console.error('game_manager;', 'cancelTakeBack', 'game not started!');
+            return;
+        }
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'cancel'});
     };
 
@@ -1353,8 +1361,8 @@ define('views/dialogs',[],function() {
         var NOTIFICATION_CLASS = 'dialogNotification';
         var HIDEONCLICK_CLASS = 'dialogClickHide';
         var INVITE_CLASS = 'dialogInvite';
+        var GAME_CLASS = 'dialogGame';
         var DRAGGABLE_CLASS = 'dialogDraggable';
-        var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var TAKEBACK_CLASS = 'dialogTakeBack';
         var ACTION_CLASS = 'dialogGameAction';
@@ -1370,9 +1378,10 @@ define('views/dialogs',[],function() {
             client.inviteManager.on('cancel_invite', cancelInvite);
             client.inviteManager.on('remove_invite', removeInvite);
             client.gameManager.on('user_leave', userLeave);
+            client.gameManager.on('turn', userTurn);
             client.gameManager.on('game_start', hideDialogs);
             client.gameManager.on('round_end', roundEnd);
-            client.gameManager.on('game_leave', hideDialogs);
+            client.gameManager.on('game_leave', leaveGame);
             client.gameManager.on('ask_draw', askDraw);
             client.gameManager.on('cancel_draw', cancelDraw);
             client.gameManager.on('ask_back', askTakeBack);
@@ -1458,6 +1467,7 @@ define('views/dialogs',[],function() {
                     $(this).remove();
                 }
             }, true, true, false);
+            div.addClass(GAME_CLASS);
         }
 
         function cancelDraw(user) {
@@ -1485,6 +1495,7 @@ define('views/dialogs',[],function() {
                 }
             }, true, true, false);
             div.addClass(TAKEBACK_CLASS);
+            div.addClass(GAME_CLASS);
         }
 
         function cancelTakeBack(user) {
@@ -1556,6 +1567,7 @@ define('views/dialogs',[],function() {
             dialogTimeout = setTimeout(function(){
                 div.parent().show()
             }, client.opts.resultDialogDelay);
+            div.addClass(GAME_CLASS);
         }
 
         function userLeave(user) {
@@ -1580,6 +1592,7 @@ define('views/dialogs',[],function() {
                     }
                 }, true, true, true);
             }
+            div.addClass(GAME_CLASS);
         }
 
         function loginError() {
@@ -1597,6 +1610,14 @@ define('views/dialogs',[],function() {
             var div = showDialog(html, {}, false, false, false);
         }
 
+        function leaveGame() {
+            hideNotification();
+            hideGameMessages();
+        }
+
+        function userTurn() {
+            $('.' + TAKEBACK_CLASS).dialog("close");
+        }
 
         function showDialog(html, options, draggable, notification, clickHide) {
             options = options || {};
@@ -1637,6 +1658,10 @@ define('views/dialogs',[],function() {
 
         function hideNotification() {
             $('.' + NOTIFICATION_CLASS).dialog("close");
+        }
+
+        function hideGameMessages() {
+            $('.' + GAME_CLASS).dialog("close");
         }
 
         function hideOnClick() {
@@ -3713,7 +3738,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.23";
+        this.version = "0.8.24";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

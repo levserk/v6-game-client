@@ -123,7 +123,7 @@ require(['require-cnf'], function () {
             });
 
             _client.gameManager.on('timeout', function(data){
-                console.log('main;','timeout', 'user: ', data.user, 'is your timeout: ', data.user == _client.getPlayer().userId);
+                console.log('main;','timeout', 'user: ', data.user, 'is your timeout: ', data.user == _client.getPlayer());
             });
 
             _client.gameManager.on('round_end', function(data){
@@ -173,13 +173,17 @@ require(['require-cnf'], function () {
             _generateEndGameBtn();
 
             function _generateEndGameBtn() {
+                var bdiv = $('<div>');
+                bdiv.addClass('v6-buttons');
+                $('body').append(bdiv);
+
                 var div = $('<div>');
                 div.attr('id', 'endGameButton');
                 div.html('<span>Выйти из игры</span>');
                 div.on('click', function () {
                     window._client.gameManager.leaveGame();
                 });
-                $('body').append(div);
+                bdiv.append(div);
 
                 div = $('<div>');
                 div.attr('id', 'drawButton');
@@ -187,7 +191,7 @@ require(['require-cnf'], function () {
                 div.on('click', function () {
                     window._client.gameManager.sendDraw();
                 });
-                $('body').append(div);
+                bdiv.append(div);
 
                 div = $('<div>');
                 div.attr('id', 'winButton');
@@ -195,7 +199,7 @@ require(['require-cnf'], function () {
                 div.on('click', function () {
                     window._client.gameManager.sendTurn({result:1});
                 });
-                $('body').append(div);
+                bdiv.append(div);
 
                 div = $('<div>');
                 div.attr('id', 'ratingButton');
@@ -203,7 +207,7 @@ require(['require-cnf'], function () {
                 div.on('click', function () {
                     window._client.ratingManager.getRatings();
                 });
-                $('body').append(div);
+                bdiv.append(div);
 
                 div = $('<div>');
                 div.attr('id', 'historyButton');
@@ -211,7 +215,29 @@ require(['require-cnf'], function () {
                 div.on('click', function () {
                     window._client.historyManager.getHistory(false, false, false);
                 });
-                $('body').append(div);
+                bdiv.append(div);
+
+                div = $('<div>');
+                div.html('<span>Передать ход</span>');
+                div.on('click', function () {
+                    window._client.gameManager.sendTurn({'switch': true});
+                });
+                bdiv.append(div);
+
+                div = $('<div>');
+                div.html('<span>Сделать ход</span>');
+                div.on('click', function () {
+                    window._client.gameManager.sendTurn({'t': (new Date).getSeconds});
+                });
+                bdiv.append(div);
+
+                div = $('<div>');
+                div.html('<span>ход назад</span>');
+                div.on('click', function () {
+                    window._client.gameManager.sendTakeBack();
+                });
+                bdiv.append(div);
+
             }
 
             function getCookie(c_name)

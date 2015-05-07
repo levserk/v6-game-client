@@ -4,8 +4,8 @@ define(function() {
         var NOTIFICATION_CLASS = 'dialogNotification';
         var HIDEONCLICK_CLASS = 'dialogClickHide';
         var INVITE_CLASS = 'dialogInvite';
+        var GAME_CLASS = 'dialogGame';
         var DRAGGABLE_CLASS = 'dialogDraggable';
-        var USERLEAVE_CLASS = 'dialogUserLeave';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var TAKEBACK_CLASS = 'dialogTakeBack';
         var ACTION_CLASS = 'dialogGameAction';
@@ -21,9 +21,10 @@ define(function() {
             client.inviteManager.on('cancel_invite', cancelInvite);
             client.inviteManager.on('remove_invite', removeInvite);
             client.gameManager.on('user_leave', userLeave);
+            client.gameManager.on('turn', userTurn);
             client.gameManager.on('game_start', hideDialogs);
             client.gameManager.on('round_end', roundEnd);
-            client.gameManager.on('game_leave', hideDialogs);
+            client.gameManager.on('game_leave', leaveGame);
             client.gameManager.on('ask_draw', askDraw);
             client.gameManager.on('cancel_draw', cancelDraw);
             client.gameManager.on('ask_back', askTakeBack);
@@ -109,6 +110,7 @@ define(function() {
                     $(this).remove();
                 }
             }, true, true, false);
+            div.addClass(GAME_CLASS);
         }
 
         function cancelDraw(user) {
@@ -136,6 +138,7 @@ define(function() {
                 }
             }, true, true, false);
             div.addClass(TAKEBACK_CLASS);
+            div.addClass(GAME_CLASS);
         }
 
         function cancelTakeBack(user) {
@@ -207,6 +210,7 @@ define(function() {
             dialogTimeout = setTimeout(function(){
                 div.parent().show()
             }, client.opts.resultDialogDelay);
+            div.addClass(GAME_CLASS);
         }
 
         function userLeave(user) {
@@ -231,6 +235,7 @@ define(function() {
                     }
                 }, true, true, true);
             }
+            div.addClass(GAME_CLASS);
         }
 
         function loginError() {
@@ -248,6 +253,14 @@ define(function() {
             var div = showDialog(html, {}, false, false, false);
         }
 
+        function leaveGame() {
+            hideNotification();
+            hideGameMessages();
+        }
+
+        function userTurn() {
+            $('.' + TAKEBACK_CLASS).dialog("close");
+        }
 
         function showDialog(html, options, draggable, notification, clickHide) {
             options = options || {};
@@ -288,6 +301,10 @@ define(function() {
 
         function hideNotification() {
             $('.' + NOTIFICATION_CLASS).dialog("close");
+        }
+
+        function hideGameMessages() {
+            $('.' + GAME_CLASS).dialog("close");
         }
 
         function hideOnClick() {

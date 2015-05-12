@@ -2489,6 +2489,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         this.messages = {};
         this.current = client.game;
         this.MSG_COUNT = 10;
+        this.MSG_INTERVBAL = 1500;
 
         client.on('login', function(){
             this.current = client.game;
@@ -2591,6 +2592,11 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
             console.warn('chat_manager; censored text', text);
             return;
         }
+        if (this.lastMessageTime &&  Date.now() - this.lastMessageTime < this.MSG_INTERVBAL ){
+            console.warn('chat_manager; many messages in the same time');
+            return
+        }
+        this.lastMessageTime = Date.now();
         var message = {
             text: text
         };
@@ -2964,7 +2970,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
                 if (i == this.history.length - 1)// first game
                     for (var j = 0 ; j < penalties.length; j++) { // add penalties
                         penalty = penalties[j];
-                        if (penalty.time <= this.history[i].timeStart) { // find previous penalties
+                        if (penalty.time <= this.history[i].timeEnd) { // find previous penalties
                             histTable.push(this.formatPenaltyRow(penalty));
                             break;
                         }
@@ -2975,11 +2981,11 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
                 for (j = penalties.length - 1 ; j > -1; j--){ // add penalties
                     penalty = penalties[j];
                         if (i == 0) {    // last game
-                            if (penalty.time >= this.history[i].timeStart) { // find next penalties
+                            if (penalty.time >= this.history[i].timeEnd) { // find next penalties
                                 histTable.unshift(this.formatPenaltyRow(penalty))
                             }
                         } else if (i < this.history.length - 1){    // other
-                            if (penalty.time < this.history[i].timeStart && penalty.time >= this.history[i + 1].timeStart) {
+                            if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
                                 histTable.unshift(this.formatPenaltyRow(penalty));
                             }
                         }
@@ -3029,8 +3035,8 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
             }
         }
         row.opponent = userData[opponentId];
-        row.date = formatDate(hrow.timeStart);
-        row.time = formatTime(hrow.timeStart);
+        row.date = formatDate(hrow.timeEnd);
+        row.time = formatTime(hrow.timeEnd);
         // compute game score
         if (!hrow.winner) row.result = 'draw';
         else {
@@ -3142,7 +3148,7 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
         var month = months[date.getMonth()];
         var year = date.getFullYear();
         if (day < 10) day = '0' + day;
-        return day + " " + month + " "  + year + ' ' + formatTime(time);
+        return day + " " + month + " "  + year;
     }
 
     function formatTime(time) {
@@ -3738,7 +3744,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.24";
+        this.version = "0.8.25";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

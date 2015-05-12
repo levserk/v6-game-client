@@ -8,6 +8,7 @@ define(['EE', 'antimat'], function(EE) {
         this.messages = {};
         this.current = client.game;
         this.MSG_COUNT = 10;
+        this.MSG_INTERVBAL = 1500;
 
         client.on('login', function(){
             this.current = client.game;
@@ -110,6 +111,11 @@ define(['EE', 'antimat'], function(EE) {
             console.warn('chat_manager; censored text', text);
             return;
         }
+        if (this.lastMessageTime &&  Date.now() - this.lastMessageTime < this.MSG_INTERVBAL ){
+            console.warn('chat_manager; many messages in the same time');
+            return
+        }
+        this.lastMessageTime = Date.now();
         var message = {
             text: text
         };

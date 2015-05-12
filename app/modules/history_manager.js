@@ -61,7 +61,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
                 if (i == this.history.length - 1)// first game
                     for (var j = 0 ; j < penalties.length; j++) { // add penalties
                         penalty = penalties[j];
-                        if (penalty.time <= this.history[i].timeStart) { // find previous penalties
+                        if (penalty.time <= this.history[i].timeEnd) { // find previous penalties
                             histTable.push(this.formatPenaltyRow(penalty));
                             break;
                         }
@@ -72,11 +72,11 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
                 for (j = penalties.length - 1 ; j > -1; j--){ // add penalties
                     penalty = penalties[j];
                         if (i == 0) {    // last game
-                            if (penalty.time >= this.history[i].timeStart) { // find next penalties
+                            if (penalty.time >= this.history[i].timeEnd) { // find next penalties
                                 histTable.unshift(this.formatPenaltyRow(penalty))
                             }
                         } else if (i < this.history.length - 1){    // other
-                            if (penalty.time < this.history[i].timeStart && penalty.time >= this.history[i + 1].timeStart) {
+                            if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
                                 histTable.unshift(this.formatPenaltyRow(penalty));
                             }
                         }
@@ -126,8 +126,8 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             }
         }
         row.opponent = userData[opponentId];
-        row.date = formatDate(hrow.timeStart);
-        row.time = formatTime(hrow.timeStart);
+        row.date = formatDate(hrow.timeEnd);
+        row.time = formatTime(hrow.timeEnd);
         // compute game score
         if (!hrow.winner) row.result = 'draw';
         else {
@@ -239,7 +239,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
         var month = months[date.getMonth()];
         var year = date.getFullYear();
         if (day < 10) day = '0' + day;
-        return day + " " + month + " "  + year + ' ' + formatTime(time);
+        return day + " " + month + " "  + year;
     }
 
     function formatTime(time) {

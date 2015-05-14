@@ -40,6 +40,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                 this.WIN_CLASS = 'historyWin';
                 this.LOSE_CLASS = 'historyLose';
                 this.DRAW_CLASS = 'historyDraw';
+                this.SELECTED_CLASS = 'historySelected';
 
                 this.renderTabs();
                 this.renderHead();
@@ -50,7 +51,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             trClicked: function(e){
                 if ($(e.target).hasClass('userName')) return;
                 var id  = $(e.currentTarget).attr('data-id');
-                //TODO save player userId history
+                this.$el.find('.' + this.SELECTED_CLASS).removeClass(this.SELECTED_CLASS);
+                $(e.currentTarget).addClass(this.SELECTED_CLASS);
                 this._manager.getGame(id);
             },
 

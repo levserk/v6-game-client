@@ -3556,6 +3556,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
                 this.WIN_CLASS = 'historyWin';
                 this.LOSE_CLASS = 'historyLose';
                 this.DRAW_CLASS = 'historyDraw';
+                this.SELECTED_CLASS = 'historySelected';
 
                 this.renderTabs();
                 this.renderHead();
@@ -3566,7 +3567,8 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             trClicked: function(e){
                 if ($(e.target).hasClass('userName')) return;
                 var id  = $(e.currentTarget).attr('data-id');
-                //TODO save player userId history
+                this.$el.find('.' + this.SELECTED_CLASS).removeClass(this.SELECTED_CLASS);
+                $(e.currentTarget).addClass(this.SELECTED_CLASS);
                 this._manager.getGame(id);
             },
 
@@ -3797,29 +3799,36 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
             this.history = this.history.concat(history);
             for (var i = this.history.length - 1; i > -1; i--) {
 
-                if (i == this.history.length - 1)// first game
-                    for (var j = 0 ; j < penalties.length; j++) { // add penalties
+                if (i == this.history.length - 1) {// first game
+                    for (var j = 0; j < penalties.length; j++) { // add penalties
                         penalty = penalties[j];
+                        console.log('history', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
                         if (penalty.time <= this.history[i].timeEnd) { // find previous penalties
                             histTable.push(this.formatPenaltyRow(penalty));
                             break;
                         }
                     }
+                } else {
+                    for (j = penalties.length - 1; j > -1; j--) { // add penalties
+                        penalty = penalties[j];
+                        console.log('history2', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd)
+                            , formatDate(this.history[i + 1].timeEnd) + ' ' + formatTime(this.history[i + 1].timeEnd));
+                        if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
+                            histTable.unshift(this.formatPenaltyRow(penalty));
+                        }
+                    }
+                }
 
                 this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
 
-                for (j = penalties.length - 1 ; j > -1; j--){ // add penalties
+                for (j = penalties.length - 1; j > -1; j--) { // add penalties
                     penalty = penalties[j];
-                        if (i == 0) {    // last game
-                            if (penalty.time >= this.history[i].timeEnd) { // find next penalties
-                                histTable.unshift(this.formatPenaltyRow(penalty))
-                            }
-                        } else if (i < this.history.length - 1){    // other
-                            if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
-                                histTable.unshift(this.formatPenaltyRow(penalty));
-                            }
+                    if (i == 0) {    // last game
+                        console.log('history3', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
+                        if (penalty.time >= this.history[i].timeEnd) { // find next penalties
+                            histTable.unshift(this.formatPenaltyRow(penalty));
                         }
-
+                    }
                 }
             }
             this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);
@@ -4551,8 +4560,10 @@ define('modules/admin_manager',['EE'], function(EE) {
             case 'enable_games':
                 this.client.gameManager.enableGames = data['flag'];
                 break;
-            case 'reload': location.reload(); break;
-
+            case 'reload': location.reload();
+                break;
+            case 'get_config':
+                console.log('admin;', 'config', data);
         }
     };
 

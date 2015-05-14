@@ -58,29 +58,36 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             this.history = this.history.concat(history);
             for (var i = this.history.length - 1; i > -1; i--) {
 
-                if (i == this.history.length - 1)// first game
-                    for (var j = 0 ; j < penalties.length; j++) { // add penalties
+                if (i == this.history.length - 1) {// first game
+                    for (var j = 0; j < penalties.length; j++) { // add penalties
                         penalty = penalties[j];
+                        console.log('history', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
                         if (penalty.time <= this.history[i].timeEnd) { // find previous penalties
                             histTable.push(this.formatPenaltyRow(penalty));
                             break;
                         }
                     }
+                } else {
+                    for (j = penalties.length - 1; j > -1; j--) { // add penalties
+                        penalty = penalties[j];
+                        console.log('history2', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd)
+                            , formatDate(this.history[i + 1].timeEnd) + ' ' + formatTime(this.history[i + 1].timeEnd));
+                        if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
+                            histTable.unshift(this.formatPenaltyRow(penalty));
+                        }
+                    }
+                }
 
                 this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
 
-                for (j = penalties.length - 1 ; j > -1; j--){ // add penalties
+                for (j = penalties.length - 1; j > -1; j--) { // add penalties
                     penalty = penalties[j];
-                        if (i == 0) {    // last game
-                            if (penalty.time >= this.history[i].timeEnd) { // find next penalties
-                                histTable.unshift(this.formatPenaltyRow(penalty))
-                            }
-                        } else if (i < this.history.length - 1){    // other
-                            if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
-                                histTable.unshift(this.formatPenaltyRow(penalty));
-                            }
+                    if (i == 0) {    // last game
+                        console.log('history3', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
+                        if (penalty.time >= this.history[i].timeEnd) { // find next penalties
+                            histTable.unshift(this.formatPenaltyRow(penalty));
                         }
-
+                    }
                 }
             }
             this.$container.append(this.historyView.render(mode, histTable, null, history && history.length == this.maxCount).$el);

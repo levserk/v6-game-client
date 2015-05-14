@@ -16,8 +16,10 @@ define(['EE'], function(EE) {
             case 'enable_games':
                 this.client.gameManager.enableGames = data['flag'];
                 break;
-            case 'reload': location.reload(); break;
-
+            case 'reload': location.reload();
+                break;
+            case 'get_config':
+                console.log('admin;', 'config', data);
         }
     };
 

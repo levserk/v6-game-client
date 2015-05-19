@@ -56,6 +56,9 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             this.userId = userId;
             this.currentMode = mode;
             this.history = this.history.concat(history);
+            var count = this.history.length;
+            var player = this.client.userList.getUser(userId);
+            if (player) count = player[mode]['games'];
             for (var i = this.history.length - 1; i > -1; i--) {
 
                 if (i == this.history.length - 1) {// first game
@@ -78,7 +81,7 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
                     }
                 }
 
-                this.formatHistoryRow(this.history[i], histTable, mode, this.history.length - i, userId);
+                this.formatHistoryRow(this.history[i], histTable, mode, count - i, userId);
 
                 for (j = penalties.length - 1; j > -1; j--) { // add penalties
                     penalty = penalties[j];

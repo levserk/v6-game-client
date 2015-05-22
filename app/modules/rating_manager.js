@@ -13,8 +13,8 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
                 {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
                 {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
                 {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> Эло',         canOrder:true },
-                {  id:'win',            source:'win',         title:'Выиграл <br> у соперников',canOrder:true },
-                {  id:'percent',        source:'percent',     title:' % ',                      canOrder:false },
+                {  id:'win',            source:'win',         title:'Выиграл',                  canOrder:true },
+                {  id:'lose',           source:'lose',        title:'Проиграл',                 canOrder:false },
                 {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> регистрации',    canOrder:true }
             ]
         };

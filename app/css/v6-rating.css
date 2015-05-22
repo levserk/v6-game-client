@@ -175,6 +175,10 @@
 .ratingTable .ratingwin div{
     width: 15px;
     margin: 0 auto;
+
+}.ratingTable .ratinglose div{
+    width: 15px;
+    margin: 0 auto;
 }
 
 

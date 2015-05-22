@@ -3495,8 +3495,8 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
                 {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
                 {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
                 {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> Эло',         canOrder:true },
-                {  id:'win',            source:'win',         title:'Выиграл <br> у соперников',canOrder:true },
-                {  id:'percent',        source:'percent',     title:' % ',                      canOrder:false },
+                {  id:'win',            source:'win',         title:'Выиграл',                  canOrder:true },
+                {  id:'lose',          source:'lose',      title: 'Проиграл',                      canOrder:false },
                 {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> регистрации',    canOrder:true }
             ]
         };
@@ -3758,7 +3758,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.25";
+        this.version = "0.8.26";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

@@ -3069,6 +3069,57 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         this.settingsView.show();
     };
 
+
+    ViewsManager.prototype.showUserProfie = function (userId, userName) {
+        if (!this.$profileDiv) {
+            this.$profileDiv = $('<div id="v6-profileDiv">');
+        }
+        this.$profileDiv.empty();
+        this.$profileDiv.append('<img  class="closeIcon" src="' + this.client.opts.images.close +  '">');
+        this.$profileDiv.append("<div class='stats-area-wrapper'></div>");
+        this.$profileDiv.find(".stats-area-wrapper").append("<h4 style='color: #444;font-size: 10pt;padding-left: 5px; text-align: center;'>" + userName + "</h4>");
+        this.closeAll();
+        if (window.LogicGame && window.LogicGame.hidePanels && window.ui) {
+            this.$profileDiv.find('img').click(function () {
+                window.LogicGame.hidePanels();
+            });
+            $.post("/gw/profile/loadProfile.php", {
+                sessionId: window._sessionId,
+                userId: window._userId,
+                playerId: userId
+            }, function (data) {
+                window.LogicGame.hidePanels();
+                var pData = JSON.parse(data);
+                if (!pData.profile.playerName) {
+                    console.warn('bad profile', pData.profile);
+                    return;
+                }
+                this.$profileDiv.find(".stats-area-wrapper").append(window.ui.userProfile.renderProfile(pData.profile));
+                window.ui.userProfile.bindActions(pData.profile);
+                showProfile.bind(this)();
+            }.bind(this))
+        } else {
+            this.$profileDiv.find('img').click(function () {
+                $(this.$profileDiv).hide();
+            }.bind(this));
+            showProfile.bind(this)();
+        }
+
+        function showProfile() {
+            if (this.client.opts.blocks.profileId) {
+                $('#'+ this.client.opts.blocks.profileId).append(this.$profileDiv);
+            } else {
+                $('body').append(this.$profileDiv);
+            }
+            this.client.historyManager.getProfileHistory(null, userId, 'v6-profileDiv');
+            if (window.ui) {
+                window.ui.showPanel({ id: 'v6-profileDiv' });
+            } else {
+                $('#v6-profileDiv').show();
+            }
+        }
+    };
+
     return ViewsManager;
 });
 /**
@@ -4217,12 +4268,15 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             renderRow: function(row, isUser){
                 var columns = ""; var col;
                 for (var i = 0; i < this.columns.length; i++){
-                    if (row[this.columns[i].source] == undefined) row[this.columns[i].source] = this.columns[i].undef;
+                    if (row[this.columns[i].source] == null) row[this.columns[i].source] = this.columns[i].undef;
                     col = {
                         id: this.columns[i].id,
                         value: row[this.columns[i].source],
                         sup: ''
                     };
+                    if (typeof this.columns[i].func == "function"){
+                        col.value = this.columns[i].func(col.value);
+                    }
                     if (col.id == 'userName') col.value = this.tplUser({
                         userName: row.userName,
                         userId: row.userId
@@ -4326,7 +4380,7 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
                 {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
                 {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> Эло',         canOrder:true },
                 {  id:'win',            source:'win',         title:'Выиграл',                  canOrder:true },
-                {  id:'lose',          source:'lose',      title: 'Проиграл',                      canOrder:false },
+                {  id:'lose',           source:'lose',        title:'Проиграл',                 canOrder:false },
                 {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> регистрации',    canOrder:true }
             ]
         };
@@ -4588,7 +4642,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.26";
+        this.version = "0.8.28";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4599,6 +4653,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.autoReconnect = opts.autoReconnect || false;
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
         opts.loadRanksInRating = false;
+        opts.autoShowProfile = !!opts.autoShowProfile || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -4609,7 +4664,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         var self = this;
 
-        this.opts = opts;
+        this.opts = this.conf = opts;
         this.game = opts.game || 'test';
         this.defaultSettings = $.extend(true, {}, defaultSettings, opts.settings || {});
         this.settings = $.extend(true, {}, this.defaultSettings);
@@ -4878,6 +4933,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             userName = user.userName;
         }
         this.emit('show_profile', {userId:userId, userName:userName});
+        if (this.opts.autoShowProfile) {
+            this.viewsManager.showUserProfie(userId, userName);
+        }
     };
 
 
@@ -4932,12 +4990,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     };
 
     var defaultImages = {
-        close: 'i/close.png',
-        spin:  'i/spin.gif',
-        sortAsc:  'i/sort-asc.png',
-        sortDesc:  'i/sort-desc.png',
-        sortBoth:  'i/sort-both.png',
-        del: 'i/delete.png'
+        close:      '//logic-games.spb.ru/v6-game-client/app/i/close.png',
+        spin:       '//logic-games.spb.ru/v6-game-client/app/i/spin.gif',
+        sortAsc:    '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
+        sortDesc:   '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
+        sortBoth:   '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
+        del:        '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
     };
 
     var defaultSounds = {
@@ -4946,7 +5004,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         },
         turn: {
             src: 'audio/v6-game-turn.ogg',
-            volume: 0.5
+            volume: 0.5,
+            enable: false
         },
         win: {
             src: 'audio/v6-game-win.ogg'

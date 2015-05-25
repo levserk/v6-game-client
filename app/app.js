@@ -22,6 +22,7 @@ require(['require-cnf'], function () {
                 port: 8078,
                 resultDialogDelay: 1000,
                 reload: true,
+                autoShowProfile: true,
                 idleTimeout: 0,
                 getUserParams: function(){
                     var inviteData = {
@@ -36,8 +37,9 @@ require(['require-cnf'], function () {
                         + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);
                 },
                 initRating: function(conf){
-                    conf.columns.splice(conf.columns.length-2, 0, {
-                        id:'score', source:'score', title:'Очки', canOrder:true, undef: 100
+                    conf.columns.splice(conf.columns.length-1, 0, {
+                        id:'score', source:'score', title:'Очки', canOrder:true, undef: 100,
+                        func: function(value) { return value * 10 }
                     });
                     return conf;
                 },
@@ -57,7 +59,8 @@ require(['require-cnf'], function () {
                     userListId:'userListDiv',
                     chatId:'chatDiv',
                     ratingId:'ratingDiv',
-                    historyId:'historyDiv'
+                    historyId:'ratingDiv',
+                    profileId:'ratingDiv'
                 },
                 images:{
                     close: 'i/close.png',

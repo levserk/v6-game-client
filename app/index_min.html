@@ -23,7 +23,7 @@
     var settingsTemplate = '<div><p>Цвет</p> <div> <label><input type="radio" name="color" value="red" >красный</label> <label><input type="radio" name="color" value="black" >черный</label> </div> </div> <p>Настройки игры</p> <div> <div class="option"> <label><input type="checkbox" name="sounds"> Включить звук</label> </div> <div class="option"> <label><input type="checkbox" name="disableInvite"> Запретить приглашать меня в игру</label> </div></div>';
 
     var userId = getCookie('userId') || 0;
-    var userName = 'User ' + userId;
+    var userName = 'Гость ' + userId;
     var sign = userId + userName;
     var user = {
         userId: userId,
@@ -38,14 +38,24 @@
         port: 8078,
         resultDialogDelay: 1000,
         reload: true,
-        getUserParams: function(){return {gameType:'Main Mode'}},
+        autoShowProfile: true,
+        idleTimeout: 0,
+        getUserParams: function(){
+            var inviteData = {
+                gameType:'Main Mode',
+                val: Math.random()* 1000 ^ 0
+            };
+            console.log('TEST!', inviteData);
+            return inviteData
+        },
         generateInviteText: function(invite){
             return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
                     + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);
         },
         initRating: function(conf){
-            conf.columns.splice(conf.columns.length-2, 0, {
-                id:'score', source:'score', title:'Очки', canOrder:true, undef: 100
+            conf.columns.splice(conf.columns.length-1, 0, {
+                id:'score', source:'score', title:'Очки', canOrder:true, undef: 100,
+                func: function(value) { return value * 10 }
             });
             return conf;
         },
@@ -55,44 +65,52 @@
             });
             return conf;
         },
+        generatePenaltyText: function(penalty){
+            if (penalty.type == 1){
+                return 'штраф за отсутствие игр в ' + Math.abs(penalty.value) + ' очков';
+            }
+            return '';
+        },
         blocks:{
             userListId:'userListDiv',
             chatId:'chatDiv',
             ratingId:'ratingDiv',
-            historyId:'historyDiv'
+            historyId:'ratingDiv',
+            profileId:'ratingDiv'
         },
         images:{
-            close: '//logic-games.spb.ru/v6-game-client/app/i/close.png',
-            spin:  '//logic-games.spb.ru/v6-game-client/app/i/spin.gif',
-            sortAsc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
-            sortDesc:  '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
-            sortBoth:  '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
-            del: '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
+            close: 'i/close.png',
+            spin:  'i/spin.gif',
+            sortAsc:  'i/sort-asc.png',
+            sortDesc:  'i/sort-desc.png',
+            sortBoth:  'i/sort-both.png',
+            del: 'i/delete.png'
         },
         sounds: {
             start: {
-                src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-start.ogg'
+                src: 'audio/v6-game-start.ogg'
             },
             turn: {
-                src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-turn.ogg',
+                src: 'audio/v6-game-turn.ogg',
                 volume: 0.5,
                 enable: false
             },
             win: {
-                src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-win.ogg'
+                src: 'audio/v6-game-win.ogg'
             },
             lose: {
-                src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-lose.ogg'
+                src: 'audio/v6-game-lose.ogg'
             },
             invite: {
-                src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-invite.ogg'
+                src: 'audio/v6-invite.ogg'
             },
             timeout: {
-                src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-timeout.ogg'
+                src: 'audio/v6-timeout.ogg'
             }
         },
         settings:{
-            color: 'red'
+            color: 'red',
+            sounds: false
         },
         settingsTemplate: settingsTemplate
     }).init(user);
@@ -124,7 +142,7 @@
     });
 
     _client.gameManager.on('timeout', function(data){
-        console.log('main;','timeout', 'user: ', data.user, 'is your timeout: ', data.user == _client.getPlayer().userId);
+        console.log('main;','timeout', 'user: ', data.user, 'is your timeout: ', data.user == _client.getPlayer());
     });
 
     _client.gameManager.on('round_end', function(data){
@@ -139,9 +157,23 @@
         console.log('main;','game_loaded, game history:', data);
     });
 
+    _client.gameManager.on('take_back', function(data){
+        console.log('main;','take_back user: ', data.user, 'history:', data.history);
+    });
+
     _client.gameManager.on('time', _.throttle(function(data){
-        console.log('main;','time user:', data);
+        //console.log('main;','time user:', data);
     }, 1000, {trailing: false}));
+
+
+    _client.gameManager.on('focus', function(data){
+        //console.log('main;', 'user changed window focus, window has focus:', data.windowHasFocus, ' user: ', data.user);
+    });
+
+
+    _client.historyManager.on('game_load', function(game){
+        console.log('main;','history game loaded, game:', game);
+    });
 
     _client.on('show_profile', function(data){
         console.log('main;','show_profile user:', data);
@@ -160,13 +192,17 @@
     _generateEndGameBtn();
 
     function _generateEndGameBtn() {
+        var bdiv = $('<div>');
+        bdiv.addClass('v6-buttons');
+        $('body').append(bdiv);
+
         var div = $('<div>');
         div.attr('id', 'endGameButton');
         div.html('<span>Выйти из игры</span>');
         div.on('click', function () {
             window._client.gameManager.leaveGame();
         });
-        $('body').append(div);
+        bdiv.append(div);
 
         div = $('<div>');
         div.attr('id', 'drawButton');
@@ -174,7 +210,7 @@
         div.on('click', function () {
             window._client.gameManager.sendDraw();
         });
-        $('body').append(div);
+        bdiv.append(div);
 
         div = $('<div>');
         div.attr('id', 'winButton');
@@ -182,7 +218,7 @@
         div.on('click', function () {
             window._client.gameManager.sendTurn({result:1});
         });
-        $('body').append(div);
+        bdiv.append(div);
 
         div = $('<div>');
         div.attr('id', 'ratingButton');
@@ -190,15 +226,37 @@
         div.on('click', function () {
             window._client.ratingManager.getRatings();
         });
-        $('body').append(div);
+        bdiv.append(div);
 
         div = $('<div>');
         div.attr('id', 'historyButton');
         div.html('<span>Показать историю</span>');
         div.on('click', function () {
-            window._client.historyManager.getHistory();
+            window._client.historyManager.getHistory(false, false, false);
         });
-        $('body').append(div);
+        bdiv.append(div);
+
+        div = $('<div>');
+        div.html('<span>Передать ход</span>');
+        div.on('click', function () {
+            window._client.gameManager.sendTurn({'switch': true});
+        });
+        bdiv.append(div);
+
+        div = $('<div>');
+        div.html('<span>Сделать ход</span>');
+        div.on('click', function () {
+            window._client.gameManager.sendTurn({'t': (new Date).getSeconds});
+        });
+        bdiv.append(div);
+
+        div = $('<div>');
+        div.html('<span>ход назад</span>');
+        div.on('click', function () {
+            window._client.gameManager.sendTakeBack();
+        });
+        bdiv.append(div);
+
     }
 
     function getCookie(c_name)

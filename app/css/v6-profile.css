@@ -1,0 +1,15 @@
+#v6-profileDiv {
+    background-color: white;
+    font-size: 13px;
+}
+
+#v6-profileDiv .closeIcon {
+    float: right;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.stats-area-wrapper {
+    padding: 10px;
+    font-family: Verdana, Geneva, sans-serif;
+}

@@ -23,5 +23,56 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
         this.settingsView.show();
     };
 
+
+    ViewsManager.prototype.showUserProfie = function (userId, userName) {
+        if (!this.$profileDiv) {
+            this.$profileDiv = $('<div id="v6-profileDiv">');
+        }
+        this.$profileDiv.empty();
+        this.$profileDiv.append('<img  class="closeIcon" src="' + this.client.opts.images.close +  '">');
+        this.$profileDiv.append("<div class='stats-area-wrapper'></div>");
+        this.$profileDiv.find(".stats-area-wrapper").append("<h4 style='color: #444;font-size: 10pt;padding-left: 5px; text-align: center;'>" + userName + "</h4>");
+        this.closeAll();
+        if (window.LogicGame && window.LogicGame.hidePanels && window.ui) {
+            this.$profileDiv.find('img').click(function () {
+                window.LogicGame.hidePanels();
+            });
+            $.post("/gw/profile/loadProfile.php", {
+                sessionId: window._sessionId,
+                userId: window._userId,
+                playerId: userId
+            }, function (data) {
+                window.LogicGame.hidePanels();
+                var pData = JSON.parse(data);
+                if (!pData.profile.playerName) {
+                    console.warn('bad profile', pData.profile);
+                    return;
+                }
+                this.$profileDiv.find(".stats-area-wrapper").append(window.ui.userProfile.renderProfile(pData.profile));
+                window.ui.userProfile.bindActions(pData.profile);
+                showProfile.bind(this)();
+            }.bind(this))
+        } else {
+            this.$profileDiv.find('img').click(function () {
+                $(this.$profileDiv).hide();
+            }.bind(this));
+            showProfile.bind(this)();
+        }
+
+        function showProfile() {
+            if (this.client.opts.blocks.profileId) {
+                $('#'+ this.client.opts.blocks.profileId).append(this.$profileDiv);
+            } else {
+                $('body').append(this.$profileDiv);
+            }
+            this.client.historyManager.getProfileHistory(null, userId, 'v6-profileDiv');
+            if (window.ui) {
+                window.ui.showPanel({ id: 'v6-profileDiv' });
+            } else {
+                $('#v6-profileDiv').show();
+            }
+        }
+    };
+
     return ViewsManager;
 });

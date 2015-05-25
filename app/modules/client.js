@@ -3,7 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.8.26";
+        this.version = "0.8.28";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -14,6 +14,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.autoReconnect = opts.autoReconnect || false;
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
         opts.loadRanksInRating = false;
+        opts.autoShowProfile = !!opts.autoShowProfile || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -24,7 +25,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         var self = this;
 
-        this.opts = opts;
+        this.opts = this.conf = opts;
         this.game = opts.game || 'test';
         this.defaultSettings = $.extend(true, {}, defaultSettings, opts.settings || {});
         this.settings = $.extend(true, {}, this.defaultSettings);
@@ -293,6 +294,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             userName = user.userName;
         }
         this.emit('show_profile', {userId:userId, userName:userName});
+        if (this.opts.autoShowProfile) {
+            this.viewsManager.showUserProfie(userId, userName);
+        }
     };
 
 
@@ -347,12 +351,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     };
 
     var defaultImages = {
-        close: 'i/close.png',
-        spin:  'i/spin.gif',
-        sortAsc:  'i/sort-asc.png',
-        sortDesc:  'i/sort-desc.png',
-        sortBoth:  'i/sort-both.png',
-        del: 'i/delete.png'
+        close:      '//logic-games.spb.ru/v6-game-client/app/i/close.png',
+        spin:       '//logic-games.spb.ru/v6-game-client/app/i/spin.gif',
+        sortAsc:    '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
+        sortDesc:   '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
+        sortBoth:   '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
+        del:        '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
     };
 
     var defaultSounds = {
@@ -361,7 +365,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         },
         turn: {
             src: 'audio/v6-game-turn.ogg',
-            volume: 0.5
+            volume: 0.5,
+            enable: false
         },
         win: {
             src: 'audio/v6-game-win.ogg'

@@ -190,12 +190,15 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             renderRow: function(row, isUser){
                 var columns = ""; var col;
                 for (var i = 0; i < this.columns.length; i++){
-                    if (row[this.columns[i].source] == undefined) row[this.columns[i].source] = this.columns[i].undef;
+                    if (row[this.columns[i].source] == null) row[this.columns[i].source] = this.columns[i].undef;
                     col = {
                         id: this.columns[i].id,
                         value: row[this.columns[i].source],
                         sup: ''
                     };
+                    if (typeof this.columns[i].func == "function"){
+                        col.value = this.columns[i].func(col.value);
+                    }
                     if (col.id == 'userName') col.value = this.tplUser({
                         userName: row.userName,
                         userId: row.userId

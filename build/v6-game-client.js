@@ -537,6 +537,8 @@ define('modules/game_manager',['EE'], function(EE) {
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
         this.currentRoom.userTakeBacks = 0;
+        this.currentRoom.cancelsAscTakeBack = 0;
+        this.currentRoom.cancelsAscDraw = 0;
         this.currentRoom.history = [];
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
@@ -659,6 +661,7 @@ define('modules/game_manager',['EE'], function(EE) {
                         break;
                     case 'cancel':
                         this.emit('cancel_draw', user);
+                        this.currentRoom.cancelsAscDraw++;
                         break;
                 }
                 break;
@@ -686,6 +689,7 @@ define('modules/game_manager',['EE'], function(EE) {
                         break;
                     case 'cancel':
                         this.emit('cancel_back', user);
+                        this.currentRoom.cancelsAscTakeBack++;
                         break;
                 }
                 break;
@@ -806,7 +810,12 @@ define('modules/game_manager',['EE'], function(EE) {
             console.error('game_manager;', 'sendDraw', 'game not started!');
             return;
         }
+        if (this.currentRoom.cancelsAscDraw >= 3){
+            this.client.viewsManager.dialogsView.showDialog('Число запросов ограничено тремя', false, true, true);
+            return;
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
+        this.emit('send_draw');
     };
 
 
@@ -828,8 +837,13 @@ define('modules/game_manager',['EE'], function(EE) {
             console.error('game_manager;', 'sendTakeBack', 'game not started!');
             return;
         }
+        if (this.currentRoom.cancelsAscTakeBack >= 3){
+            this.client.viewsManager.dialogsView.showDialog('Вы превысили число запросов к другому игроку', false, true, true);
+            return;
+        }
         this.client.viewsManager.dialogsView.cancelTakeBack();
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'take'});
+        this.emit('send_back');
     };
 
 
@@ -1458,6 +1472,12 @@ define('modules/user_list',['EE'], function(EE) {
         this.isPlayer = fIsPlayer || false;
         this.disableInvite = data.disableInvite || false;
         this.isActive  = (typeof data.isActive == 'boolean' ? data.isActive : true); // true default
+        this.fullName = this.userName;
+
+        if (client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
+            var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);
+            this.userName = 'Гость ' + nameNumber;
+        }
 
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
@@ -1469,6 +1489,11 @@ define('modules/user_list',['EE'], function(EE) {
             }
             this.disableInvite = data.disableInvite || false;
             if (typeof data.isActive == 'boolean') this.isActive  = data.isActive;
+
+            if (this._client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
+                var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);
+                this.userName = 'Гость ' + nameNumber;
+            }
         };
 
         this._client = client;
@@ -2459,11 +2484,17 @@ define('views/dialogs',[],function() {
                     $(this).remove();
                 }
             };
+            draggable = draggable || options.draggable;
+            notification = notification || options.notification;
+            clickHide = clickHide || options.clickHide;
+
             var div = $('<div>');
             var prevFocus = document.activeElement || document;
             div.html(html).dialog(options);
             div.parent().find(':button').attr('tabindex', '-1');
-            document.activeElement.blur();
+            if (document.activeElement != null){
+                document.activeElement.blur();
+            }
             $(prevFocus).focus();
             if (draggable) {
                 div.parent().draggable();
@@ -4654,6 +4685,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
         opts.loadRanksInRating = false;
         opts.autoShowProfile = !!opts.autoShowProfile || false;
+        opts.shortGuestNames = !!opts.shortGuestNames || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -4930,7 +4962,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 console.error('client;', 'user', userId, ' is not online!, can not get his name');
                 return;
             }
-            userName = user.userName;
+            userName = user.fullName;
         }
         this.emit('show_profile', {userId:userId, userName:userName});
         if (this.opts.autoShowProfile) {

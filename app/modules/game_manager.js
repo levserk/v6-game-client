@@ -98,6 +98,8 @@ define(['EE'], function(EE) {
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
         this.currentRoom.userTakeBacks = 0;
+        this.currentRoom.cancelsAscTakeBack = 0;
+        this.currentRoom.cancelsAscDraw = 0;
         this.currentRoom.history = [];
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
@@ -220,6 +222,7 @@ define(['EE'], function(EE) {
                         break;
                     case 'cancel':
                         this.emit('cancel_draw', user);
+                        this.currentRoom.cancelsAscDraw++;
                         break;
                 }
                 break;
@@ -247,6 +250,7 @@ define(['EE'], function(EE) {
                         break;
                     case 'cancel':
                         this.emit('cancel_back', user);
+                        this.currentRoom.cancelsAscTakeBack++;
                         break;
                 }
                 break;
@@ -367,7 +371,12 @@ define(['EE'], function(EE) {
             console.error('game_manager;', 'sendDraw', 'game not started!');
             return;
         }
+        if (this.currentRoom.cancelsAscDraw >= 3){
+            this.client.viewsManager.dialogsView.showDialog('Число запросов ограничено тремя', false, true, true);
+            return;
+        }
         this.client.send('game_manager', 'event', 'server', {type:'draw', action:'ask'});
+        this.emit('send_draw');
     };
 
 
@@ -389,8 +398,13 @@ define(['EE'], function(EE) {
             console.error('game_manager;', 'sendTakeBack', 'game not started!');
             return;
         }
+        if (this.currentRoom.cancelsAscTakeBack >= 3){
+            this.client.viewsManager.dialogsView.showDialog('Вы превысили число запросов к другому игроку', false, true, true);
+            return;
+        }
         this.client.viewsManager.dialogsView.cancelTakeBack();
         this.client.send('game_manager', 'event', 'server', {type:'back', action:'take'});
+        this.emit('send_back');
     };
 
 

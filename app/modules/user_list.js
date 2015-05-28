@@ -215,6 +215,12 @@ define(['EE'], function(EE) {
         this.isPlayer = fIsPlayer || false;
         this.disableInvite = data.disableInvite || false;
         this.isActive  = (typeof data.isActive == 'boolean' ? data.isActive : true); // true default
+        this.fullName = this.userName;
+
+        if (client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
+            var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);
+            this.userName = 'Гость ' + nameNumber;
+        }
 
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
@@ -226,6 +232,11 @@ define(['EE'], function(EE) {
             }
             this.disableInvite = data.disableInvite || false;
             if (typeof data.isActive == 'boolean') this.isActive  = data.isActive;
+
+            if (this._client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
+                var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);
+                this.userName = 'Гость ' + nameNumber;
+            }
         };
 
         this._client = client;

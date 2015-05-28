@@ -24,6 +24,7 @@ require(['require-cnf'], function () {
                 reload: true,
                 autoShowProfile: true,
                 idleTimeout: 0,
+                shortGuestNames: false,
                 getUserParams: function(){
                     var inviteData = {
                         gameType:'Main Mode',

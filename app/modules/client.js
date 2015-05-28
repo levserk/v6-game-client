@@ -15,6 +15,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
         opts.loadRanksInRating = false;
         opts.autoShowProfile = !!opts.autoShowProfile || false;
+        opts.shortGuestNames = !!opts.shortGuestNames || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -291,7 +292,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 console.error('client;', 'user', userId, ' is not online!, can not get his name');
                 return;
             }
-            userName = user.userName;
+            userName = user.fullName;
         }
         this.emit('show_profile', {userId:userId, userName:userName});
         if (this.opts.autoShowProfile) {

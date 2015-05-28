@@ -272,11 +272,17 @@ define(function() {
                     $(this).remove();
                 }
             };
+            draggable = draggable || options.draggable;
+            notification = notification || options.notification;
+            clickHide = clickHide || options.clickHide;
+
             var div = $('<div>');
             var prevFocus = document.activeElement || document;
             div.html(html).dialog(options);
             div.parent().find(':button').attr('tabindex', '-1');
-            document.activeElement.blur();
+            if (document.activeElement != null){
+                document.activeElement.blur();
+            }
             $(prevFocus).focus();
             if (draggable) {
                 div.parent().draggable();

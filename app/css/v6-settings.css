@@ -9,6 +9,7 @@
     color: #444;
     font-family: Verdana, Geneva;
     font-size: 12px;
+    cursor: pointer;
 }
 
 #v6-settings .closeIcon {
@@ -30,6 +31,11 @@
 #v6-settings p{
     font-weight: 700;
     margin: 16px 0 6px 0;
+    cursor: default;
+}
+
+#v6-settings label {
+    cursor: default;
 }
 
 #v6-settings .settingsContainer {

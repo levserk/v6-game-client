@@ -30,6 +30,14 @@
      border-bottom: 1px solid #069;
 }
 
+#v6-rating .adminLink a{
+     cursor: pointer;
+     text-decoration: none;
+     color: #069;
+     font-size: 12px;
+     border-bottom: 1px solid #069;
+}
+
 #v6-rating .ratingTable {
     font-size: 8pt;
     text-align: center;

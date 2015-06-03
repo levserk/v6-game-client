@@ -8,7 +8,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
             tplMain: _.template(tplMain),
             tplDefault: _.template(tplDefault),
             events: {
-                'click .closeIcon': 'close',
+                'click .closeIcon': 'save',
                 'change input': 'changed',
                 'click .confirmBtn': 'save'
             },
@@ -22,7 +22,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
 
                 $('body').append(this.$el);
                 this.$el.hide();
-
+                this.$el.draggable();
             },
 
             changed: function (e){
@@ -97,10 +97,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                 }
             },
 
-            close: function () {
-                this.$el.hide();
-                this.isClosed = true;
-
+            cancel: function () {
                 //emit changed default
                 var $input, value, property, settings = this.client.settings;
                 for (var i = 0; i < this.changedProperties.length; i++){

@@ -2119,7 +2119,7 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
             tplMain: _.template(tplMain),
             tplDefault: _.template(tplDefault),
             events: {
-                'click .closeIcon': 'close',
+                'click .closeIcon': 'save',
                 'change input': 'changed',
                 'click .confirmBtn': 'save'
             },
@@ -2133,7 +2133,7 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
 
                 $('body').append(this.$el);
                 this.$el.hide();
-
+                this.$el.draggable();
             },
 
             changed: function (e){
@@ -2208,10 +2208,7 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
                 }
             },
 
-            close: function () {
-                this.$el.hide();
-                this.isClosed = true;
-
+            cancel: function () {
                 //emit changed default
                 var $input, value, property, settings = this.client.settings;
                 for (var i = 0; i < this.changedProperties.length; i++){
@@ -2263,7 +2260,7 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
     ViewsManager.prototype.closeAll = function(){
         this.client.ratingManager.close();
         this.client.historyManager.close();
-        this.settingsView.close();
+        this.settingsView.save();
     };
 
     ViewsManager.prototype.showSettings = function () {
@@ -3407,7 +3404,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                     this.$tabs.append(this.tplTab(this.tabs[i]));
                     this.setActiveTab(this.tabs[0].id);
                 }
-                if (this.subTabs.length>1) {
+                if (this.subTabs.length > 1) {
                     this.$tabs.append('<br>');
                     for (var i in this.subTabs){
                         this.$tabs.append(this.tplTab(this.subTabs[i]));
@@ -3556,6 +3553,11 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
                     if (!append) this.$tbody.children().remove();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);
+                }
+
+                if (this.manager.client.isAdmin && !this.$tabs.find('.adminLink').length){
+                    var $span = $('<span>').html('<a href="/admin">Админка</a>')
+                        .addClass('adminLink').appendTo(this.$tabs);
                 }
 
                 return this;

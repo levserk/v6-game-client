@@ -128,7 +128,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     this.$tabs.append(this.tplTab(this.tabs[i]));
                     this.setActiveTab(this.tabs[0].id);
                 }
-                if (this.subTabs.length>1) {
+                if (this.subTabs.length > 1) {
                     this.$tabs.append('<br>');
                     for (var i in this.subTabs){
                         this.$tabs.append(this.tplTab(this.subTabs[i]));
@@ -277,6 +277,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     if (!append) this.$tbody.children().remove();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);
+                }
+
+                if (this.manager.client.isAdmin && !this.$tabs.find('.adminLink').length){
+                    var $span = $('<span>').html('<a href="/admin">Админка</a>')
+                        .addClass('adminLink').appendTo(this.$tabs);
                 }
 
                 return this;

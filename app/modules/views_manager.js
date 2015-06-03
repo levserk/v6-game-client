@@ -16,7 +16,7 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
     ViewsManager.prototype.closeAll = function(){
         this.client.ratingManager.close();
         this.client.historyManager.close();
-        this.settingsView.close();
+        this.settingsView.save();
     };
 
     ViewsManager.prototype.showSettings = function () {

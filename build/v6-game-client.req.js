@@ -206,6 +206,12 @@ define('modules/game_manager',['EE'], function(EE) {
         if (data.turn.nextPlayer) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
+        } else {
+            // reset user turn time if enabled
+            if (this.currentRoom.resetTimerEveryTurn){
+                console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime);
+                this.currentRoom.userTime = this.currentRoom.turnTime;
+            }
         }
         this.emit('turn', data);
         this.switchPlayer(data.nextPlayer);
@@ -568,6 +574,7 @@ define('modules/game_manager',['EE'], function(EE) {
         this.mode = room.mode;
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
         this.takeBacks = room.takeBacks;
+        this.resetTimerEveryTurn = !!room.resetTimerEveryTurn;
         this.history = [];
 
         console.log('TEST!', room.data);
@@ -3845,7 +3852,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.28";
+        this.version = "0.8.29";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

@@ -206,6 +206,12 @@ define(['EE'], function(EE) {
         if (data.turn.nextPlayer) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
+        } else {
+            // reset user turn time if enabled
+            if (this.currentRoom.resetTimerEveryTurn){
+                console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime);
+                this.currentRoom.userTime = this.currentRoom.turnTime;
+            }
         }
         this.emit('turn', data);
         this.switchPlayer(data.nextPlayer);
@@ -568,6 +574,7 @@ define(['EE'], function(EE) {
         this.mode = room.mode;
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
         this.takeBacks = room.takeBacks;
+        this.resetTimerEveryTurn = !!room.resetTimerEveryTurn;
         this.history = [];
 
         console.log('TEST!', room.data);

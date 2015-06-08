@@ -71,6 +71,7 @@
         initRating: null,           // функции инициализации настроек рейтинга
         initHistory: null,          // функция инициализации настроек истории
         generatePenaltyText: null,  // функция генерации строки штрафа в истории
+        newGameFormat: false,       // единый формат эмитов ходов и событий и истории
         blocks:{                    // id блоков на странице в которые будут добавлены представления
             userListId:'userListDiv',
             chatId:'chatDiv',

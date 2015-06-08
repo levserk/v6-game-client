@@ -1,4 +1,4 @@
-define(['EE'], function(EE) {
+define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], function(EE, Room, Turn, GameEvent) {
     'use strict';
 
     var GameManager = function(client){
@@ -126,7 +126,7 @@ define(['EE'], function(EE) {
         var timeStart = Date.now();
         this.emit('game_start', room);
         this.onRoundStart(data['initData'], true);
-        this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
+        this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
@@ -150,7 +150,7 @@ define(['EE'], function(EE) {
             return;
         }
         this.onRoundStart(data['initData'], true);
-        this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
+        this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         // switch player
         if (data.userTime != null)
@@ -202,7 +202,9 @@ define(['EE'], function(EE) {
 
     GameManager.prototype.onTurn = function(data){
         console.log('game_manager;', 'emit turn', data);
-        this.currentRoom.history.push(data.turn);
+        if (!this.client.opts.newGameFormat){
+            this.currentRoom.history.push(data.turn);
+        }
         if (data.turn.nextPlayer) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
@@ -212,6 +214,10 @@ define(['EE'], function(EE) {
                 console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime);
                 this.currentRoom.userTime = this.currentRoom.turnTime;
             }
+        }
+        if (this.client.opts.newGameFormat){
+            data = new Turn(data.turn, this.getPlayer(data.user), data.nextPlayer);
+            this.currentRoom.history.push(data);
         }
         this.emit('turn', data);
         this.switchPlayer(data.nextPlayer);
@@ -234,10 +240,18 @@ define(['EE'], function(EE) {
                 break;
             case 'timeout':
                 if (event.nextPlayer) {
-                    event.user = this.getPlayer(event.user);
-                    this.currentRoom.history.push({user: event.user.userId, action: 'timeout', nextPlayer: event.nextPlayer});
-                    this.emit('timeout', event);
-                    this.switchPlayer(this.getPlayer(event.nextPlayer));
+                    if (this.client.opts.newGameFormat){
+                        event.user = this.getPlayer(event.user);
+                        event.nextPlayer = this.getPlayer(event.nextPlayer);
+                        event = new GameEvent(event);
+                        this.currentRoom.history.push(event);
+                        this.emit('timeout', event);
+                    } else {
+                        event.user = this.getPlayer(event.user);
+                        this.currentRoom.history.push({user: event.user.userId, action: 'timeout', nextPlayer: event.nextPlayer});
+                        this.emit('timeout', event);
+                        this.switchPlayer(this.getPlayer(event.nextPlayer));
+                    }
                 }
                 break;
             case 'back':
@@ -247,7 +261,7 @@ define(['EE'], function(EE) {
                             this.currentRoom.userTakeBacks++;
                         }
                         this.switchPlayer(user);
-                        this.currentRoom.history = GameManager.parseHistory(event.history);
+                        this.currentRoom.history = this.parseHistory(event.history);
                         this.emit('take_back', {user: user, history: this.currentRoom.history});
                         break;
                     case 'ask':
@@ -265,8 +279,15 @@ define(['EE'], function(EE) {
                 break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
+                if (this.client.opts.newGameFormat) {
+                    event.user = this.getPlayer(event.user) || undefined;
+                    event.nextPlayer = this.getPlayer(event.nextPlayer) || undefined;
+                    event.target = this.getPlayer(event.target) || undefined;
+                    event = new GameEvent(event);
+                }
                 this.currentRoom.history.push(event);
                 this.emit('event', event);
+
         }
     };
 
@@ -550,7 +571,7 @@ define(['EE'], function(EE) {
     };
 
 
-    GameManager.parseHistory = function(shistory, playerTurns){
+    GameManager.prototype.parseHistory = function(shistory, playerTurns){
         shistory = '['+shistory+']';
         shistory = shistory.replace(new RegExp('@', 'g'),',');
         var history = JSON.parse(shistory);
@@ -559,39 +580,41 @@ define(['EE'], function(EE) {
                 playerTurns = playerTurns[0];
             history.push(playerTurns);
         }
-        return history;
-    };
-
-
-    function Room(room, client){
-        this.data = room; //deprecated
-        this.inviteData = room.data;
-        this.id = room.room;
-        this.owner = client.getUser(room.owner);
-        this.players = [];
-        this.spectators = [];
-        this.isPlayer = false;
-        this.mode = room.mode;
-        this.turnTime = room.turnTime || client.opts.turnTime * 1000;
-        this.takeBacks = room.takeBacks;
-        this.resetTimerEveryTurn = !!room.resetTimerEveryTurn;
-        this.history = [];
-
-        console.log('TEST!', room.data);
-
-        // init players
-        if (typeof room.players[0] == "object") this.players = room.players;
-        else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
-
-        this.score = {games:0};
-        for (i = 0; i < this.players.length; i++){
-            this.score[this.players[i].userId] = 0;
-            if (this.players[i] == client.getPlayer()) this.isPlayer = true;
+        if (this.client.opts.newGameFormat){
+            var current = this.currentRoom.current,
+                newHistory = [],
+                self = this;
+            for (var i = 0; i < history.length; i++){
+                newHistory = newHistory.concat(parseTurn(history[i]));
+            }
+            history = newHistory;
         }
 
-        room.spectators = room.spectators || [];
-        for (i = 0; i < room.spectators.length; i++) this.spectators.push(client.getUser(room.spectators[i]));
-    }
+        function parseTurn(turn){
+            // parse array of user turns
+            if (turn.length){
+                for (var j = 0; j < turn.length; j++){
+                    turn[j] = parseTurn(turn);
+                }
+            } else { // parse single user turn or game event
+                if (turn.type || turn.action == 'timeout'){ // event
+                    turn.user = self.getPlayer(turn.user) || undefined;
+                    turn.nextPlayer = self.getPlayer(turn.nextPlayer) || undefined;
+                    turn.target = self.getPlayer(turn.target) || undefined;
+                    turn = new GameEvent(turn);
+                } else { // turn
+                    turn.nextPlayer = self.getPlayer(turn.nextPlayer) || undefined;
+                    turn = new Turn(turn, current, turn.nextPlayer);
+                }
+                if (turn.nextPlayer){
+                    current = turn.nextPlayer;
+                }
+            }
+
+            return turn;
+        }
+        return history;
+    };
 
     return GameManager;
 });

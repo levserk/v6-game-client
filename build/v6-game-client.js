@@ -437,7 +437,73 @@ define("lib/almond.js", function(){});
  * @preserve
  */
 (function(){function t(){}function i(t,n){for(var e=t.length;e--;)if(t[e].listener===n)return e;return-1}function n(e){return function(){return this[e].apply(this,arguments)}}var e=t.prototype,r=this,s=r.EventEmitter;e.getListeners=function(n){var r,e,t=this._getEvents();if(n instanceof RegExp){r={};for(e in t)t.hasOwnProperty(e)&&n.test(e)&&(r[e]=t[e])}else r=t[n]||(t[n]=[]);return r},e.flattenListeners=function(t){var e,n=[];for(e=0;e<t.length;e+=1)n.push(t[e].listener);return n},e.getListenersAsObject=function(n){var e,t=this.getListeners(n);return t instanceof Array&&(e={},e[n]=t),e||t},e.addListener=function(r,e){var t,n=this.getListenersAsObject(r),s="object"==typeof e;for(t in n)n.hasOwnProperty(t)&&-1===i(n[t],e)&&n[t].push(s?e:{listener:e,once:!1});return this},e.on=n("addListener"),e.addOnceListener=function(e,t){return this.addListener(e,{listener:t,once:!0})},e.once=n("addOnceListener"),e.defineEvent=function(e){return this.getListeners(e),this},e.defineEvents=function(t){for(var e=0;e<t.length;e+=1)this.defineEvent(t[e]);return this},e.removeListener=function(r,s){var n,e,t=this.getListenersAsObject(r);for(e in t)t.hasOwnProperty(e)&&(n=i(t[e],s),-1!==n&&t[e].splice(n,1));return this},e.off=n("removeListener"),e.addListeners=function(e,t){return this.manipulateListeners(!1,e,t)},e.removeListeners=function(e,t){return this.manipulateListeners(!0,e,t)},e.manipulateListeners=function(r,t,i){var e,n,s=r?this.removeListener:this.addListener,o=r?this.removeListeners:this.addListeners;if("object"!=typeof t||t instanceof RegExp)for(e=i.length;e--;)s.call(this,t,i[e]);else for(e in t)t.hasOwnProperty(e)&&(n=t[e])&&("function"==typeof n?s.call(this,e,n):o.call(this,e,n));return this},e.removeEvent=function(e){var t,r=typeof e,n=this._getEvents();if("string"===r)delete n[e];else if(e instanceof RegExp)for(t in n)n.hasOwnProperty(t)&&e.test(t)&&delete n[t];else delete this._events;return this},e.removeAllListeners=n("removeEvent"),e.emitEvent=function(r,o){var e,i,t,s,n=this.getListenersAsObject(r);for(t in n)if(n.hasOwnProperty(t))for(i=n[t].length;i--;)e=n[t][i],e.once===!0&&this.removeListener(r,e.listener),s=e.listener.apply(this,o||[]),s===this._getOnceReturnValue()&&this.removeListener(r,e.listener);return this},e.trigger=n("emitEvent"),e.emit=function(e){var t=Array.prototype.slice.call(arguments,1);return this.emitEvent(e,t)},e.setOnceReturnValue=function(e){return this._onceReturnValue=e,this},e._getOnceReturnValue=function(){return this.hasOwnProperty("_onceReturnValue")?this._onceReturnValue:!0},e._getEvents=function(){return this._events||(this._events={})},t.noConflict=function(){return r.EventEmitter=s,t},"function"==typeof define&&define.amd?define('EE',[],function(){return t}):"object"==typeof module&&module.exports?module.exports=t:r.EventEmitter=t}).call(this);
-define('modules/game_manager',['EE'], function(EE) {
+define('instances/room',[], function() {
+    var Room = function(room, client){
+        this.data = room; //deprecated
+        this.inviteData = room.data;
+        this.id = room.room;
+        this.owner = client.getUser(room.owner);
+        this.players = [];
+        this.spectators = [];
+        this.isPlayer = false;
+        this.mode = room.mode;
+        this.turnTime = room.turnTime || client.opts.turnTime * 1000;
+        this.takeBacks = room.takeBacks;
+        this.resetTimerEveryTurn = !!room.resetTimerEveryTurn;
+        this.history = [];
+
+        console.log('TEST!', room.data);
+
+        // init players
+        if (typeof room.players[0] == "object") this.players = room.players;
+        else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
+
+        this.score = {games:0};
+        for (i = 0; i < this.players.length; i++){
+            this.score[this.players[i].userId] = 0;
+            if (this.players[i] == client.getPlayer()) this.isPlayer = true;
+        }
+
+        room.spectators = room.spectators || [];
+        for (i = 0; i < room.spectators.length; i++) this.spectators.push(client.getUser(room.spectators[i]));
+    };
+
+    return Room;
+});
+define('instances/turn',[], function() {
+    var Turn = function(turn, user, nextPlayer){
+        this.user = user;
+        this.nextPlayer = nextPlayer;
+        this.turn = turn;
+    };
+    return Turn;
+});
+define('instances/game_event',[], function() {
+    var GameEvent = function(data){
+        this.event = {};
+        for (var key in data){
+            if (data.hasOwnProperty(key)){
+                switch (key){
+                    case 'user':
+                        this.user = data.user;
+                        break;
+                    case 'type':
+                        this.event.type = data.type;
+                        break;
+                    case 'action':
+                        if (data.action == 'timeout') {
+                            data.type = data.action;
+                        }
+                        break;
+                    default:
+                        this.event[key] = data[key];
+                }
+            }
+        }
+    };
+    return GameEvent;
+});
+define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instances/game_event'], function(EE, Room, Turn, GameEvent) {
     
 
     var GameManager = function(client){
@@ -565,7 +631,7 @@ define('modules/game_manager',['EE'], function(EE) {
         var timeStart = Date.now();
         this.emit('game_start', room);
         this.onRoundStart(data['initData'], true);
-        this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
+        this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
@@ -589,7 +655,7 @@ define('modules/game_manager',['EE'], function(EE) {
             return;
         }
         this.onRoundStart(data['initData'], true);
-        this.currentRoom.history = GameManager.parseHistory(data.history, data['playerTurns']);
+        this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         // switch player
         if (data.userTime != null)
@@ -641,7 +707,9 @@ define('modules/game_manager',['EE'], function(EE) {
 
     GameManager.prototype.onTurn = function(data){
         console.log('game_manager;', 'emit turn', data);
-        this.currentRoom.history.push(data.turn);
+        if (!this.client.opts.newGameFormat){
+            this.currentRoom.history.push(data.turn);
+        }
         if (data.turn.nextPlayer) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
@@ -651,6 +719,10 @@ define('modules/game_manager',['EE'], function(EE) {
                 console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime);
                 this.currentRoom.userTime = this.currentRoom.turnTime;
             }
+        }
+        if (this.client.opts.newGameFormat){
+            data = new Turn(data.turn, this.getPlayer(data.user), data.nextPlayer);
+            this.currentRoom.history.push(data);
         }
         this.emit('turn', data);
         this.switchPlayer(data.nextPlayer);
@@ -673,10 +745,18 @@ define('modules/game_manager',['EE'], function(EE) {
                 break;
             case 'timeout':
                 if (event.nextPlayer) {
-                    event.user = this.getPlayer(event.user);
-                    this.currentRoom.history.push({user: event.user.userId, action: 'timeout', nextPlayer: event.nextPlayer});
-                    this.emit('timeout', event);
-                    this.switchPlayer(this.getPlayer(event.nextPlayer));
+                    if (this.client.opts.newGameFormat){
+                        event.user = this.getPlayer(event.user);
+                        event.nextPlayer = this.getPlayer(event.nextPlayer);
+                        event = new GameEvent(event);
+                        this.currentRoom.history.push(event);
+                        this.emit('timeout', event);
+                    } else {
+                        event.user = this.getPlayer(event.user);
+                        this.currentRoom.history.push({user: event.user.userId, action: 'timeout', nextPlayer: event.nextPlayer});
+                        this.emit('timeout', event);
+                        this.switchPlayer(this.getPlayer(event.nextPlayer));
+                    }
                 }
                 break;
             case 'back':
@@ -686,7 +766,7 @@ define('modules/game_manager',['EE'], function(EE) {
                             this.currentRoom.userTakeBacks++;
                         }
                         this.switchPlayer(user);
-                        this.currentRoom.history = GameManager.parseHistory(event.history);
+                        this.currentRoom.history = this.parseHistory(event.history);
                         this.emit('take_back', {user: user, history: this.currentRoom.history});
                         break;
                     case 'ask':
@@ -704,8 +784,15 @@ define('modules/game_manager',['EE'], function(EE) {
                 break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
+                if (this.client.opts.newGameFormat) {
+                    event.user = this.getPlayer(event.user) || undefined;
+                    event.nextPlayer = this.getPlayer(event.nextPlayer) || undefined;
+                    event.target = this.getPlayer(event.target) || undefined;
+                    event = new GameEvent(event);
+                }
                 this.currentRoom.history.push(event);
                 this.emit('event', event);
+
         }
     };
 
@@ -989,7 +1076,7 @@ define('modules/game_manager',['EE'], function(EE) {
     };
 
 
-    GameManager.parseHistory = function(shistory, playerTurns){
+    GameManager.prototype.parseHistory = function(shistory, playerTurns){
         shistory = '['+shistory+']';
         shistory = shistory.replace(new RegExp('@', 'g'),',');
         var history = JSON.parse(shistory);
@@ -998,39 +1085,41 @@ define('modules/game_manager',['EE'], function(EE) {
                 playerTurns = playerTurns[0];
             history.push(playerTurns);
         }
-        return history;
-    };
-
-
-    function Room(room, client){
-        this.data = room; //deprecated
-        this.inviteData = room.data;
-        this.id = room.room;
-        this.owner = client.getUser(room.owner);
-        this.players = [];
-        this.spectators = [];
-        this.isPlayer = false;
-        this.mode = room.mode;
-        this.turnTime = room.turnTime || client.opts.turnTime * 1000;
-        this.takeBacks = room.takeBacks;
-        this.resetTimerEveryTurn = !!room.resetTimerEveryTurn;
-        this.history = [];
-
-        console.log('TEST!', room.data);
-
-        // init players
-        if (typeof room.players[0] == "object") this.players = room.players;
-        else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
-
-        this.score = {games:0};
-        for (i = 0; i < this.players.length; i++){
-            this.score[this.players[i].userId] = 0;
-            if (this.players[i] == client.getPlayer()) this.isPlayer = true;
+        if (this.client.opts.newGameFormat){
+            var current = this.currentRoom.current,
+                newHistory = [],
+                self = this;
+            for (var i = 0; i < history.length; i++){
+                newHistory = newHistory.concat(parseTurn(history[i]));
+            }
+            history = newHistory;
         }
 
-        room.spectators = room.spectators || [];
-        for (i = 0; i < room.spectators.length; i++) this.spectators.push(client.getUser(room.spectators[i]));
-    }
+        function parseTurn(turn){
+            // parse array of user turns
+            if (turn.length){
+                for (var j = 0; j < turn.length; j++){
+                    turn[j] = parseTurn(turn);
+                }
+            } else { // parse single user turn or game event
+                if (turn.type || turn.action == 'timeout'){ // event
+                    turn.user = self.getPlayer(turn.user) || undefined;
+                    turn.nextPlayer = self.getPlayer(turn.nextPlayer) || undefined;
+                    turn.target = self.getPlayer(turn.target) || undefined;
+                    turn = new GameEvent(turn);
+                } else { // turn
+                    turn.nextPlayer = self.getPlayer(turn.nextPlayer) || undefined;
+                    turn = new Turn(turn, current, turn.nextPlayer);
+                }
+                if (turn.nextPlayer){
+                    current = turn.nextPlayer;
+                }
+            }
+
+            return turn;
+        }
+        return history;
+    };
 
     return GameManager;
 });
@@ -3825,7 +3914,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
         });
         return HistoryView;
     });
-define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryView) {
+define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'instances/game_event'], function(EE, HistoryView, Turn, GameEvent) {
     
 
     var HistoryManager = function (client) {
@@ -3891,7 +3980,6 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
                 if (i == this.history.length - 1) {// first game
                     for (var j = 0; j < penalties.length; j++) { // add penalties
                         penalty = penalties[j];
-                        console.log('history', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
                         if (penalty.time <= this.history[i].timeEnd) { // find previous penalties
                             histTable.push(this.formatPenaltyRow(penalty));
                             break;
@@ -3900,8 +3988,6 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
                 } else {
                     for (j = penalties.length - 1; j > -1; j--) { // add penalties
                         penalty = penalties[j];
-                        console.log('history2', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd)
-                            , formatDate(this.history[i + 1].timeEnd) + ' ' + formatTime(this.history[i + 1].timeEnd));
                         if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
                             histTable.unshift(this.formatPenaltyRow(penalty));
                         }
@@ -3913,7 +3999,6 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
                 for (j = penalties.length - 1; j > -1; j--) { // add penalties
                     penalty = penalties[j];
                     if (i == 0) {    // last game
-                        console.log('history3', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
                         if (penalty.time >= this.history[i].timeEnd) { // find next penalties
                             histTable.unshift(this.formatPenaltyRow(penalty));
                         }
@@ -3933,15 +4018,57 @@ define('modules/history_manager',['EE', 'views/history'], function(EE, HistoryVi
             game.history = JSON.parse(game.history);
             game.initData = JSON.parse(game.initData);
             game.userData = JSON.parse(game.userData);
-            var players = [];
-            for (var i = 0; i < game.players.length; i++) {
+            var players = [], i;
+            for (i = 0; i < game.players.length; i++) {
                 players.push(this.client.userList.createUser(game.userData[game.players[i]]));
             }
             if (players.length != players.length) throw new Error('UserData and players are different!');
             game.players = players;
+            if (this.client.opts.newGameFormat){
+                game.initData.first = getPlayer(game.initData.first);
+                game.winner = getPlayer(game.winner);
+                var current = game.initData.first,
+                    history = [];
+                for (i = 0; i < game.history.length; i++){
+                    history = history.concat(parseTurn(game.history[i]))
+                }
+                game.history = history;
+            }
             console.log('history_manager;', 'game parsed', game);
+
         }
         if (!this.isCancel) this.emit('game_load', game);
+
+        function getPlayer(id){
+            for (var i = 0; i < players.length; i++){
+                if (players[i].userId == id) return players[i];
+            }
+            return null;
+        }
+
+        function parseTurn(turn){
+            // parse array of user turns
+            if (turn.length){
+                for (var j = 0; j < turn.length; j++){
+                    turn[j] = parseTurn(turn);
+                }
+            } else { // parse single user turn or game event
+                if (turn.type || turn.action == 'timeout'){ // event
+                    turn.user = getPlayer(turn.user) || undefined;
+                    turn.nextPlayer = getPlayer(turn.nextPlayer) || undefined;
+                    turn.target = getPlayer(turn.target) || undefined;
+                    turn = new GameEvent(turn);
+                } else { // turn
+                    turn.nextPlayer = getPlayer(turn.nextPlayer) || undefined;
+                    turn = new Turn(turn, current, turn.nextPlayer);
+                }
+                if (turn.nextPlayer){
+                    current = turn.nextPlayer;
+                }
+            }
+
+            return turn;
+        }
     };
 
 
@@ -4682,7 +4809,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.29";
+        this.version = "0.8.30";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4695,6 +4822,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.loadRanksInRating = false;
         opts.autoShowProfile = !!opts.autoShowProfile || false;
         opts.shortGuestNames = !!opts.shortGuestNames || false;
+        opts.newGameFormat = !!opts.newGameFormat || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();

@@ -1,4 +1,4 @@
-define(['EE', 'views/history'], function(EE, HistoryView) {
+define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], function(EE, HistoryView, Turn, GameEvent) {
     'use strict';
 
     var HistoryManager = function (client) {
@@ -64,7 +64,6 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
                 if (i == this.history.length - 1) {// first game
                     for (var j = 0; j < penalties.length; j++) { // add penalties
                         penalty = penalties[j];
-                        console.log('history', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
                         if (penalty.time <= this.history[i].timeEnd) { // find previous penalties
                             histTable.push(this.formatPenaltyRow(penalty));
                             break;
@@ -73,8 +72,6 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
                 } else {
                     for (j = penalties.length - 1; j > -1; j--) { // add penalties
                         penalty = penalties[j];
-                        console.log('history2', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd)
-                            , formatDate(this.history[i + 1].timeEnd) + ' ' + formatTime(this.history[i + 1].timeEnd));
                         if (penalty.time < this.history[i].timeEnd && penalty.time >= this.history[i + 1].timeEnd) {
                             histTable.unshift(this.formatPenaltyRow(penalty));
                         }
@@ -86,7 +83,6 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
                 for (j = penalties.length - 1; j > -1; j--) { // add penalties
                     penalty = penalties[j];
                     if (i == 0) {    // last game
-                        console.log('history3', formatDate(penalty.time) + ' ' + formatTime(penalty.time), formatDate(this.history[i].timeEnd) + ' ' + formatTime(this.history[i].timeEnd));
                         if (penalty.time >= this.history[i].timeEnd) { // find next penalties
                             histTable.unshift(this.formatPenaltyRow(penalty));
                         }
@@ -106,15 +102,57 @@ define(['EE', 'views/history'], function(EE, HistoryView) {
             game.history = JSON.parse(game.history);
             game.initData = JSON.parse(game.initData);
             game.userData = JSON.parse(game.userData);
-            var players = [];
-            for (var i = 0; i < game.players.length; i++) {
+            var players = [], i;
+            for (i = 0; i < game.players.length; i++) {
                 players.push(this.client.userList.createUser(game.userData[game.players[i]]));
             }
             if (players.length != players.length) throw new Error('UserData and players are different!');
             game.players = players;
+            if (this.client.opts.newGameFormat){
+                game.initData.first = getPlayer(game.initData.first);
+                game.winner = getPlayer(game.winner);
+                var current = game.initData.first,
+                    history = [];
+                for (i = 0; i < game.history.length; i++){
+                    history = history.concat(parseTurn(game.history[i]))
+                }
+                game.history = history;
+            }
             console.log('history_manager;', 'game parsed', game);
+
         }
         if (!this.isCancel) this.emit('game_load', game);
+
+        function getPlayer(id){
+            for (var i = 0; i < players.length; i++){
+                if (players[i].userId == id) return players[i];
+            }
+            return null;
+        }
+
+        function parseTurn(turn){
+            // parse array of user turns
+            if (turn.length){
+                for (var j = 0; j < turn.length; j++){
+                    turn[j] = parseTurn(turn);
+                }
+            } else { // parse single user turn or game event
+                if (turn.type || turn.action == 'timeout'){ // event
+                    turn.user = getPlayer(turn.user) || undefined;
+                    turn.nextPlayer = getPlayer(turn.nextPlayer) || undefined;
+                    turn.target = getPlayer(turn.target) || undefined;
+                    turn = new GameEvent(turn);
+                } else { // turn
+                    turn.nextPlayer = getPlayer(turn.nextPlayer) || undefined;
+                    turn = new Turn(turn, current, turn.nextPlayer);
+                }
+                if (turn.nextPlayer){
+                    current = turn.nextPlayer;
+                }
+            }
+
+            return turn;
+        }
     };
 
 

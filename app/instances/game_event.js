@@ -12,7 +12,7 @@ define([], function() {
                         break;
                     case 'action':
                         if (data.action == 'timeout') {
-                            data.type = data.action;
+                            this.event.type = data.action;
                         }
                         break;
                     default:

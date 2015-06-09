@@ -475,6 +475,7 @@ define('instances/turn',[], function() {
         this.user = user;
         this.nextPlayer = nextPlayer;
         this.turn = turn;
+        delete this.turn.nextPlayer;
     };
     return Turn;
 });
@@ -492,7 +493,7 @@ define('instances/game_event',[], function() {
                         break;
                     case 'action':
                         if (data.action == 'timeout') {
-                            data.type = data.action;
+                            this.event.type = data.action;
                         }
                         break;
                     default:
@@ -828,11 +829,11 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
     GameManager.prototype.leaveGame = function(){
         if (!this.currentRoom){
-            console.error('game_manager;', 'leaveGame', 'game not started!');
+            console.warn('game_manager;', 'leaveGame', 'game not started!');
             return;
         }
         if (this.currentRoom.isClosed){
-            console.warn('game_manager;', 'leaveGame', 'game already ended');
+            this.leaveRoom();
             return;
         }
         // TODO: send to server leave game, block game and wait leave message
@@ -842,7 +843,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
     GameManager.prototype.leaveRoom = function(){
         if (!this.currentRoom){
-            console.error('game_manager;', 'leaveRoom', 'game not started!');
+            console.warn('game_manager;', 'leaveRoom', 'game not started!');
             return;
         }
         if (!this.currentRoom.isClosed) {
@@ -2306,7 +2307,10 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
     });
     return UserListView;
 });
-define('views/dialogs',[],function() {
+
+define('text!tpls/v6-dialogRoundResult.ejs',[],function () { return '<p><%= result %></p>\r\n<p><%= rankResult %></p>\r\n<br>\r\n<span class="dialogGameAction">Сыграть с соперником еще раз?</span>\r\n<div class="roundResultTime">Осталось: <span>30</span> секунд</div>';});
+
+define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoundResultStr) {
     
     var dialogs = (function() {
         var NOTIFICATION_CLASS = 'dialogNotification';
@@ -2317,10 +2321,15 @@ define('views/dialogs',[],function() {
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var TAKEBACK_CLASS = 'dialogTakeBack';
         var ACTION_CLASS = 'dialogGameAction';
+        var BTN_PLAYAGANIN_CLASS = 'btnPlayAgain';
+        var BTN_LEAVEGAME_CLASS = 'btnLeaveGame';
+        var BTN_LEAVEGAMEOK_CLASS = 'btnLeaveGameOk';
         var client;
+        var roundResultInterval, roundResultStartTime;
+        var tplRoundResult = _.template(tplRoundResultStr);
         var dialogTimeout;
         var inviteTimeout = 30;
-        var TIMEDIV = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
+        var tplInvite = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
 
         function _subscribe(_client) {
             client = _client;
@@ -2331,6 +2340,7 @@ define('views/dialogs',[],function() {
             client.gameManager.on('user_leave', userLeave);
             client.gameManager.on('turn', userTurn);
             client.gameManager.on('game_start', hideDialogs);
+            client.gameManager.on('round_start', onRoundStart);
             client.gameManager.on('round_end', roundEnd);
             client.gameManager.on('game_leave', leaveGame);
             client.gameManager.on('ask_draw', askDraw);
@@ -2341,14 +2351,14 @@ define('views/dialogs',[],function() {
             client.on('login_error', loginError);
             $(document).on("click", hideOnClick);
             inviteTimeout = client.inviteManager.inviteTimeoutTime;
-            TIMEDIV = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
+            tplInvite = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
         }
 
         function newInvite(invite) {
             var html = 'Вас пригласил в игру пользователь <b>' + invite.from.userName + '</b>';
             if (typeof this.client.opts.generateInviteText == "function")
                 html = this.client.opts.generateInviteText(invite);
-                html += TIMEDIV;
+                html += tplInvite;
             var div = showDialog(html, {
                 buttons: {
                     "Принять": function() {
@@ -2455,7 +2465,6 @@ define('views/dialogs',[],function() {
             var div = showDialog(html, {}, true, true, true);
         }
 
-
         function roundEnd(data) {
             if (!data.isPlayer) {
                 return;
@@ -2487,38 +2496,76 @@ define('views/dialogs',[],function() {
                     rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
                 } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
             }
-            var html = '<p>' + result + '</p><p>' + rankResult +'</p><br>' +
-                '<span class="'+ACTION_CLASS+'">Сыграть с соперником еще раз?</span>';
+            var html = tplRoundResult({result: result, rankResult: rankResult});
 
             var div = showDialog(html, {
                 width: 350,
                 buttons: {
-                    "Да, начать новую игру": function () {
-                        $(this).remove();
-                        client.gameManager.sendReady();
+                    "Да, начать новую игру": {
+                        text: 'Да, начать новую игру',
+                        'class': BTN_PLAYAGANIN_CLASS,
+                        click: function () {
+                            console.log('result yes');
+                            client.gameManager.sendReady();
+                            div.parent().find(':button').hide();
+                            div.parent().find(":button."+BTN_LEAVEGAME_CLASS).show();
+                            div.find('.'+ACTION_CLASS).html('Ожидание сопреника..');
+                        }
                     },
-                    "Нет, выйти": function () {
-                        $(this).remove();
-                        client.gameManager.leaveGame();
+                    "Нет, выйти": {
+                        text: 'Нет, выйти',
+                        'class': BTN_LEAVEGAME_CLASS,
+                        click: function () {
+                            console.log('result no');
+                            clearInterval(roundResultInterval);
+                            $(this).remove();
+                            client.gameManager.leaveGame();
+                        }
                     },
-                    "Ок" : function() {
-                        $(this).remove();
-                        client.gameManager.leaveRoom();
+                    "Ок" : {
+                        text: 'Ок',
+                        'class': BTN_LEAVEGAMEOK_CLASS,
+                        click: function() {
+                            console.log('result ok');
+                            clearInterval(roundResultInterval);
+                            $(this).remove();
+                            client.gameManager.leaveGame();
+                        }
                     }
                 },
                 close: function () {
+                    console.log('result close');
+                    clearInterval(roundResultInterval);
                     $(this).remove();
                     client.gameManager.leaveGame();
                 }
             }, true, false);
+
             div.addClass(ROUNDRESULT_CLASS);
-            div.parent().find(":button:contains('Ок')").hide();
+            div.parent().find(":button."+BTN_LEAVEGAMEOK_CLASS).hide();
             // show dialog result with delay
             div.parent().hide();
             dialogTimeout = setTimeout(function(){
                 div.parent().show()
             }, client.opts.resultDialogDelay);
             div.addClass(GAME_CLASS);
+
+            // add timer to auto close
+            roundResultStartTime = Date.now();
+            roundResultInterval = setInterval(function(){
+                var time = (inviteTimeout * 1000 - (Date.now() - roundResultStartTime)) / 1000 ^0;
+                this.find('.roundResultTime span').html(time);
+                if (time < 1) {
+                    console.log('interval', time);
+                    clearInterval(roundResultInterval);
+                    this.find('.roundResultTime').hide();
+                    this.find('.'+ACTION_CLASS).html('Время ожидания истекло');
+                    div.parent().find(':button').hide();
+                    div.parent().find(":button."+BTN_LEAVEGAMEOK_CLASS).show();
+                    div.removeClass(GAME_CLASS);
+                    client.gameManager.leaveGame();
+                }
+            }.bind(div), 250);
         }
 
         function userLeave(user) {
@@ -2527,8 +2574,10 @@ define('views/dialogs',[],function() {
             var div = $('.'+ROUNDRESULT_CLASS);
             if (div && div.length>0){   // find round result dialog and update it
                 div.parent().find(':button').hide();
-                div.parent().find(":button:contains('Ок')").show();
+                div.parent().find(":button."+BTN_LEAVEGAMEOK_CLASS).show();
                 div.find('.'+ACTION_CLASS).html(html);
+                clearInterval(roundResultInterval);
+                div.find('.roundResultTime').hide();
             } else {
                 div = showDialog(html, {
                     buttons: {
@@ -2606,11 +2655,17 @@ define('views/dialogs',[],function() {
         }
 
 
+        function onRoundStart() {
+            clearInterval(roundResultInterval);
+            $('.' + ROUNDRESULT_CLASS).remove();
+        }
+
+
         function hideDialogs() {
             $('.' + NOTIFICATION_CLASS).dialog("close");
-            $('.' + ROUNDRESULT_CLASS).dialog("close");
             $('.' + INVITE_CLASS).dialog("close");
             clearTimeout(dialogTimeout);
+            clearInterval(roundResultInterval);
         }
 
         function hideNotification() {
@@ -4809,7 +4864,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.30";
+        this.version = "0.8.31";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

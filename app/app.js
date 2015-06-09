@@ -25,6 +25,7 @@ require(['require-cnf'], function () {
                 autoShowProfile: true,
                 idleTimeout: 0,
                 shortGuestNames: false,
+                newGameFormat: false,
                 getUserParams: function(){
                     var inviteData = {
                         gameType:'Main Mode',
@@ -115,7 +116,7 @@ require(['require-cnf'], function () {
             });
 
             _client.gameManager.on('turn', function(data){
-                console.log('main;','turn', data.turn, 'is your turn: ', data.user == _client.getPlayer().userId);
+                console.log('main;','turn', data);
             });
 
             _client.gameManager.on('switch_player', function(data){

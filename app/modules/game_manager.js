@@ -323,11 +323,11 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
     GameManager.prototype.leaveGame = function(){
         if (!this.currentRoom){
-            console.error('game_manager;', 'leaveGame', 'game not started!');
+            console.warn('game_manager;', 'leaveGame', 'game not started!');
             return;
         }
         if (this.currentRoom.isClosed){
-            console.warn('game_manager;', 'leaveGame', 'game already ended');
+            this.leaveRoom();
             return;
         }
         // TODO: send to server leave game, block game and wait leave message
@@ -337,7 +337,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
     GameManager.prototype.leaveRoom = function(){
         if (!this.currentRoom){
-            console.error('game_manager;', 'leaveRoom', 'game not started!');
+            console.warn('game_manager;', 'leaveRoom', 'game not started!');
             return;
         }
         if (!this.currentRoom.isClosed) {

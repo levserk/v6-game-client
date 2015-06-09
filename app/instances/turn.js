@@ -3,6 +3,7 @@ define([], function() {
         this.user = user;
         this.nextPlayer = nextPlayer;
         this.turn = turn;
+        delete this.turn.nextPlayer;
     };
     return Turn;
 });

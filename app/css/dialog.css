@@ -27,6 +27,13 @@
 }
 .ui-dialog .inviteTime span{
     font-weight: bold;
+
+}
+.ui-dialog .roundResultTime {
+    margin-top: 10px;
+}
+.ui-dialog .roundResultTime span{
+    font-weight: bold;
 }
 
 /* disable images */

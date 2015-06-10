@@ -3274,8 +3274,8 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
                     return;
                 }
                 this.$profileDiv.find(".stats-area-wrapper").append(window.ui.userProfile.renderProfile(pData.profile));
-                window.ui.userProfile.bindActions(pData.profile);
                 showProfile.bind(this)();
+                window.ui.userProfile.bindActions(pData.profile);
             }.bind(this))
         } else {
             this.$profileDiv.find('img').click(function () {
@@ -3712,7 +3712,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         }
         if (this.messages[target] && this.messages[target].length > 0
             && this.messages[target].length < this.MSG_COUNT) {
-            this.loadMessages(this.MSG_COUNT, this.messages[target][0], target);
+            this.loadMessages(this.MSG_COUNT, this.messages[target][0].time, target);
         }  else this.loadMessages(this.MSG_COUNT, null, target);
     };
 
@@ -4864,7 +4864,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.8.31";
+        this.version = "0.9.1";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

@@ -49,8 +49,8 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
                     return;
                 }
                 this.$profileDiv.find(".stats-area-wrapper").append(window.ui.userProfile.renderProfile(pData.profile));
-                window.ui.userProfile.bindActions(pData.profile);
                 showProfile.bind(this)();
+                window.ui.userProfile.bindActions(pData.profile);
             }.bind(this))
         } else {
             this.$profileDiv.find('img').click(function () {

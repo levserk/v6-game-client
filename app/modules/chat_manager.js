@@ -171,7 +171,7 @@ define(['EE', 'antimat'], function(EE) {
         }
         if (this.messages[target] && this.messages[target].length > 0
             && this.messages[target].length < this.MSG_COUNT) {
-            this.loadMessages(this.MSG_COUNT, this.messages[target][0], target);
+            this.loadMessages(this.MSG_COUNT, this.messages[target][0].time, target);
         }  else this.loadMessages(this.MSG_COUNT, null, target);
     };
 

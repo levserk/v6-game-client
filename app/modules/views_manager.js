@@ -66,11 +66,21 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
                 $('body').append(this.$profileDiv);
             }
             this.client.historyManager.getProfileHistory(null, userId, 'v6-profileDiv');
-            if (window.ui) {
-                window.ui.showPanel({ id: 'v6-profileDiv' });
-            } else {
-                $('#v6-profileDiv').show();
+            this.showPanel(this.$profileDiv);
+        }
+    };
+
+
+    ViewsManager.prototype.showPanel = function ($panel) {
+    // try use logic game show panel, auto hide others, opened the same
+        try{
+            if (window.ui && window.ui.showPanel) {
+                window.ui.showPanel({id: $panel.attr('id')})
+            } else{
+                $panel.show();
             }
+        } catch (e){
+            console.error('views_manager;', 'show_panel', e);
         }
     };
 

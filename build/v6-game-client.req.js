@@ -1679,7 +1679,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                             client.gameManager.sendReady();
                             div.parent().find(':button').hide();
                             div.parent().find(":button."+BTN_LEAVEGAME_CLASS).show();
-                            div.find('.'+ACTION_CLASS).html('Ожидание сопреника..');
+                            div.find('.'+ACTION_CLASS).html('Ожидание соперника..');
                         }
                     },
                     "Нет, выйти": {
@@ -2461,11 +2461,21 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
                 $('body').append(this.$profileDiv);
             }
             this.client.historyManager.getProfileHistory(null, userId, 'v6-profileDiv');
-            if (window.ui) {
-                window.ui.showPanel({ id: 'v6-profileDiv' });
-            } else {
-                $('#v6-profileDiv').show();
+            this.showPanel(this.$profileDiv);
+        }
+    };
+
+
+    ViewsManager.prototype.showPanel = function ($panel) {
+    // try use logic game show panel, auto hide others, opened the same
+        try{
+            if (window.ui && window.ui.showPanel) {
+                window.ui.showPanel({id: $panel.attr('id')})
+            } else{
+                $panel.show();
             }
+        } catch (e){
+            console.error('views_manager;', 'show_panel', e);
         }
     };
 
@@ -3378,6 +3388,7 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
         this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
         this.userId = this.client.getPlayer().userId;
         this._getHistory(mode, false);
+        this.client.viewsManager.showPanel(this.historyView.$el);
     };
 
     HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
@@ -3865,6 +3876,7 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
             count: this.maxCount,
             offset: this.count
         });
+        this.client.viewsManager.showPanel(this.ratingView.$el);
     };
 
     RatingManager.prototype.close = function(){
@@ -4034,7 +4046,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.1";
+        this.version = "0.9.2";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;

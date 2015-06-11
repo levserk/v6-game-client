@@ -237,6 +237,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
         this.$container = (this.client.opts.blocks.historyId?$('#'+this.client.opts.blocks.historyId):$('body'));
         this.userId = this.client.getPlayer().userId;
         this._getHistory(mode, false);
+        this.client.viewsManager.showPanel(this.historyView.$el);
     };
 
     HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){

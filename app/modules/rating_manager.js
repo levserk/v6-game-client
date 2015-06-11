@@ -107,6 +107,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             count: this.maxCount,
             offset: this.count
         });
+        this.client.viewsManager.showPanel(this.ratingView.$el);
     };
 
     RatingManager.prototype.close = function(){

@@ -197,7 +197,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                             client.gameManager.sendReady();
                             div.parent().find(':button').hide();
                             div.parent().find(":button."+BTN_LEAVEGAME_CLASS).show();
-                            div.find('.'+ACTION_CLASS).html('Ожидание сопреника..');
+                            div.find('.'+ACTION_CLASS).html('Ожидание соперника..');
                         }
                     },
                     "Нет, выйти": {

@@ -25,7 +25,7 @@ require(['require-cnf'], function () {
                 autoShowProfile: true,
                 idleTimeout: 0,
                 shortGuestNames: false,
-                newGameFormat: false,
+                newGameFormat: true,
                 getUserParams: function(){
                     var inviteData = {
                         gameType:'Main Mode',
@@ -149,6 +149,7 @@ require(['require-cnf'], function () {
 
             _client.gameManager.on('time', _.throttle(function(data){
                //console.log('main;','time user:', data);
+                $('#time').html((data.user.isPlayer ? 'Ваш ход' : 'Ход соперника') + ' ' + data.userTimeFormat)
             }, 1000, {trailing: false}));
 
 
@@ -241,6 +242,10 @@ require(['require-cnf'], function () {
                 div.on('click', function () {
                     window._client.gameManager.sendTakeBack();
                 });
+                bdiv.append(div);
+
+                div = $('<div>');
+                div.attr('id', 'time');
                 bdiv.append(div);
 
             }

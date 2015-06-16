@@ -5,14 +5,18 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         this.client = client;
         this.currentRoom = null;
         this.enableGames = true;
-        this.client.on('disconnected', function(){
-            // TODO: save or close current room
-        });
+
+        client.on('disconnected', function () {
+            this.currentRoom = null;
+            clearInterval(this.timeInterval);
+            this.timeInterval = null;
+            this.prevTime = null;
+        }.bind(this));
+
         window.addEventListener('blur', function(){
             this.onUserFocusChanged(false);
         }.bind(this));
         window.addEventListener('focus', function(){
-
             this.onUserFocusChanged(true);
         }.bind(this));
     };
@@ -631,7 +635,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             // parse array of user turns
             if (turn.length){
                 for (var j = 0; j < turn.length; j++){
-                    turn[j] = parseTurn(turn);
+                    turn[j] = parseTurn(turn[j]);
                 }
             } else { // parse single user turn or game event
                 if (turn.type || turn.action == 'timeout'){ // event

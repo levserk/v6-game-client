@@ -3,7 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.3";
+        this.version = "0.9.4";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -287,6 +287,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     Client.prototype.onShowProfile = function(userId, userName){
+        if (!this.isLogin) return;
         if (!userName) {
             var user = this.userList.getUser(userId);
             if (!user) {
@@ -297,7 +298,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
         this.emit('show_profile', {userId:userId, userName:userName});
         if (this.opts.autoShowProfile) {
-            this.viewsManager.showUserProfie(userId, userName);
+            this.viewsManager.showUserProfile(userId, userName);
         }
     };
 

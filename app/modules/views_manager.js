@@ -4,6 +4,10 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
         this.userListView = null;
         this.dialogsView = dialogsView;
         this.chat = null;
+
+        client.on('disconnected', function () {
+            this.closeAll();
+        }.bind(this));
     };
 
     ViewsManager.prototype.init = function() {
@@ -20,11 +24,12 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
     };
 
     ViewsManager.prototype.showSettings = function () {
+        if (!this.client.isLogin) return;
         this.settingsView.show();
     };
 
 
-    ViewsManager.prototype.showUserProfie = function (userId, userName) {
+    ViewsManager.prototype.showUserProfile = function (userId, userName) {
         if (!this.$profileDiv) {
             this.$profileDiv = $('<div id="v6-profileDiv">');
         }

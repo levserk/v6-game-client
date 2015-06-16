@@ -515,14 +515,18 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         this.client = client;
         this.currentRoom = null;
         this.enableGames = true;
-        this.client.on('disconnected', function(){
-            // TODO: save or close current room
-        });
+
+        client.on('disconnected', function () {
+            this.currentRoom = null;
+            clearInterval(this.timeInterval);
+            this.timeInterval = null;
+            this.prevTime = null;
+        }.bind(this));
+
         window.addEventListener('blur', function(){
             this.onUserFocusChanged(false);
         }.bind(this));
         window.addEventListener('focus', function(){
-
             this.onUserFocusChanged(true);
         }.bind(this));
     };
@@ -1141,7 +1145,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             // parse array of user turns
             if (turn.length){
                 for (var j = 0; j < turn.length; j++){
-                    turn[j] = parseTurn(turn);
+                    turn[j] = parseTurn(turn[j]);
                 }
             } else { // parse single user turn or game event
                 if (turn.type || turn.action == 'timeout'){ // event
@@ -1199,11 +1203,15 @@ define('modules/invite_manager',['EE'], function(EE) {
             self.client.viewsManager.userListView._setRandomPlay();
         });
         client.on('disconnected', function(){
+            // TODO: clear all;
+            clearTimeout(self.inviteTimeout);
             self.invite = null;
             for (var userId in self.invites)
                 if (self.invites.hasOwnProperty(userId)){
                     self.removeInvite(userId);
                 }
+            self.isPlayRandom = false;
+            self.client.viewsManager.userListView._setRandomPlay();
         });
         client.on('mode_switch', function(){
             if (self.isPlayRandom){
@@ -1358,6 +1366,7 @@ define('modules/invite_manager',['EE'], function(EE) {
 
 
     InviteManager.prototype.playRandom = function(cancel){
+        if (!this.client.isLogin) return;
         if (!this.client.gameManager.enableGames && !cancel){
             this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
             return;
@@ -2407,6 +2416,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             client.gameManager.on('cancel_back', cancelTakeBack);
             client.chatManager.on('show_ban', showBan);
             client.on('login_error', loginError);
+            client.on('disconnect', onDisconnect);
             $(document).on("click", hideOnClick);
             inviteTimeout = client.inviteManager.inviteTimeoutTime;
             tplInvite = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
@@ -2754,6 +2764,10 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             }
         }
 
+        function onDisconnect() {
+            hideDialogs();
+        }
+
         return {
             init: _subscribe,
             showDialog: showDialog,
@@ -2769,7 +2783,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
 });
 
 
-define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected>Готовые сообщения</option>\r\n        <option>Ваш ход!</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
+define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected style="font-style: italic;">Готовые сообщения</option>\r\n        <option>Ваш ход!</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
 
 
 define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>" title="<%= msg.userName %>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение" style="background-image: url(<%= imgDel %>);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
@@ -2809,7 +2823,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             },
 
             banUser: function(userId, userName){
-                var mng =  this.client.chatManager;
+                var mng =  this.manager;
                 var div = $(this.tplBan({userName: userName})).attr('data-userId', userId).dialog({
                     buttons: {
                         "Добавить в бан": function() {
@@ -2902,10 +2916,10 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
             scrollEvent: function() {
                 if (this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() != 0 &&
-                this.$messagesWrap.scrollTop()<5 &&
-                !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
+                    this.$messagesWrap.scrollTop()<5 && this.client.isLogin &&
+                    !this.manager.fullLoaded[this.manager.current]){
                     this._setLoadingState();
-                    this.client.chatManager.loadMessages();
+                    this.manager.loadMessages();
                 }
             },
 
@@ -2926,7 +2940,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     alert(this.MAX_LENGTH_MSG);
                     return;
                 }
-                this.client.chatManager.sendMessage(text, null, $('#chatIsAdmin')[0].checked);
+                this.manager.sendMessage(text, null, $('#chatIsAdmin')[0].checked);
                 this.$inputMsg.empty();
                 this.$inputMsg.focus();
             },
@@ -2957,11 +2971,12 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 this.currentActiveTabName = tabName;
                 this._setActiveTab(this.currentActiveTabName);
-                this.client.chatManager.loadCachedMessages(this.tabs[tabName].target);
+                this.manager.loadCachedMessages(this.tabs[tabName].target);
             },
 
             initialize: function(_client) {
                 this.client = _client;
+                this.manager = _client.chatManager;
                 this.images = _client.opts.images;
                 this.$el.html(this.tplMain());
 
@@ -3016,10 +3031,10 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 if (this.client.isAdmin) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
 
-                this.listenTo(this.client.chatManager, 'message', this._addOneMsg.bind(this));
-                this.listenTo(this.client.chatManager, 'load', this._preaddMsgs.bind(this));
-                this.listenTo(this.client.chatManager, 'open_dialog', this._openDialog.bind(this));
-                this.listenTo(this.client.chatManager, 'close_dialog', this._closeDialog.bind(this));
+                this.listenTo(this.manager, 'message', this._addOneMsg.bind(this));
+                this.listenTo(this.manager, 'load', this._preaddMsgs.bind(this));
+                this.listenTo(this.manager, 'open_dialog', this._openDialog.bind(this));
+                this.listenTo(this.manager, 'close_dialog', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
                 this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
             },
@@ -3073,7 +3088,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     msgId = $msg.attr('data-msgId')
                 }
                 if (msgId) {
-                    this.client.chatManager.deleteMessage(parseFloat(msgId));
+                    this.manager.deleteMessage(parseFloat(msgId));
                 }
                 // если был передан id сообщения
                 if (!$msg) {
@@ -3094,8 +3109,10 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 var $msg = this.tplMsg({msg:msg, imgDel:this.images.del});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
 
-                if (!this.client.chatManager.last[msg.target] || this.client.chatManager.last[msg.target].d != msg.d) this.$msgsList.append(this.tplDay(msg));
-
+                if (!this.manager.last[msg.target] ||
+                    this.manager.last[msg.target].d != msg.d) {
+                    this.$msgsList.append(this.tplDay(msg));
+                }
                 this.$msgsList.append($msg);
 
                 $msg = this.$el.find('li[data-msgId="' + msg.time + '"]');
@@ -3117,10 +3134,12 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 if (!msg) return;
                 var oldScrollTop =  this.$messagesWrap.scrollTop();
                 var oldScrollHeight = this.$messagesWrap[0].scrollHeight;
-                var oldDay = this.$el.find('li[data-day-msgId="' + this.client.chatManager.first[msg.target].time + '"]');
+                var oldDay = this.$el.find('li[data-day-msgId="' + this.manager.first[msg.target].time + '"]');
                 if (oldDay) oldDay.remove();
                 // add day previous msg
-                if (this.client.chatManager.first[msg.target].d != msg.d) this.$msgsList.prepend(this.tplDay(this.client.chatManager.first[msg.target]));
+                if (this.manager.first[msg.target].d != msg.d) {
+                    this.$msgsList.prepend(this.tplDay(this.manager.first[msg.target]));
+                }
                 var $msg = this.tplMsg({msg: msg, imgDel:this.images.del});
                 this.$msgsList.prepend($msg);
                 // add day this, now firs message
@@ -3287,6 +3306,10 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         this.userListView = null;
         this.dialogsView = dialogsView;
         this.chat = null;
+
+        client.on('disconnected', function () {
+            this.closeAll();
+        }.bind(this));
     };
 
     ViewsManager.prototype.init = function() {
@@ -3303,11 +3326,12 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
     };
 
     ViewsManager.prototype.showSettings = function () {
+        if (!this.client.isLogin) return;
         this.settingsView.show();
     };
 
 
-    ViewsManager.prototype.showUserProfie = function (userId, userName) {
+    ViewsManager.prototype.showUserProfile = function (userId, userName) {
         if (!this.$profileDiv) {
             this.$profileDiv = $('<div id="v6-profileDiv">');
         }
@@ -3621,6 +3645,11 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
 
         client.on('login', function(){
             this.current = client.game;
+            this.first = {};
+            this.last = {};
+            this.fullLoaded = {};
+            this.messages = {};
+            this.current = client.game;
             client.viewsManager.v6ChatView.setPublicTab(client.game);
             this.loadMessages();
         }.bind(this));
@@ -3642,6 +3671,8 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
                 }
             }
         }.bind(this));
+
+        client.on('disconnected', function () {});
     };
 
     ChatManager.prototype = new EE();
@@ -4064,6 +4095,10 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
         this.maxCount = 100;
         this.count = 0;
         this.history = [];
+
+        client.on('disconnected', function () {
+            // TODO: clear all
+        })
     };
 
     HistoryManager.prototype = new EE();
@@ -4173,7 +4208,7 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
             // parse array of user turns
             if (turn.length){
                 for (var j = 0; j < turn.length; j++){
-                    turn[j] = parseTurn(turn);
+                    turn[j] = parseTurn(turn[j]);
                 }
             } else { // parse single user turn or game event
                 if (turn.type || turn.action == 'timeout'){ // event
@@ -4267,6 +4302,7 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
 
 
     HistoryManager.prototype.getHistory = function(mode){
+        if (!this.client.isLogin) return;
         this.historyView.clearHistory();
         var gm = this.client.gameManager;
         if (this.client.gameManager.inGame()){
@@ -4280,6 +4316,7 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
     };
 
     HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
+        if (!this.client.isLogin) return;
         this.historyView.clearHistory();
         this.historyView.setFilter('');
         if (blockId) this.$container = $('#'+blockId);
@@ -4682,6 +4719,8 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
         this.maxCount = 500;
         this.count = 0;
+
+        client.on('disconnected', function () {})
     };
 
     RatingManager.prototype = new EE();
@@ -4753,6 +4792,7 @@ define('modules/rating_manager',['EE', 'views/rating'], function(EE, RatingView)
 
 
     RatingManager.prototype.getRatings = function(mode, column, order, filter, showMore){
+        if (!this.client.isLogin) return;
         if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
         this.filter = filter;
@@ -4934,7 +4974,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.3";
+        this.version = "0.9.4";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -5218,6 +5258,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     Client.prototype.onShowProfile = function(userId, userName){
+        if (!this.isLogin) return;
         if (!userName) {
             var user = this.userList.getUser(userId);
             if (!user) {
@@ -5228,7 +5269,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
         this.emit('show_profile', {userId:userId, userName:userName});
         if (this.opts.autoShowProfile) {
-            this.viewsManager.showUserProfie(userId, userName);
+            this.viewsManager.showUserProfile(userId, userName);
         }
     };
 

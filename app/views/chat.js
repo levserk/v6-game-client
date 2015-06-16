@@ -24,7 +24,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             },
 
             banUser: function(userId, userName){
-                var mng =  this.client.chatManager;
+                var mng =  this.manager;
                 var div = $(this.tplBan({userName: userName})).attr('data-userId', userId).dialog({
                     buttons: {
                         "Добавить в бан": function() {
@@ -117,10 +117,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
             scrollEvent: function() {
                 if (this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() != 0 &&
-                this.$messagesWrap.scrollTop()<5 &&
-                !this.client.chatManager.fullLoaded[this.client.chatManager.current]){
+                    this.$messagesWrap.scrollTop()<5 && this.client.isLogin &&
+                    !this.manager.fullLoaded[this.manager.current]){
                     this._setLoadingState();
-                    this.client.chatManager.loadMessages();
+                    this.manager.loadMessages();
                 }
             },
 
@@ -141,7 +141,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     alert(this.MAX_LENGTH_MSG);
                     return;
                 }
-                this.client.chatManager.sendMessage(text, null, $('#chatIsAdmin')[0].checked);
+                this.manager.sendMessage(text, null, $('#chatIsAdmin')[0].checked);
                 this.$inputMsg.empty();
                 this.$inputMsg.focus();
             },
@@ -172,11 +172,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this.currentActiveTabName = tabName;
                 this._setActiveTab(this.currentActiveTabName);
-                this.client.chatManager.loadCachedMessages(this.tabs[tabName].target);
+                this.manager.loadCachedMessages(this.tabs[tabName].target);
             },
 
             initialize: function(_client) {
                 this.client = _client;
+                this.manager = _client.chatManager;
                 this.images = _client.opts.images;
                 this.$el.html(this.tplMain());
 
@@ -231,10 +232,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 if (this.client.isAdmin) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
 
-                this.listenTo(this.client.chatManager, 'message', this._addOneMsg.bind(this));
-                this.listenTo(this.client.chatManager, 'load', this._preaddMsgs.bind(this));
-                this.listenTo(this.client.chatManager, 'open_dialog', this._openDialog.bind(this));
-                this.listenTo(this.client.chatManager, 'close_dialog', this._closeDialog.bind(this));
+                this.listenTo(this.manager, 'message', this._addOneMsg.bind(this));
+                this.listenTo(this.manager, 'load', this._preaddMsgs.bind(this));
+                this.listenTo(this.manager, 'open_dialog', this._openDialog.bind(this));
+                this.listenTo(this.manager, 'close_dialog', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
                 this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
             },
@@ -288,7 +289,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     msgId = $msg.attr('data-msgId')
                 }
                 if (msgId) {
-                    this.client.chatManager.deleteMessage(parseFloat(msgId));
+                    this.manager.deleteMessage(parseFloat(msgId));
                 }
                 // если был передан id сообщения
                 if (!$msg) {
@@ -309,8 +310,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 var $msg = this.tplMsg({msg:msg, imgDel:this.images.del});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
 
-                if (!this.client.chatManager.last[msg.target] || this.client.chatManager.last[msg.target].d != msg.d) this.$msgsList.append(this.tplDay(msg));
-
+                if (!this.manager.last[msg.target] ||
+                    this.manager.last[msg.target].d != msg.d) {
+                    this.$msgsList.append(this.tplDay(msg));
+                }
                 this.$msgsList.append($msg);
 
                 $msg = this.$el.find('li[data-msgId="' + msg.time + '"]');
@@ -332,10 +335,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 if (!msg) return;
                 var oldScrollTop =  this.$messagesWrap.scrollTop();
                 var oldScrollHeight = this.$messagesWrap[0].scrollHeight;
-                var oldDay = this.$el.find('li[data-day-msgId="' + this.client.chatManager.first[msg.target].time + '"]');
+                var oldDay = this.$el.find('li[data-day-msgId="' + this.manager.first[msg.target].time + '"]');
                 if (oldDay) oldDay.remove();
                 // add day previous msg
-                if (this.client.chatManager.first[msg.target].d != msg.d) this.$msgsList.prepend(this.tplDay(this.client.chatManager.first[msg.target]));
+                if (this.manager.first[msg.target].d != msg.d) {
+                    this.$msgsList.prepend(this.tplDay(this.manager.first[msg.target]));
+                }
                 var $msg = this.tplMsg({msg: msg, imgDel:this.images.del});
                 this.$msgsList.prepend($msg);
                 // add day this, now firs message

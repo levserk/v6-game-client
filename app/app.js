@@ -21,7 +21,7 @@ require(['require-cnf'], function () {
                 game: 'test2',
                 port: 8078,
                 resultDialogDelay: 1000,
-                reload: true,
+                reload: false,
                 autoShowProfile: true,
                 idleTimeout: 0,
                 shortGuestNames: false,

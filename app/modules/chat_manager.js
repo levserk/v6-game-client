@@ -12,6 +12,11 @@ define(['EE', 'antimat'], function(EE) {
 
         client.on('login', function(){
             this.current = client.game;
+            this.first = {};
+            this.last = {};
+            this.fullLoaded = {};
+            this.messages = {};
+            this.current = client.game;
             client.viewsManager.v6ChatView.setPublicTab(client.game);
             this.loadMessages();
         }.bind(this));
@@ -33,6 +38,8 @@ define(['EE', 'antimat'], function(EE) {
                 }
             }
         }.bind(this));
+
+        client.on('disconnected', function () {});
     };
 
     ChatManager.prototype = new EE();

@@ -25,6 +25,8 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
         this.maxCount = 500;
         this.count = 0;
+
+        client.on('disconnected', function () {})
     };
 
     RatingManager.prototype = new EE();
@@ -96,6 +98,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
 
 
     RatingManager.prototype.getRatings = function(mode, column, order, filter, showMore){
+        if (!this.client.isLogin) return;
         if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
         this.filter = filter;

@@ -32,11 +32,15 @@ define(['EE'], function(EE) {
             self.client.viewsManager.userListView._setRandomPlay();
         });
         client.on('disconnected', function(){
+            // TODO: clear all;
+            clearTimeout(self.inviteTimeout);
             self.invite = null;
             for (var userId in self.invites)
                 if (self.invites.hasOwnProperty(userId)){
                     self.removeInvite(userId);
                 }
+            self.isPlayRandom = false;
+            self.client.viewsManager.userListView._setRandomPlay();
         });
         client.on('mode_switch', function(){
             if (self.isPlayRandom){
@@ -191,6 +195,7 @@ define(['EE'], function(EE) {
 
 
     InviteManager.prototype.playRandom = function(cancel){
+        if (!this.client.isLogin) return;
         if (!this.client.gameManager.enableGames && !cancel){
             this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
             return;

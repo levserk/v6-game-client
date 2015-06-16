@@ -37,6 +37,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             client.gameManager.on('cancel_back', cancelTakeBack);
             client.chatManager.on('show_ban', showBan);
             client.on('login_error', loginError);
+            client.on('disconnect', onDisconnect);
             $(document).on("click", hideOnClick);
             inviteTimeout = client.inviteManager.inviteTimeoutTime;
             tplInvite = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
@@ -382,6 +383,10 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                 }
                 return str;
             }
+        }
+
+        function onDisconnect() {
+            hideDialogs();
         }
 
         return {

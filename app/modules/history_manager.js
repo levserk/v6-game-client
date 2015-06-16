@@ -25,6 +25,10 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
         this.maxCount = 100;
         this.count = 0;
         this.history = [];
+
+        client.on('disconnected', function () {
+            // TODO: clear all
+        })
     };
 
     HistoryManager.prototype = new EE();
@@ -134,7 +138,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
             // parse array of user turns
             if (turn.length){
                 for (var j = 0; j < turn.length; j++){
-                    turn[j] = parseTurn(turn);
+                    turn[j] = parseTurn(turn[j]);
                 }
             } else { // parse single user turn or game event
                 if (turn.type || turn.action == 'timeout'){ // event
@@ -228,6 +232,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
 
 
     HistoryManager.prototype.getHistory = function(mode){
+        if (!this.client.isLogin) return;
         this.historyView.clearHistory();
         var gm = this.client.gameManager;
         if (this.client.gameManager.inGame()){
@@ -241,6 +246,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
     };
 
     HistoryManager.prototype.getProfileHistory = function(mode, userId, blockId){
+        if (!this.client.isLogin) return;
         this.historyView.clearHistory();
         this.historyView.setFilter('');
         if (blockId) this.$container = $('#'+blockId);

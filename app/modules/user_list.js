@@ -181,9 +181,9 @@ define(['EE'], function(EE) {
 
 
     UserList.prototype.getRoomList = function(filter) {
-        if (!filter) return this.rooms;
+        var rooms = [], room;
+        if (!filter)rooms = this.rooms;
         else {
-            var rooms = [], room;
             for (var i = 0; i < this.rooms.length; i++){
                 room = this.rooms[i];
                 for (var j = 0; j < room.players.length; j++){
@@ -193,8 +193,21 @@ define(['EE'], function(EE) {
                     }
                 }
             }
-            return rooms;
         }
+        rooms.sort(function(a, b){
+            var ar = UserList.getRoomRank(a);
+            var br = UserList.getRoomRank(b);
+            return ar - br;
+        });
+        return rooms;
+    };
+
+
+    UserList.getRoomRank = function(room) {
+        if (room.players.length) {
+            return Math.min(room.players[0].getNumberRank(), room.players[1].getNumberRank())
+        }
+        return 0;
     };
 
 
@@ -224,6 +237,10 @@ define(['EE'], function(EE) {
 
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
+        };
+
+        this.getNumberRank = function(mode) {
+            return this[mode||this._client.currentMode].rank || Number.POSITIVE_INFINITY;
         };
 
         this.update = function(data) {

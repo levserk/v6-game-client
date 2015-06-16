@@ -720,19 +720,19 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         if (!this.client.opts.newGameFormat){
             this.currentRoom.history.push(data.turn);
         }
+        var userTurnTime = data.turn.userTurnTime || 0;
+        if (data.turn.userTurnTime) {
+            delete data.turn.userTurnTime;
+        }
         if (data.turn.nextPlayer) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
         } else {
             // reset user turn time if enabled
             if (this.currentRoom.resetTimerEveryTurn){
-                console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime);
-                this.currentRoom.userTime = this.currentRoom.turnTime;
+                console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime, this.currentRoom.userTurnTime);
+                this.currentRoom.userTime = userTurnTime || this.currentRoom.turnTime;
             }
-        }
-        var userTurnTime = data.turn.userTurnTime;
-        if (data.turn.userTurnTime) {
-            delete data.turn.userTurnTime;
         }
         if (this.client.opts.newGameFormat){
             data = new Turn(data.turn, this.getPlayer(data.user), data.nextPlayer);
@@ -1576,9 +1576,9 @@ define('modules/user_list',['EE'], function(EE) {
 
 
     UserList.prototype.getRoomList = function(filter) {
-        if (!filter) return this.rooms;
+        var rooms = [], room;
+        if (!filter)rooms = this.rooms;
         else {
-            var rooms = [], room;
             for (var i = 0; i < this.rooms.length; i++){
                 room = this.rooms[i];
                 for (var j = 0; j < room.players.length; j++){
@@ -1588,8 +1588,21 @@ define('modules/user_list',['EE'], function(EE) {
                     }
                 }
             }
-            return rooms;
         }
+        rooms.sort(function(a, b){
+            var ar = UserList.getRoomRank(a);
+            var br = UserList.getRoomRank(b);
+            return ar - br;
+        });
+        return rooms;
+    };
+
+
+    UserList.getRoomRank = function(room) {
+        if (room.players.length) {
+            return Math.min(room.players[0].getNumberRank(), room.players[1].getNumberRank())
+        }
+        return 0;
     };
 
 
@@ -1619,6 +1632,10 @@ define('modules/user_list',['EE'], function(EE) {
 
         this.getRank = function (mode) {
             return this[mode||this._client.currentMode].rank || '—';
+        };
+
+        this.getNumberRank = function(mode) {
+            return this[mode||this._client.currentMode].rank || Number.POSITIVE_INFINITY;
         };
 
         this.update = function(data) {

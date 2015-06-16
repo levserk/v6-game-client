@@ -210,19 +210,19 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         if (!this.client.opts.newGameFormat){
             this.currentRoom.history.push(data.turn);
         }
+        var userTurnTime = data.turn.userTurnTime || 0;
+        if (data.turn.userTurnTime) {
+            delete data.turn.userTurnTime;
+        }
         if (data.turn.nextPlayer) {
             data.nextPlayer = this.getPlayer(data.turn.nextPlayer);
             delete data.turn.nextPlayer;
         } else {
             // reset user turn time if enabled
             if (this.currentRoom.resetTimerEveryTurn){
-                console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime);
-                this.currentRoom.userTime = this.currentRoom.turnTime;
+                console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime, this.currentRoom.userTurnTime);
+                this.currentRoom.userTime = userTurnTime || this.currentRoom.turnTime;
             }
-        }
-        var userTurnTime = data.turn.userTurnTime;
-        if (data.turn.userTurnTime) {
-            delete data.turn.userTurnTime;
         }
         if (this.client.opts.newGameFormat){
             data = new Turn(data.turn, this.getPlayer(data.user), data.nextPlayer);

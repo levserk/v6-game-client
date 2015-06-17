@@ -5,9 +5,28 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         this.client = client;
         this.currentRoom = null;
         this.enableGames = true;
+        this.wasPlaying = false;
+        this.leaveGameTimeout = null;
+        this.LEAVE_GAME_TIME = 1000;
+
+        client.on('relogin', function(){
+            clearTimeout(this.leaveGameTimeout);
+            // if was previous game, wait reconnect and leave prev game;
+            if (this.wasPlaying){
+                this.leaveGameTimeout = setTimeout(function () {
+                    console.log('game_manager;', 'auto leave not restarted game');
+                    this.emit('game_leave', this.currentRoom);
+                    this.currentRoom = null;
+                }.bind(this), this.LEAVE_GAME_TIME);
+            }
+        }.bind(this));
 
         client.on('disconnected', function () {
-            this.currentRoom = null;
+            this.wasPlaying = this.isPlaying();
+            if (this.isSpectating()){
+                this.emit('game_leave', this.currentRoom);
+            }
+            clearTimeout(this.leaveGameTimeout);
             clearInterval(this.timeInterval);
             this.timeInterval = null;
             this.prevTime = null;
@@ -89,6 +108,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.onGameStart = function(room){
+        clearTimeout(this.leaveGameTimeout);
         room = new Room(room, this.client);
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
@@ -122,6 +142,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.onGameRestart = function (data) {
+        clearTimeout(this.leaveGameTimeout);
         console.log('game_manager;', 'game restart', data);
         //start game
         var room = new Room(data['roomInfo'], this.client);

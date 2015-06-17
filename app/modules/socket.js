@@ -9,6 +9,7 @@ define(['EE'], function(EE) {
         this.url = opts.url || this.game;
         this.https = opts.https || false;
         this.protocol = (this.https?'wss':'ws');
+        this.connectionCount = 0;
 
         this.isConnecting = true;
         this.isConnected = false;
@@ -20,8 +21,10 @@ define(['EE'], function(EE) {
 
     Socket.prototype.init = function(){
         var self = this;
-        self.isConnecting = true;
-        self.isConnected = false;
+        this.isConnecting = true;
+        this.isConnected = false;
+        this.timeConnection = Date.now();
+        this.connectionCount++;
 
         try{
 
@@ -78,6 +81,7 @@ define(['EE'], function(EE) {
 
     Socket.prototype.onConnect = function(){
         this.isConnected = true;
+        this.connectionCount = 0;
         this.emit("connection");
     };
 

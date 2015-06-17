@@ -33,9 +33,13 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
 
 
     RatingManager.prototype.init = function(conf){
+        this.conf.subTabs = [];
         for (var i = 0 ; i < this.client.modes.length; i++)
             this.conf.subTabs.push({id:this.client.modes[i], title:this.client.getModeAlias(this.client.modes[i])});
-
+        if (this.ratingView && this.ratingView.$el){
+            this.ratingView.$el.remove();
+            this.ratingView.remove();
+        }
         this.ratingView = new RatingView(this.conf, this);
     };
 
@@ -114,7 +118,9 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
     };
 
     RatingManager.prototype.close = function(){
-        this.ratingView.close();
+        if (this.ratingView){
+            this.ratingView.close();
+        }
     };
 
     function formatDate(time) {

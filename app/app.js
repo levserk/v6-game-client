@@ -23,6 +23,7 @@ require(['require-cnf'], function () {
                 resultDialogDelay: 1000,
                 reload: false,
                 autoShowProfile: true,
+                autoReconnect: true,
                 idleTimeout: 0,
                 shortGuestNames: false,
                 newGameFormat: true,

@@ -35,9 +35,14 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
 
 
     HistoryManager.prototype.init = function(conf){
+        this.conf.tabs = [];
         if (this.client.modes.length > 1)
             for (var i = 0 ; i < this.client.modes.length; i++)
                 this.conf.tabs.push({id:this.client.modes[i], title: this.client.getModeAlias(this.client.modes[i])});
+        if (this.historyView && this.historyView.$el){
+            this.historyView.$el.remove();
+            this.historyView.remove();
+        }
         this.historyView = new HistoryView(this.conf, this);
     };
 
@@ -284,7 +289,9 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
 
 
     HistoryManager.prototype.close = function(){
-      this.historyView.close();
+      if (this.historyView){
+          this.historyView.close();
+      }
     };
 
     function formatDate(time) {

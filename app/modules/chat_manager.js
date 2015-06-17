@@ -10,16 +10,8 @@ define(['EE', 'antimat'], function(EE) {
         this.MSG_COUNT = 10;
         this.MSG_INTERVBAL = 1500;
 
-        client.on('login', function(){
-            this.current = client.game;
-            this.first = {};
-            this.last = {};
-            this.fullLoaded = {};
-            this.messages = {};
-            this.current = client.game;
-            client.viewsManager.v6ChatView.setPublicTab(client.game);
-            this.loadMessages();
-        }.bind(this));
+        client.on('login', this.onLogin.bind(this));
+        client.on('relogin', this.onLogin.bind(this));
 
         client.gameManager.on('game_start', function(room){
             if (!room.isPlayer) return;
@@ -44,12 +36,13 @@ define(['EE', 'antimat'], function(EE) {
 
     ChatManager.prototype = new EE();
 
-
-    ChatManager.initMessage = function(message, player, mode){
+    ChatManager.initMessage = function (message, player, mode) {
         if (message.userData[mode]) message.rank = message.userData[mode].rank;
         if (!message.rank || message.rank < 1) message.rank = '—';
         if (message.target == player.userId) // is private message, set target sender
+        {
             message.target = message.userId;
+        }
 
         if (message.admin) {
             message.rank = '';
@@ -62,13 +55,23 @@ define(['EE', 'antimat'], function(EE) {
         var m = message.date.getMinutes();
         if (h < 10) h = '0' + h;
         if (m < 10) m = '0' + m;
-        message.t =  h + ':' + m;
+        message.t = h + ':' + m;
         message.d = message.date.getDate() + ' ' + ChatManager.months[message.date.getMonth()] + ' ' + message.date.getFullYear();
         return message;
     };
 
     ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
 
+    ChatManager.prototype.onLogin = function() {
+        this.current = this.client.game;
+        this.first = {};
+        this.last = {};
+        this.fullLoaded = {};
+        this.messages = {};
+        this.current = this.client.game;
+        this.client.viewsManager.v6ChatView.setPublicTab(this.client.game);
+        this.loadMessages();
+    };
 
     ChatManager.prototype.onMessage = function (message) {
         var data = message.data, player = this.client.getPlayer(), i, cache;

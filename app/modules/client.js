@@ -3,7 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.4";
+        this.version = "0.9.6";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -43,16 +43,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.adminManager = new AdminManager(this);
 
         this.currentMode = null;
-
         this.reconnectTimeout = null;
-
         this.timeoutUserChanged = null;
         this.lastTimeUserChanged = 0;
+
+        this.TIME_BETWEEN_RECONNECTION = 3000;
 
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
             console.log('client;', 'socket connected');
             clearTimeout(self.reconnectTimeout);
+            self.relogin = self.reconnection;
             self.isLogin = false;
             self.socket.send({
                 module:'server',
@@ -60,22 +61,25 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 target:'server',
                 data: self.loginData
             });
+            self.reconnection = false;
         });
 
         this.socket.on("disconnection", function() {
             console.log('client;', 'socket disconnected');
+            self.reconnection = false;
             self.isLogin = false;
             self.emit('disconnected');
             if (!self.closedByServer && self.opts.autoReconnect){
-                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), 3000);
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.TIME_BETWEEN_RECONNECTION);
             }
         });
 
         this.socket.on("failed", function() {
             console.log('client;', 'socket connection failed');
+            self.reconnection = false;
             self.emit('disconnected');
             if (!self.closedByServer && self.opts.autoReconnect){
-                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), 30000);
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.TIME_BETWEEN_RECONNECTION * 5);
             }
         });
 
@@ -128,14 +132,21 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.reconnect = function(force){
         clearTimeout(this.reconnectTimeout);
+        var deltaTime = Date.now() - this.socket.timeConnection;
+        console.log('client;', 'reconnect, last was', deltaTime, 'ms ago');
+        if (deltaTime < this.TIME_BETWEEN_RECONNECTION){
+            this.reconnectTimeout = setTimeout(this.reconnect.bind(this), this.TIME_BETWEEN_RECONNECTION - deltaTime);
+            return;
+        }
         if (this.isLogin && !force){
             console.log('client;', 'connected!');
             return;
         }
-        if (this.opts.reload) {
+        if (this.socket.connectionCount > 10 || this.opts.reload) {
             location.reload(false);
             return;
         }
+        this.reconnection = true;
         this.socket.init();
     };
 
@@ -202,13 +213,13 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.userList.onUserLogin(user, true);
         for (var i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
-
         this.isLogin = true;
 
-        this.emit('login', user);
+        this.emit(this.relogin ? 'relogin':'login', user);
 
         this.ratingManager.init();
         this.historyManager.init();
+        this.relogin = false;
     };
 
 

@@ -244,7 +244,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             delete data.turn.nextPlayer;
         } else {
             // reset user turn time if enabled
-            if (this.currentRoom.resetTimerEveryTurn){
+            if (this.currentRoom.timeMode == 'reset_every_turn'){
                 console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime, this.currentRoom.userTurnTime);
                 this.currentRoom.userTime = userTurnTime || this.currentRoom.turnTime;
             }

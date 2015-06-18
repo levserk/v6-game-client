@@ -10,7 +10,7 @@ define([], function() {
         this.mode = room.mode;
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
         this.takeBacks = room.takeBacks;
-        this.resetTimerEveryTurn = !!room.resetTimerEveryTurn;
+        this.timeMode = room.timeMode || 'reset_every_switch';
         this.history = [];
 
         console.log('TEST!', room.data);

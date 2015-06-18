@@ -10,7 +10,7 @@ define('instances/room',[], function() {
         this.mode = room.mode;
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
         this.takeBacks = room.takeBacks;
-        this.resetTimerEveryTurn = !!room.resetTimerEveryTurn;
+        this.timeMode = room.timeMode || 'reset_every_switch';
         this.history = [];
 
         console.log('TEST!', room.data);
@@ -315,7 +315,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             delete data.turn.nextPlayer;
         } else {
             // reset user turn time if enabled
-            if (this.currentRoom.resetTimerEveryTurn){
+            if (this.currentRoom.timeMode == 'reset_every_turn'){
                 console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime, this.currentRoom.userTurnTime);
                 this.currentRoom.userTime = userTurnTime || this.currentRoom.turnTime;
             }
@@ -4186,7 +4186,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.6";
+        this.version = "0.9.7";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = opts.reload || false;
@@ -4253,7 +4253,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             self.isLogin = false;
             self.emit('disconnected');
             if (!self.closedByServer && self.opts.autoReconnect){
-                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.TIME_BETWEEN_RECONNECTION);
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.socket.connectionCount  <= 1 ? 100 : self.TIME_BETWEEN_RECONNECTION);
             }
         });
 

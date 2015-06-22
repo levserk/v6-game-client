@@ -137,6 +137,9 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             isPlayer: this.currentRoom.isPlayer,
             loading: !!loading
         });
+        if (this.currentRoom.timeStartMode == 'after_round_start'){
+            this.switchPlayer(this.currentRoom.current, 0, this.getTurnTime());
+        }
         this.emitTime();
     };
 
@@ -254,7 +257,12 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             this.currentRoom.history.push(data);
         }
         this.emit('turn', data);
-        this.switchPlayer(data.nextPlayer, 0, userTurnTime);
+        var nextPlayer = data.nextPlayer;
+        // reset time on first turn if need
+        if (!data.nextPlayer && !this.timeInterval && (this.currentRoom.timeMode == 'reset_every_turn' || this.currentRoom.timeStartMode == 'after_turn')){
+            nextPlayer = this.currentRoom.current;
+        }
+        this.switchPlayer(nextPlayer, 0, userTurnTime);
     };
 
 

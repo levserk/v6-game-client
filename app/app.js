@@ -21,9 +21,7 @@ require(['require-cnf'], function () {
                 game: 'test2',
                 port: 8078,
                 resultDialogDelay: 1000,
-                reload: false,
                 autoShowProfile: true,
-                autoReconnect: true,
                 idleTimeout: 0,
                 shortGuestNames: false,
                 newGameFormat: true,
@@ -148,10 +146,10 @@ require(['require-cnf'], function () {
                 console.log('main;','take_back user: ', data.user, 'history:', data.history);
             });
 
-            _client.gameManager.on('time', _.throttle(function(data){
+            _client.gameManager.on('time', function(data){
                //console.log('main;','time user:', data);
                 $('#time').html((data.user.isPlayer ? 'Ваш ход' : 'Ход соперника') + ' ' + data.userTimeFormat)
-            }, 1000, {trailing: false}));
+            });
 
 
             _client.gameManager.on('focus', function(data){

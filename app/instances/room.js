@@ -11,6 +11,7 @@ define([], function() {
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
         this.takeBacks = room.takeBacks;
         this.timeMode = room.timeMode || 'reset_every_switch';
+        this.timeStartMode = room.timeStartMode || 'after_switch';
         this.history = [];
 
         console.log('TEST!', room.data);

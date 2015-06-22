@@ -3,15 +3,15 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.7";
+        this.version = "0.9.8";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
-        opts.reload = opts.reload || false;
+        opts.reload = false;
         opts.turnTime = opts.turnTime || 60;
         opts.blocks = opts.blocks || {};
         opts.images = opts.images || defaultImages;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
-        opts.autoReconnect = opts.autoReconnect || false;
+        opts.autoReconnect = opts.autoReconnect != false;
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
         opts.loadRanksInRating = false;
         opts.autoShowProfile = !!opts.autoShowProfile || false;
@@ -99,12 +99,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         if (opts.idleTimeout > 0)
             $( document ).idleTimer(opts.idleTimeout);
         $( document ).on( "idle.idleTimer", function(){
-            console.log('client;', 'idle');
             self.isActive = false;
             self.sendChanged();
         });
         $( document ).on( "active.idleTimer", function(){
-            console.log('client;', 'active');
             self.isActive = true;
             self.sendChanged();
         });

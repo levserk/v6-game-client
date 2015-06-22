@@ -450,6 +450,7 @@ define('instances/room',[], function() {
         this.turnTime = room.turnTime || client.opts.turnTime * 1000;
         this.takeBacks = room.takeBacks;
         this.timeMode = room.timeMode || 'reset_every_switch';
+        this.timeStartMode = room.timeStartMode || 'after_switch';
         this.history = [];
 
         console.log('TEST!', room.data);
@@ -647,6 +648,9 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             isPlayer: this.currentRoom.isPlayer,
             loading: !!loading
         });
+        if (this.currentRoom.timeStartMode == 'after_round_start'){
+            this.switchPlayer(this.currentRoom.current, 0, this.getTurnTime());
+        }
         this.emitTime();
     };
 
@@ -764,7 +768,12 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             this.currentRoom.history.push(data);
         }
         this.emit('turn', data);
-        this.switchPlayer(data.nextPlayer, 0, userTurnTime);
+        var nextPlayer = data.nextPlayer;
+        // reset time on first turn if need
+        if (!data.nextPlayer && !this.timeInterval && (this.currentRoom.timeMode == 'reset_every_turn' || this.currentRoom.timeStartMode == 'after_turn')){
+            nextPlayer = this.currentRoom.current;
+        }
+        this.switchPlayer(nextPlayer, 0, userTurnTime);
     };
 
 
@@ -5016,15 +5025,15 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.7";
+        this.version = "0.9.8";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
-        opts.reload = opts.reload || false;
+        opts.reload = false;
         opts.turnTime = opts.turnTime || 60;
         opts.blocks = opts.blocks || {};
         opts.images = opts.images || defaultImages;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
-        opts.autoReconnect = opts.autoReconnect || false;
+        opts.autoReconnect = opts.autoReconnect != false;
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
         opts.loadRanksInRating = false;
         opts.autoShowProfile = !!opts.autoShowProfile || false;
@@ -5083,7 +5092,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             self.isLogin = false;
             self.emit('disconnected');
             if (!self.closedByServer && self.opts.autoReconnect){
-                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.socket.connectionCount  <= 1 ? 100 : self.TIME_BETWEEN_RECONNECTION);
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.socket.connectionCount  == 0 ? 100 : self.TIME_BETWEEN_RECONNECTION);
             }
         });
 
@@ -5112,12 +5121,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         if (opts.idleTimeout > 0)
             $( document ).idleTimer(opts.idleTimeout);
         $( document ).on( "idle.idleTimer", function(){
-            console.log('client;', 'idle');
             self.isActive = false;
             self.sendChanged();
         });
         $( document ).on( "active.idleTimer", function(){
-            console.log('client;', 'active');
             self.isActive = true;
             self.sendChanged();
         });

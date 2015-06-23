@@ -793,18 +793,23 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
                 break;
             case 'timeout':
                 if (event.nextPlayer) {
+                    var nextPlayer = this.getPlayer(event.nextPlayer);
                     if (this.client.opts.newGameFormat){
                         event.user = this.getPlayer(event.user);
-                        event.nextPlayer = this.getPlayer(event.nextPlayer);
+                        event.nextPlayer = nextPlayer;
                         event = new GameEvent(event);
                         this.currentRoom.history.push(event);
                         this.emit('timeout', event);
                     } else {
                         event.user = this.getPlayer(event.user);
-                        this.currentRoom.history.push({user: event.user.userId, action: 'timeout', nextPlayer: event.nextPlayer});
+                        this.currentRoom.history.push({
+                            user: event.user.userId,
+                            action: 'timeout',
+                            nextPlayer: event.nextPlayer
+                        });
                         this.emit('timeout', event);
-                        this.switchPlayer(this.getPlayer(event.nextPlayer));
                     }
+                    this.switchPlayer(nextPlayer);
                 }
                 break;
             case 'back':
@@ -2649,7 +2654,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             div.parent().hide();
             dialogTimeout = setTimeout(function(){
                 div.parent().show()
-            }, client.opts.resultDialogDelay);
+            }, data.action == 'user_leave' ? 1000 : client.opts.resultDialogDelay);
             div.addClass(GAME_CLASS);
 
             // add timer to auto close
@@ -5025,7 +5030,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.8";
+        this.version = "0.9.9";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;

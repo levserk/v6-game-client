@@ -282,18 +282,23 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
                 break;
             case 'timeout':
                 if (event.nextPlayer) {
+                    var nextPlayer = this.getPlayer(event.nextPlayer);
                     if (this.client.opts.newGameFormat){
                         event.user = this.getPlayer(event.user);
-                        event.nextPlayer = this.getPlayer(event.nextPlayer);
+                        event.nextPlayer = nextPlayer;
                         event = new GameEvent(event);
                         this.currentRoom.history.push(event);
                         this.emit('timeout', event);
                     } else {
                         event.user = this.getPlayer(event.user);
-                        this.currentRoom.history.push({user: event.user.userId, action: 'timeout', nextPlayer: event.nextPlayer});
+                        this.currentRoom.history.push({
+                            user: event.user.userId,
+                            action: 'timeout',
+                            nextPlayer: event.nextPlayer
+                        });
                         this.emit('timeout', event);
-                        this.switchPlayer(this.getPlayer(event.nextPlayer));
                     }
+                    this.switchPlayer(nextPlayer);
                 }
                 break;
             case 'back':

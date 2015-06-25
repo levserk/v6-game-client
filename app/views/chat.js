@@ -180,6 +180,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.manager = _client.chatManager;
                 this.images = _client.opts.images;
                 this.$el.html(this.tplMain());
+                this.$el.addClass('v6-block-border');
 
                 this.MAX_MSG_LENGTH = 128;
                 this.SCROLL_VAL = 40;

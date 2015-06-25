@@ -536,6 +536,9 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             this.wasPlaying = this.isPlaying();
             if (this.isSpectating()){
                 this.emit('game_leave', this.currentRoom);
+            } else if (this.inGame() && !this.isPlaying()){
+                this.emit('game_leave', this.currentRoom);
+                this.currentRoom = null;
             }
             clearTimeout(this.leaveGameTimeout);
             clearInterval(this.timeInterval);
@@ -613,6 +616,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
                 break;
             case 'error':
                 console.error('game_manager;', 'error', data);
+                this.emit('error', data);
                 break;
         }
     };
@@ -633,6 +637,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
         this.currentRoom.userTurnTime = 0;
+        this.currentRoom.turnStartTime = null;
         this.currentRoom.userTakeBacks = 0;
         this.currentRoom.cancelsAscTakeBack = 0;
         this.currentRoom.cancelsAscDraw = 0;
@@ -861,6 +866,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
 
     GameManager.prototype.switchPlayer = function(nextPlayer, userTime, turnTime){
+        console.log('switch player;', nextPlayer, userTime, turnTime);
         if (!this.currentRoom){
             console.error('game_manager;', 'switchPlayer', 'game not started!');
             return;
@@ -871,10 +877,19 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         } else {
             this.currentRoom.userTurnTime = turnTime;
         }
-        userTime = userTime || 0;
+
         this.currentRoom.current = nextPlayer;
-        this.currentRoom.userTime = (turnTime || this.currentRoom.turnTime) - userTime;
-        if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+        userTime = userTime || 0;
+
+        if (this.currentRoom.timeMode == 'common'){
+            this.currentRoom.turnStartTime = this.currentRoom.turnStartTime == null ? Date.now() - userTime : this.currentRoom.turnStartTime;
+            this.currentRoom.userTime = userTime;
+        } else {
+            this.currentRoom.turnStartTime = Date.now();
+            this.currentRoom.userTime = (turnTime || this.currentRoom.turnTime) - userTime;
+            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+        }
+
         this.emit('switch_player', this.currentRoom.current);
         this.emitTime();
         if (!this.timeInterval) {
@@ -938,7 +953,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             console.warn('game_manager;', 'not your turn!');
             return false;
         }
-        if (this.currentRoom.userTime < 300) {
+        if (this.currentRoom.timeMode != 'common' && this.currentRoom.userTime < 300) {
             console.warn('game_manager;', 'your time is out!');
             return false;
         }
@@ -1142,18 +1157,33 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
 
     GameManager.prototype.emitTime = function(){
-        var minutes = Math.floor(this.currentRoom.userTime / 60000);
-        var seconds = Math.floor((this.currentRoom.userTime - minutes * 60000) / 1000);
+        var time = this.currentRoom.userTime;
+        if (this.currentRoom.timeMode == 'common') {
+            time = Date.now() - this.currentRoom.turnStartTime;
+        }
+        var minutes = Math.floor(time / 60000),
+            seconds = Math.floor((time - minutes * 60000) / 1000);
         if (minutes < 10) minutes = '0' + minutes;
         if (seconds < 10) seconds = '0' + seconds;
 
-        this.emit('time',{
-            user:this.currentRoom.current,
-            userTimeMS: this.currentRoom.userTime,
-            userTimeS: Math.floor(this.currentRoom.userTime/ 1000),
-            userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
-            userTimeFormat: minutes + ':' + seconds
-        });
+        if (this.currentRoom.timeMode == 'common') {
+            time = {
+                userTimeMS: this.currentRoom.userTime,
+                userTimeS: Math.floor(this.currentRoom.userTime / 1000),
+                userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
+                userTimeFormat: minutes + ':' + seconds
+            };
+        } else {
+            time = {
+                user: this.currentRoom.current,
+                userTimeMS: this.currentRoom.userTime,
+                userTimeS: Math.floor(this.currentRoom.userTime / 1000),
+                userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
+                userTimeFormat: minutes + ':' + seconds
+            };
+        }
+
+        this.emit('time', time);
     };
 
 
@@ -2318,6 +2348,8 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
                 '</div></td></tr>');
             this.$loadingTab = $('<tr><td>Загрузка..</td></tr>');
             this.$el.html(this.tplMain());
+            this.$el.addClass('v6-block-border');
+
             // append user list
             if (_client.opts.blocks.userListId)
                 $('#'+_client.opts.blocks.userListId).append(this.el);
@@ -2832,7 +2864,7 @@ define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" d
 define('text!tpls/v6-chatDay.ejs',[],function () { return '<li class="chatDay" data-day-msgId="<%= time %>">\r\n    <div>\r\n        <%= d %>\r\n    </div>\r\n</li>';});
 
 
-define('text!tpls/v6-chatRules.ejs',[],function () { return '<div id="chat-rules" class="aboutPanel">\r\n    <img class="closeIcon" src="<%= close %>">\r\n\r\n    <div style="padding: 10px 12px 15px 25px;">\r\n        <h2>Правила чата</h2>\r\n        <p style="line-height: 16px;">В чате запрещено:<br>\r\n            <span style="margin-left:5px;">1. использование ненормативной лексики и оскорбительных выражений;</span><br>\r\n            <span style="margin-left:5px;">2. хамское и некорректное общение с другими участниками;</span><br>\r\n            <span style="margin-left:5px;">3. многократная публикация бессмысленных, несодержательных или одинаковых сообщений.</span>\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Баны</span> выносятся: на 1 день, на 3 дня, на 7 дней, на месяц или навсегда,\r\n            в зависимости от степени тяжести нарушения.\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Бан</span> снимается автоматически по истечении срока.\r\n        </p>\r\n\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-chatRules.ejs',[],function () { return '<div id="chat-rules" class="aboutPanel v6-block-border">\r\n    <img class="closeIcon" src="<%= close %>">\r\n\r\n    <div style="padding: 10px 12px 15px 25px;">\r\n        <h2>Правила чата</h2>\r\n        <p style="line-height: 16px;">В чате запрещено:<br>\r\n            <span style="margin-left:5px;">1. использование ненормативной лексики и оскорбительных выражений;</span><br>\r\n            <span style="margin-left:5px;">2. хамское и некорректное общение с другими участниками;</span><br>\r\n            <span style="margin-left:5px;">3. многократная публикация бессмысленных, несодержательных или одинаковых сообщений.</span>\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Баны</span> выносятся: на 1 день, на 3 дня, на 7 дней, на месяц или навсегда,\r\n            в зависимости от степени тяжести нарушения.\r\n        </p>\r\n\r\n        <p style="line-height: 16px;"><span style="margin-left:5px;">Бан</span> снимается автоматически по истечении срока.\r\n        </p>\r\n\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-chatBan.ejs',[],function () { return '<div>\r\n    <span class="ban-username" style="font-weight:bold;">Бан игрока <i><%= userName%></i></span><br><br>\r\n    <span>Причина бана:</span>\r\n    <br>\r\n    <div class="inputTextField" id="ban-reason" contenteditable="true" style="height:54px; border: 1px solid #aaaaaa;"></div><br>\r\n\r\n    <span>Длительность бана:</span><br>\r\n    <select id="ban-duration">\r\n        <option value="1">1 день</option>\r\n        <option value="3">3 дня</option>\r\n        <option value="7" selected="">7 дней</option>\r\n        <option value="30">30 дней</option>\r\n        <option value="9999">Навсегда</option>\r\n    </select>\r\n\r\n</div>';});
@@ -3019,6 +3051,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.manager = _client.chatManager;
                 this.images = _client.opts.images;
                 this.$el.html(this.tplMain());
+                this.$el.addClass('v6-block-border');
 
                 this.MAX_MSG_LENGTH = 128;
                 this.SCROLL_VAL = 40;
@@ -3375,6 +3408,7 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         if (!this.$profileDiv) {
             this.$profileDiv = $('<div id="v6-profileDiv">');
         }
+        this.$profileDiv.addClass('v6-block-border');
         this.$profileDiv.empty();
         this.$profileDiv.append('<img  class="closeIcon" src="' + this.client.opts.images.close +  '">');
         this.$profileDiv.append("<div class='stats-area-wrapper'></div>");
@@ -3872,7 +3906,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
     return ChatManager;
 });
 
-define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history">\r\n    <div class="historyHeader">\r\n        <div class="historyFilter">\r\n            <input type="text" placeholder="Поиск по имени" id="historyAutoComplete" value="">\r\n            <div class="delete" style="background-image: url(<%= imgDel %>)"></div>\r\n        </div>\r\n        <img class="closeIcon" src="<%= close %>" title="Закрыть окно истории">\r\n    </div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div id="showMore">Показать еще</div>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-historyMain.ejs',[],function () { return '<div id="v6-history" class="v6-block-border">\r\n    <div class="historyHeader">\r\n        <div class="historyFilter">\r\n            <input type="text" placeholder="Поиск по имени" id="historyAutoComplete" value="">\r\n            <div class="delete" style="background-image: url(<%= imgDel %>)"></div>\r\n        </div>\r\n        <img class="closeIcon" src="<%= close %>" title="Закрыть окно истории">\r\n    </div>\r\n    <div class="historyWrapper">\r\n        <table class="historyTable">\r\n            <thead>\r\n                <tr></tr>\r\n            </thead>\r\n            <tbody>\r\n            </tbody>\r\n        </table>\r\n        <div id="showMore">Показать еще</div>\r\n        <div class="noHistory">Сохранения отсутствуют</div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-historyHeaderTD.ejs',[],function () { return '<td class="sessionHeader historyDate" rowspan="<%= rows %>"> <%= date %> </td>\r\n<td class="sessionHeader historyName" rowspan="<%= rows %>">\r\n    <span class="userName" data-userid="<%= userId %>"><%= userName %></span>\r\n    <span class="userRank">(<%= rank %>)</span>\r\n    <span class="userScore"><%= score %></span>\r\n    <div class="eloDiff <%= (eloDiff>-1?\'diffPositive\':\'diffNegative\')%>"><%= eloDiff ===\'\'?\'\':(eloDiff>-1?\'+\'+eloDiff:eloDiff)%></div>\r\n</td>';});
@@ -4429,7 +4463,7 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
    return HistoryManager;
 });
 
-define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating">\r\n    <img class="closeIcon" src="<%= close %>" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
+define('text!tpls/v6-ratingMain.ejs',[],function () { return '<div id="v6-rating" class="v6-block-border">\r\n    <img class="closeIcon" src="<%= close %>" title="Закрыть окно рейтинга">\r\n    <div>\r\n        <!-- rating filter panel -->\r\n        <div class="filterPanel">\r\n            <div style="margin-left: 8px;">\r\n\r\n            </div>\r\n        </div>\r\n        <div class="loading"><img src="<%= spin %>"></div>\r\n        <!-- rating table -->\r\n        <table class="ratingTable" cellspacing="0">\r\n            <thead>\r\n                <tr class="headTitles">\r\n\r\n                </tr>\r\n                <tr class="headIcons">\r\n\r\n                </tr>\r\n            </thead>\r\n            <tbody class="ratingTBody">\r\n\r\n            </tbody>\r\n        </table>\r\n\r\n        <!-- div show more -->\r\n        <div class="chat-button chat-post" id="ratingShowMore">\r\n            <span>Ещё 500 игроков</span>\r\n        </div>\r\n\r\n        <!-- div bottom buttons -->\r\n        <div class="footButtons">\r\n            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>\r\n            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>\r\n        </div>\r\n    </div>\r\n</div>';});
 
 
 define('text!tpls/v6-ratingTD.ejs',[],function () { return '<td data-idcol="<%= id %>" class="rating<%= id %>"><div><%= value %><sup class="greenSup"><%= sup %></sup></div></td>';});
@@ -5030,7 +5064,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.9";
+        this.version = "0.9.10";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;

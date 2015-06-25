@@ -33,6 +33,7 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
         if (!this.$profileDiv) {
             this.$profileDiv = $('<div id="v6-profileDiv">');
         }
+        this.$profileDiv.addClass('v6-block-border');
         this.$profileDiv.empty();
         this.$profileDiv.append('<img  class="closeIcon" src="' + this.client.opts.images.close +  '">');
         this.$profileDiv.append("<div class='stats-area-wrapper'></div>");

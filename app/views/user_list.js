@@ -98,6 +98,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 '</div></td></tr>');
             this.$loadingTab = $('<tr><td>Загрузка..</td></tr>');
             this.$el.html(this.tplMain());
+            this.$el.addClass('v6-block-border');
+
             // append user list
             if (_client.opts.blocks.userListId)
                 $('#'+_client.opts.blocks.userListId).append(this.el);

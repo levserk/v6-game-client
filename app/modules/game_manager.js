@@ -25,6 +25,9 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             this.wasPlaying = this.isPlaying();
             if (this.isSpectating()){
                 this.emit('game_leave', this.currentRoom);
+            } else if (this.inGame() && !this.isPlaying()){
+                this.emit('game_leave', this.currentRoom);
+                this.currentRoom = null;
             }
             clearTimeout(this.leaveGameTimeout);
             clearInterval(this.timeInterval);
@@ -102,6 +105,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
                 break;
             case 'error':
                 console.error('game_manager;', 'error', data);
+                this.emit('error', data);
                 break;
         }
     };
@@ -122,6 +126,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
         this.currentRoom.userTurnTime = 0;
+        this.currentRoom.turnStartTime = null;
         this.currentRoom.userTakeBacks = 0;
         this.currentRoom.cancelsAscTakeBack = 0;
         this.currentRoom.cancelsAscDraw = 0;
@@ -350,6 +355,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.switchPlayer = function(nextPlayer, userTime, turnTime){
+        console.log('switch player;', nextPlayer, userTime, turnTime);
         if (!this.currentRoom){
             console.error('game_manager;', 'switchPlayer', 'game not started!');
             return;
@@ -360,10 +366,19 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         } else {
             this.currentRoom.userTurnTime = turnTime;
         }
-        userTime = userTime || 0;
+
         this.currentRoom.current = nextPlayer;
-        this.currentRoom.userTime = (turnTime || this.currentRoom.turnTime) - userTime;
-        if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+        userTime = userTime || 0;
+
+        if (this.currentRoom.timeMode == 'common'){
+            this.currentRoom.turnStartTime = this.currentRoom.turnStartTime == null ? Date.now() - userTime : this.currentRoom.turnStartTime;
+            this.currentRoom.userTime = userTime;
+        } else {
+            this.currentRoom.turnStartTime = Date.now();
+            this.currentRoom.userTime = (turnTime || this.currentRoom.turnTime) - userTime;
+            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+        }
+
         this.emit('switch_player', this.currentRoom.current);
         this.emitTime();
         if (!this.timeInterval) {
@@ -427,7 +442,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             console.warn('game_manager;', 'not your turn!');
             return false;
         }
-        if (this.currentRoom.userTime < 300) {
+        if (this.currentRoom.timeMode != 'common' && this.currentRoom.userTime < 300) {
             console.warn('game_manager;', 'your time is out!');
             return false;
         }
@@ -631,18 +646,33 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.emitTime = function(){
-        var minutes = Math.floor(this.currentRoom.userTime / 60000);
-        var seconds = Math.floor((this.currentRoom.userTime - minutes * 60000) / 1000);
+        var time = this.currentRoom.userTime;
+        if (this.currentRoom.timeMode == 'common') {
+            time = Date.now() - this.currentRoom.turnStartTime;
+        }
+        var minutes = Math.floor(time / 60000),
+            seconds = Math.floor((time - minutes * 60000) / 1000);
         if (minutes < 10) minutes = '0' + minutes;
         if (seconds < 10) seconds = '0' + seconds;
 
-        this.emit('time',{
-            user:this.currentRoom.current,
-            userTimeMS: this.currentRoom.userTime,
-            userTimeS: Math.floor(this.currentRoom.userTime/ 1000),
-            userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
-            userTimeFormat: minutes + ':' + seconds
-        });
+        if (this.currentRoom.timeMode == 'common') {
+            time = {
+                userTimeMS: this.currentRoom.userTime,
+                userTimeS: Math.floor(this.currentRoom.userTime / 1000),
+                userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
+                userTimeFormat: minutes + ':' + seconds
+            };
+        } else {
+            time = {
+                user: this.currentRoom.current,
+                userTimeMS: this.currentRoom.userTime,
+                userTimeS: Math.floor(this.currentRoom.userTime / 1000),
+                userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
+                userTimeFormat: minutes + ':' + seconds
+            };
+        }
+
+        this.emit('time', time);
     };
 
 

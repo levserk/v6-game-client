@@ -148,7 +148,7 @@ require(['require-cnf'], function () {
 
             _client.gameManager.on('time', function(data){
                //console.log('main;','time user:', data);
-                $('#time').html((data.user.isPlayer ? 'Ваш ход' : 'Ход соперника') + ' ' + data.userTimeFormat)
+                $('#time').html( (data.user ? ((data.user.isPlayer ? 'Ваш ход' : 'Ход соперника')) : 'Time: ') + ' ' + data.userTimeFormat)
             });
 
 

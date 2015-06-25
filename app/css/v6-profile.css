@@ -13,3 +13,8 @@
     padding: 10px;
     font-family: Verdana, Geneva, sans-serif;
 }
+
+#v6-profileDiv #v6-history {
+    border: none;
+    box-shadow: none;
+}

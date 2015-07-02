@@ -7,6 +7,9 @@ define([], function() {
                     case 'user':
                         this.user = data.user;
                         break;
+                    case 'nextPlayer':
+                        this.nextPlayer = data.nextPlayer;
+                        break;
                     case 'type':
                         this.event.type = data.type;
                         break;

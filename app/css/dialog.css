@@ -114,3 +114,13 @@
 .ui-state-error-text .ui-icon {
     background-image: none;
 }
+
+.vkWallPost {
+    margin-bottom: 10px;
+    margin-top: -5px;
+    color: blue;
+    font-size: 14px;
+    font-family: tahoma, verdana;
+    display: block;
+    text-decoration: underline;
+}

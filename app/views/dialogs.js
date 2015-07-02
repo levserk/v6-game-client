@@ -162,7 +162,9 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             var oldRank = +client.getPlayer()[data.mode].rank;
             var newElo = +data['ratings'][client.getPlayer().userId].ratingElo;
             var newRank = +data['ratings'][client.getPlayer().userId].rank;
-            var eloDif = newElo - oldElo;
+            var eloDif = newElo - oldElo,
+                vkPost = false,
+                vkText = '';
             console.log('round_end;', data, oldElo, newElo, oldRank, newRank);
             hideDialogs();
             var result = "";
@@ -185,8 +187,17 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                     rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
                 } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
             }
-            var html = tplRoundResult({result: result, rankResult: rankResult});
-
+            // check vk post
+            if (this.client.vkWallPost) {
+                if (client.getPlayer()[data.mode].win == 0 && data['ratings'][client.getPlayer().userId].win == 1){
+                    vkPost = true;
+                    vkText = 'Моя первая победа';
+                } else if (data.result == 'win' && oldRank > 0 && newRank < oldRank){
+                    vkPost = true;
+                    vkText = 'Я занимаю ' + newRank + ' место в рейтинге';
+                }
+            }
+            var html = tplRoundResult({result: result, rankResult: rankResult, vkPost: vkPost});
             var div = showDialog(html, {
                 width: 350,
                 buttons: {
@@ -255,6 +266,12 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                     client.gameManager.leaveGame();
                 }
             }.bind(div), 250);
+
+            if (vkPost) {
+                div.find('.vkWallPost').on('click', function(){
+                    this.client.vkWallPostResult(vkText);
+                }.bind(this))
+            }
         }
 
         function userLeave(user) {

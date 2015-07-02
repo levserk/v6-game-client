@@ -3,7 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.10";
+        this.version = "0.9.12";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -17,6 +17,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.autoShowProfile = !!opts.autoShowProfile || false;
         opts.shortGuestNames = !!opts.shortGuestNames || false;
         opts.newGameFormat = !!opts.newGameFormat || false;
+        opts.vk = opts.vk || {};
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -41,6 +42,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.ratingManager = new RatingManager(this);
         this.soundManager = new SoundManager(this);
         this.adminManager = new AdminManager(this);
+
+        this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
 
         this.currentMode = null;
         this.reconnectTimeout = null;
@@ -356,6 +359,32 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype._onSettingsChanged = function(property){
         this.emit('settings_changed', property);
     };
+
+
+    Client.prototype.checkVKWallPostEnabled = function () {
+        this.vkWallPost = false;
+        if (!window.VK || !window.VK.api || !window._isVk) return;
+        window.VK.api('account.getAppPermissions', function(r) {
+            if (r && r.response)
+                console.log('client; checkVKWallPostEnabled; permissions', r.response);
+                this.vkWallPost = !!(r.response & 8192);
+        }.bind(this))
+    };
+
+
+    Client.prototype.vkWallPostResult = function (text) {
+        console.log('client;', 'vkWallPostResult', text);
+        if (this.opts.vk.title){
+            text  += ' в ' + this.opts.vk.title;
+        }
+        var attachments = (this.opts.vk.photo || '') + ',' + (this.opts.vk.url || '');
+        try{
+            VK.api('wall.post', {message: text, attachments:attachments}, function(r) {console.log(r)})
+        } catch (e) {
+            console.log('client;', 'vkWallPostResult', e);
+        }
+    };
+
 
     var defaultSettings = {
         disableInvite: false,

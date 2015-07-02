@@ -197,7 +197,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.onRoundEnd = function(data){
-        console.log('game_manager', 'emit round_end', data, this.currentRoom);
+        console.log('game_manager;', 'emit round_end', data, this.currentRoom, this.getHistory());
         clearInterval(this.timeInterval);
         this.timeInterval = null;
         this.prevTime = null;

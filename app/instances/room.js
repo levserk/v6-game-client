@@ -1,33 +1,44 @@
 define([], function() {
-    var Room = function(room, client){
-        this.data = room; //deprecated
-        this.inviteData = room.data;
-        this.id = room.room;
-        this.owner = client.getUser(room.owner);
+    var Room = function(roomInfo, client){
+        this.data = roomInfo; //deprecated
+        this.inviteData = roomInfo.data;
+        this.id = roomInfo.room;
+        this.owner = client.getUser(roomInfo.owner);
         this.players = [];
         this.spectators = [];
         this.isPlayer = false;
-        this.mode = room.mode;
-        this.turnTime = room.turnTime || client.opts.turnTime * 1000;
-        this.takeBacks = room.takeBacks;
-        this.timeMode = room.timeMode || 'reset_every_switch';
-        this.timeStartMode = room.timeStartMode || 'after_switch';
+        this.mode = roomInfo.mode;
+        this.turnTime = roomInfo.turnTime || client.opts.turnTime * 1000;
+        this.takeBacks = roomInfo.takeBacks;
+        this.timeMode = roomInfo.timeMode || 'reset_every_switch';
+        this.timeStartMode = roomInfo.timeStartMode || 'after_switch';
         this.history = [];
-
-        console.log('TEST!', room.data);
-
+        var i;
         // init players
-        if (typeof room.players[0] == "object") this.players = room.players;
-        else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
+        if (typeof roomInfo.players[0] == "object") {
+            this.players = roomInfo.players;
+        }
+        else {
+            for (i = 0; i < roomInfo.players.length; i++)
+                this.players.push(client.getUser(roomInfo.players[i]));
+        }
+
+        // init spectators
+        if (roomInfo.spectators && roomInfo.spectators.length) {
+            if (typeof roomInfo.spectators[0] == "object") {
+                this.players = roomInfo.players;
+            }
+            else {
+                for (i = 0; i < roomInfo.spectators.length; i++)
+                    this.spectators.push(client.getUser(roomInfo.spectators[i]));
+            }
+        }
 
         this.score = {games:0};
         for (i = 0; i < this.players.length; i++){
             this.score[this.players[i].userId] = 0;
             if (this.players[i] == client.getPlayer()) this.isPlayer = true;
         }
-
-        room.spectators = room.spectators || [];
-        for (i = 0; i < room.spectators.length; i++) this.spectators.push(client.getUser(room.spectators[i]));
     };
 
     return Room;

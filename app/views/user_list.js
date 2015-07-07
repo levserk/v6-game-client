@@ -31,9 +31,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             if (clickedTabName === this.currentActiveTabName) {
                 return;
             }
-
-            this.currentActiveTabName = clickedTabName;
-            this._setActiveTab(this.currentActiveTabName);
+            this._setActiveTab(clickedTabName);
             this.render();
         },
         userClick: function(e) {
@@ -112,11 +110,16 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.TEXT_PLAY_ACTIVE = 'Идет подбор игрока...';
             this.TEXT_PLAY_UNACTIVE = 'Играть с любым';
 
+            this.IN_GAME_CLASS = 'inGame';
+            this.NOT_IN_GAME_CLASS = 'NotInGame';
+
             this.$list = this.$el.find('.tableWrap table');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
+            this.$counterSpectators = this.$el.find('.tabs div[data-type="spectators"]').find('span');
             this.$btnPlay = this.$el.find('#randomPlay');
             this.$filter = this.$el.find('#filterUserList');
+            this.$tabs = this.$el.find('.tabs');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
             this.listenTo(this.client, 'mode_switch', bindedRender);
@@ -128,9 +131,11 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.listenTo(this.client.userList, 'user_changed', bindedRender);
             this.listenTo(this.client, 'disconnected', bindedRender);
             this.listenTo(this.client, 'user_relogin', bindedRender);
-
-            this.currentActiveTabName = 'free';
-            this._setActiveTab(this.currentActiveTabName);
+            this.listenTo(this.client.gameManager, 'spectator_join', bindedRender);
+            this.listenTo(this.client.gameManager, 'spectator_leave', bindedRender);
+            this.listenTo(this.client.gameManager, 'game_start', this.showSpectatorsTab.bind(this));
+            this.listenTo(this.client.gameManager, 'game_leave', this.hideSpectatorsTab.bind(this));
+            this._setActiveTab('free');
             this.$list.html(this.$loadingTab);
             this.randomPlay = false;
         },
@@ -143,7 +148,24 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 this.$btnPlay.removeClass('active');
             }
         },
+        showSpectatorsTab: function(){
+            if (!this.client.opts.showSpectators) return;
+            this.$tabs.removeClass(this.NOT_IN_GAME_CLASS);
+            this.$tabs.addClass(this.IN_GAME_CLASS);
+            this.$el.find('.tabs div[data-type="' + 'spectators' + '"]').show();
+            this.render();
+        },
+        hideSpectatorsTab: function(){
+            if (!this.client.opts.showSpectators) return;
+            if (this.currentActiveTabName == 'spectators'){
+                this._setActiveTab('free');
+            }
+            this.$tabs.addClass(this.NOT_IN_GAME_CLASS);
+            this.$tabs.removeClass(this.IN_GAME_CLASS);
+            this.$el.find('.tabs div[data-type="' + 'spectators' + '"]').hide();
+        },
         _setActiveTab: function(tabName) {
+            this.currentActiveTabName = tabName;
             this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
             this.$el.find('.tabs div[data-type="' + tabName + '"]').addClass(this.ACTIVE_TAB_CLASS);
         },
@@ -151,31 +173,37 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             if (!this.client.socket.isConnected) {
                 this.$counterFree.html('');
                 this.$counterinGame.html('');
+                this.hideSpectatorsTab();
                 return;
             }
 
             this.$counterFree.html('(' + this.client.userList.getUserList().length + ')');
             this.$counterinGame.html('(' + this.client.userList.getRoomList().length * 2 + ')');
+            this.$counterSpectators.html('(' + this.client.userList.getSpectatorsList().length + ')');
         },
         _showPlayerListByTabName: function() {
-            // default
-
             if (!this.client.socket.isConnected) {
                 this.$list.html(this.$disconnectedTab);
                 return;
             }
 
-            if (this.currentActiveTabName === 'free') {
-                this.$list.html(this.tplFree({
-                    users: this.client.userList.getUserList(this.getFilter())
-                }));
-            }
-            else if (this.currentActiveTabName === 'inGame') {
-                this.$list.html(this.tplInGame({
-                    rooms: this.client.userList.getRoomList(this.getFilter())
-                }));
-            } else {
-                console.warn('unknown tab', this.currentActiveTabName);
+            switch(this.currentActiveTabName) {
+                case 'free':
+                    this.$list.html(this.tplFree({
+                        users: this.client.userList.getUserList(this.getFilter())
+                    }));
+                    break;
+                case 'inGame':
+                    this.$list.html(this.tplInGame({
+                        rooms: this.client.userList.getRoomList(this.getFilter())
+                    }));
+                    break;
+                case 'spectators':
+                    this.$list.html(this.tplFree({
+                        users: this.client.userList.getSpectatorsList(this.getFilter())
+                    }));
+                    break;
+                default: console.warn('unknown tab', this.currentActiveTabName);
             }
         },
         onRejectInvite: function(invite) {

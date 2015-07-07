@@ -41,6 +41,18 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 }).parent().draggable();
             },
 
+            answerUser: function(userId, userName){
+                var text = this.$inputMsg.text();
+                console.log('answer', userName, text);
+                if (this.$inputMsg.has(this.$placeHolderSpan).length) {
+                   text = '';
+                }
+                if (text.length && text.substr(0,userName.length) == userName){
+                    return;
+                }
+                this.$inputMsg.text(userName+ ', '+ text);
+            },
+
             showChatRules: function() {
                 this.$rules.css({
                     top: ($(window).height() / 2) - (this.$rules.outerHeight() / 2),
@@ -59,6 +71,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     case 'showProfile': this.client.onShowProfile(actionObj.userId, actionObj.userName); break;
                     case 'invite': this.client.viewsManager.userListView.invitePlayer(actionObj.userId); break;
                     case 'ban': this.banUser(actionObj.userId, actionObj.userName); break;
+                    case 'answer': this.answerUser(actionObj.userId, actionObj.userName); break;
                 }
             },
 
@@ -141,7 +154,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     alert(this.MAX_LENGTH_MSG);
                     return;
                 }
-                this.manager.sendMessage(text, null, $('#chatIsAdmin')[0].checked);
+                this.manager.sendMessage(text, null, this.currentActiveTabName, $('#chatIsAdmin')[0].checked);
                 this.$inputMsg.empty();
                 this.$inputMsg.focus();
             },
@@ -172,7 +185,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                 this.currentActiveTabName = tabName;
                 this._setActiveTab(this.currentActiveTabName);
-                this.manager.loadCachedMessages(this.tabs[tabName].target);
+                this.manager.loadCachedMessages(this.tabs[tabName].target, this.currentActiveTabName);
             },
 
             initialize: function(_client) {
@@ -217,8 +230,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.currentActiveTabName = 'public';
                 this.currentActiveTabTitle = _client.game;
                 this.tabs = {
-                    'public': { target: _client.game, title: 'Общий чат' },
-                    'private': null
+                    'public': { target: _client.game, title: 'Общий' },
+                    'private': null,
+                    'room': null
                 };
 
                 this._setActiveTab(this.currentActiveTabName);
@@ -257,7 +271,6 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$msgsList.html('');
                 this._setLoadingState();
                 this.currentActiveTabTitle = this.tabs[tabName].target;
-
             },
 
             render: function() {
@@ -267,15 +280,21 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             _openDialog: function(dialog){
                 if (dialog.userId) {
                     this.tabs['private'] = {target: dialog.userId, title: dialog.userName};
+                    this.currentActiveTabName = 'private';
+                    this._setActiveTab('private');
+                } else if (dialog.roomId) {
+                    this.tabs['room'] = {target: dialog.roomId, title:'Стол'};
+                    this.currentActiveTabName = 'room';
+                    this._setActiveTab('room');
                 }
-                this.currentActiveTabName = 'private';
-                this._setActiveTab('private');
+
             },
 
             _closeDialog: function(target){
                 this.currentActiveTabName = 'public';
                 this._setActiveTab('public');
                 this.$el.find('.tabs div[data-type="' + 'private' + '"]').hide();
+                this.$el.find('.tabs div[data-type="' + 'room' + '"]').hide();
             },
 
             _deleteMsg: function(e) {

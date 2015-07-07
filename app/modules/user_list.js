@@ -182,12 +182,15 @@ define(['EE'], function(EE) {
 
     UserList.prototype.getRoomList = function(filter) {
         var rooms = [], room;
-        if (!filter)rooms = this.rooms;
-        else {
-            for (var i = 0; i < this.rooms.length; i++){
-                room = this.rooms[i];
-                for (var j = 0; j < room.players.length; j++){
-                    if (room.players[j].userName.toLowerCase().indexOf(filter) != -1){
+        for (var i = 0; i < this.rooms.length; i++) {
+            room = this.rooms[i];
+            // check room is current
+            room.current = (this.client.gameManager.currentRoom && this.client.gameManager.currentRoom.id == room.room);
+            if (!filter) {
+                rooms.push(room);
+            } else { // find user by filter in room
+                for (var j = 0; j < room.players.length; j++) {
+                    if (room.players[j].userName.toLowerCase().indexOf(filter) != -1) {
                         rooms.push(room);
                         break;
                     }
@@ -200,6 +203,27 @@ define(['EE'], function(EE) {
             return ar - br;
         });
         return rooms;
+    };
+
+
+    UserList.prototype.getSpectatorsList = function(filter) {
+        var spectators = [];
+        if (this.client.gameManager.currentRoom && this.client.gameManager.currentRoom.spectators.length) {
+            var user, invite = this.client.inviteManager.invite;
+            for (var i = 0; i < this.client.gameManager.currentRoom.spectators.length; i++) {
+                user = this.client.gameManager.currentRoom.spectators[i];
+                if (invite && user.userId == invite.target) { // user is invited
+                    user.isInvited = true;
+                } else {
+                    delete user.isInvited;
+                }
+                if (!filter || user.userName.toLowerCase().indexOf(filter) != -1) {
+                    spectators.push(user);
+                }
+            }
+        }
+
+        return spectators;
     };
 
 

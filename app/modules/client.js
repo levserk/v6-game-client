@@ -18,6 +18,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.shortGuestNames = !!opts.shortGuestNames || false;
         opts.newGameFormat = !!opts.newGameFormat || false;
         opts.vk = opts.vk || {};
+        opts.showSpectators =  opts.showSpectators || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();

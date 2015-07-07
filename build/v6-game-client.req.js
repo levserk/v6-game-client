@@ -1,33 +1,44 @@
 define('instances/room',[], function() {
-    var Room = function(room, client){
-        this.data = room; //deprecated
-        this.inviteData = room.data;
-        this.id = room.room;
-        this.owner = client.getUser(room.owner);
+    var Room = function(roomInfo, client){
+        this.data = roomInfo; //deprecated
+        this.inviteData = roomInfo.data;
+        this.id = roomInfo.room;
+        this.owner = client.getUser(roomInfo.owner);
         this.players = [];
         this.spectators = [];
         this.isPlayer = false;
-        this.mode = room.mode;
-        this.turnTime = room.turnTime || client.opts.turnTime * 1000;
-        this.takeBacks = room.takeBacks;
-        this.timeMode = room.timeMode || 'reset_every_switch';
-        this.timeStartMode = room.timeStartMode || 'after_switch';
+        this.mode = roomInfo.mode;
+        this.turnTime = roomInfo.turnTime || client.opts.turnTime * 1000;
+        this.takeBacks = roomInfo.takeBacks;
+        this.timeMode = roomInfo.timeMode || 'reset_every_switch';
+        this.timeStartMode = roomInfo.timeStartMode || 'after_switch';
         this.history = [];
-
-        console.log('TEST!', room.data);
-
+        var i;
         // init players
-        if (typeof room.players[0] == "object") this.players = room.players;
-        else for (var i = 0; i < room.players.length; i++) this.players.push(client.getUser(room.players[i]));
+        if (typeof roomInfo.players[0] == "object") {
+            this.players = roomInfo.players;
+        }
+        else {
+            for (i = 0; i < roomInfo.players.length; i++)
+                this.players.push(client.getUser(roomInfo.players[i]));
+        }
+
+        // init spectators
+        if (roomInfo.spectators && roomInfo.spectators.length) {
+            if (typeof roomInfo.spectators[0] == "object") {
+                this.players = roomInfo.players;
+            }
+            else {
+                for (i = 0; i < roomInfo.spectators.length; i++)
+                    this.spectators.push(client.getUser(roomInfo.spectators[i]));
+            }
+        }
 
         this.score = {games:0};
         for (i = 0; i < this.players.length; i++){
             this.score[this.players[i].userId] = 0;
             if (this.players[i] == client.getPlayer()) this.isPlayer = true;
         }
-
-        room.spectators = room.spectators || [];
-        for (i = 0; i < room.spectators.length; i++) this.spectators.push(client.getUser(room.spectators[i]));
     };
 
     return Room;
@@ -53,6 +64,9 @@ define('instances/game_event',[], function() {
                 switch (key){
                     case 'user':
                         this.user = data.user;
+                        break;
+                    case 'nextPlayer':
+                        this.nextPlayer = data.nextPlayer;
                         break;
                     case 'type':
                         this.event.type = data.type;
@@ -119,7 +133,8 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
 
     GameManager.prototype.onMessage = function(message){
-        var data = message.data, player = this.client.getPlayer(), i, user;
+        var data = message.data, player = this.client.getPlayer(),
+            i, user, spectatorInd;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
             case 'new_game':
@@ -162,10 +177,16 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
                 this.onSpectateStart(data);
                 break;
             case 'spectator_join':
-                console.log('game_manager;', 'spectate_join', data);
+                console.log('game_manager;', 'spectator_join', data);
+                user = this.client.getUser(data.user);
+                spectatorInd = this.currentRoom.spectators.indexOf(user);
+                if (user && spectatorInd < 0){
+                    this.currentRoom.spectators.push(user);
+                    this.emit('spectator_join', user);
+                }
                 break;
             case 'spectator_leave':
-                console.log('game_manager;', 'spectate_leave', data);
+                console.log('game_manager;', 'spectator_leave', data);
                 if (this.currentRoom && this.currentRoom.id != data.room){
                     console.error('game_manager;', 'user leave wrong room, roomId:', data.room, 'current room: ', this.currentRoom);
                     return;
@@ -173,6 +194,13 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
                 if (data.user == this.client.getPlayer().userId && this.currentRoom) {
                     this.currentRoom.isClosed = true;
                     this.leaveRoom();
+                } else {
+                    user = this.getSpectator(data.user);
+                    spectatorInd = this.currentRoom.spectators.indexOf(user);
+                    if (user && spectatorInd >= 0){
+                        this.currentRoom.spectators.splice(spectatorInd, 1);
+                        this.emit('spectator_leave', user);
+                    }
                 }
                 break;
             case 'error':
@@ -246,8 +274,10 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         console.log('game_manager;', 'spectate start', data);
         //start game
         var room = new Room(data['roomInfo'], this.client);
-        // TODO: server send spectators
-        room.spectators.push(this.client.getPlayer());
+        // for old server version add user to spectators
+        if (!room.spectators.length) {
+            room.spectators.push(this.client.getPlayer());
+        }
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
@@ -269,7 +299,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
 
     GameManager.prototype.onRoundEnd = function(data){
-        console.log('game_manager', 'emit round_end', data, this.currentRoom);
+        console.log('game_manager;', 'emit round_end', data, this.currentRoom, this.getHistory());
         clearInterval(this.timeInterval);
         this.timeInterval = null;
         this.prevTime = null;
@@ -499,7 +529,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         }
         if (!this.enableGames){
             this.leaveGame();
-            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
+            this.client.viewsManager.dialogsView.showDialog('Новые игры временно отключены',{}, true, false, false);
         }
         this.client.send('game_manager', 'ready', 'server', true);
     };
@@ -634,6 +664,13 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         if (this.currentRoom)
             for (var i = 0; i < this.currentRoom.players.length; i++)
                 if (this.currentRoom.players[i].userId == id) return this.currentRoom.players[i];
+        return null;
+    };
+
+
+    GameManager.prototype.getSpectator = function(id){
+        for (var i = 0; i < this.currentRoom.spectators.length; i++)
+            if (this.currentRoom.spectators[i].userId == id) return this.currentRoom.spectators[i];
         return null;
     };
 
@@ -1212,12 +1249,15 @@ define('modules/user_list',['EE'], function(EE) {
 
     UserList.prototype.getRoomList = function(filter) {
         var rooms = [], room;
-        if (!filter)rooms = this.rooms;
-        else {
-            for (var i = 0; i < this.rooms.length; i++){
-                room = this.rooms[i];
-                for (var j = 0; j < room.players.length; j++){
-                    if (room.players[j].userName.toLowerCase().indexOf(filter) != -1){
+        for (var i = 0; i < this.rooms.length; i++) {
+            room = this.rooms[i];
+            // check room is current
+            room.current = (this.client.gameManager.currentRoom && this.client.gameManager.currentRoom.id == room.room);
+            if (!filter) {
+                rooms.push(room);
+            } else { // find user by filter in room
+                for (var j = 0; j < room.players.length; j++) {
+                    if (room.players[j].userName.toLowerCase().indexOf(filter) != -1) {
                         rooms.push(room);
                         break;
                     }
@@ -1230,6 +1270,27 @@ define('modules/user_list',['EE'], function(EE) {
             return ar - br;
         });
         return rooms;
+    };
+
+
+    UserList.prototype.getSpectatorsList = function(filter) {
+        var spectators = [];
+        if (this.client.gameManager.currentRoom && this.client.gameManager.currentRoom.spectators.length) {
+            var user, invite = this.client.inviteManager.invite;
+            for (var i = 0; i < this.client.gameManager.currentRoom.spectators.length; i++) {
+                user = this.client.gameManager.currentRoom.spectators[i];
+                if (invite && user.userId == invite.target) { // user is invited
+                    user.isInvited = true;
+                } else {
+                    delete user.isInvited;
+                }
+                if (!filter || user.userName.toLowerCase().indexOf(filter) != -1) {
+                    spectators.push(user);
+                }
+            }
+        }
+
+        return spectators;
     };
 
 
@@ -1413,10 +1474,10 @@ define('modules/socket',['EE'], function(EE) {
 define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree">\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>"><%= user.userName %></td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td></td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>\r\n    <% } else { %>\r\n    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>\r\n    <% } %>\r\n\r\n</tr>\r\n\r\n<% }) %>';});
 
 
-define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr class="userListGame" data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td>:</td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr class="userListGame <%= room.current ? \'currentGame\' : \'\' %>" data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td>:</td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="userListSearch">Поиск по списку:</label><input type="text" id="filterUserList"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table cellspacing="0" class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span>Играть с любым</span>\r\n</div>';});
+define('text!tpls/userListMain.ejs',[],function () { return '<div class="tabs notInGame">\r\n    <div data-type="free">Свободны <span></span></div>\r\n    <div data-type="inGame">Играют <span></span></div>\r\n    <div data-type="spectators" style="display: none">Смотрят <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <label for="filterUserList">Поиск по списку:</label><input type="text" id="filterUserList"/>\r\n</div>\r\n<div class="tableWrap">\r\n    <table cellspacing="0" class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span>Играть с любым</span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -1451,9 +1512,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             if (clickedTabName === this.currentActiveTabName) {
                 return;
             }
-
-            this.currentActiveTabName = clickedTabName;
-            this._setActiveTab(this.currentActiveTabName);
+            this._setActiveTab(clickedTabName);
             this.render();
         },
         userClick: function(e) {
@@ -1532,11 +1591,16 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.TEXT_PLAY_ACTIVE = 'Идет подбор игрока...';
             this.TEXT_PLAY_UNACTIVE = 'Играть с любым';
 
+            this.IN_GAME_CLASS = 'inGame';
+            this.NOT_IN_GAME_CLASS = 'NotInGame';
+
             this.$list = this.$el.find('.tableWrap table');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
+            this.$counterSpectators = this.$el.find('.tabs div[data-type="spectators"]').find('span');
             this.$btnPlay = this.$el.find('#randomPlay');
             this.$filter = this.$el.find('#filterUserList');
+            this.$tabs = this.$el.find('.tabs');
 
             this.listenTo(this.client.userList, 'new_user', bindedRender);
             this.listenTo(this.client, 'mode_switch', bindedRender);
@@ -1548,9 +1612,11 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.listenTo(this.client.userList, 'user_changed', bindedRender);
             this.listenTo(this.client, 'disconnected', bindedRender);
             this.listenTo(this.client, 'user_relogin', bindedRender);
-
-            this.currentActiveTabName = 'free';
-            this._setActiveTab(this.currentActiveTabName);
+            this.listenTo(this.client.gameManager, 'spectator_join', bindedRender);
+            this.listenTo(this.client.gameManager, 'spectator_leave', bindedRender);
+            this.listenTo(this.client.gameManager, 'game_start', this.showSpectatorsTab.bind(this));
+            this.listenTo(this.client.gameManager, 'game_leave', this.hideSpectatorsTab.bind(this));
+            this._setActiveTab('free');
             this.$list.html(this.$loadingTab);
             this.randomPlay = false;
         },
@@ -1563,7 +1629,24 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
                 this.$btnPlay.removeClass('active');
             }
         },
+        showSpectatorsTab: function(){
+            if (!this.client.opts.showSpectators) return;
+            this.$tabs.removeClass(this.NOT_IN_GAME_CLASS);
+            this.$tabs.addClass(this.IN_GAME_CLASS);
+            this.$el.find('.tabs div[data-type="' + 'spectators' + '"]').show();
+            this.render();
+        },
+        hideSpectatorsTab: function(){
+            if (!this.client.opts.showSpectators) return;
+            if (this.currentActiveTabName == 'spectators'){
+                this._setActiveTab('free');
+            }
+            this.$tabs.addClass(this.NOT_IN_GAME_CLASS);
+            this.$tabs.removeClass(this.IN_GAME_CLASS);
+            this.$el.find('.tabs div[data-type="' + 'spectators' + '"]').hide();
+        },
         _setActiveTab: function(tabName) {
+            this.currentActiveTabName = tabName;
             this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
             this.$el.find('.tabs div[data-type="' + tabName + '"]').addClass(this.ACTIVE_TAB_CLASS);
         },
@@ -1571,31 +1654,37 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             if (!this.client.socket.isConnected) {
                 this.$counterFree.html('');
                 this.$counterinGame.html('');
+                this.hideSpectatorsTab();
                 return;
             }
 
             this.$counterFree.html('(' + this.client.userList.getUserList().length + ')');
             this.$counterinGame.html('(' + this.client.userList.getRoomList().length * 2 + ')');
+            this.$counterSpectators.html('(' + this.client.userList.getSpectatorsList().length + ')');
         },
         _showPlayerListByTabName: function() {
-            // default
-
             if (!this.client.socket.isConnected) {
                 this.$list.html(this.$disconnectedTab);
                 return;
             }
 
-            if (this.currentActiveTabName === 'free') {
-                this.$list.html(this.tplFree({
-                    users: this.client.userList.getUserList(this.getFilter())
-                }));
-            }
-            else if (this.currentActiveTabName === 'inGame') {
-                this.$list.html(this.tplInGame({
-                    rooms: this.client.userList.getRoomList(this.getFilter())
-                }));
-            } else {
-                console.warn('unknown tab', this.currentActiveTabName);
+            switch(this.currentActiveTabName) {
+                case 'free':
+                    this.$list.html(this.tplFree({
+                        users: this.client.userList.getUserList(this.getFilter())
+                    }));
+                    break;
+                case 'inGame':
+                    this.$list.html(this.tplInGame({
+                        rooms: this.client.userList.getRoomList(this.getFilter())
+                    }));
+                    break;
+                case 'spectators':
+                    this.$list.html(this.tplFree({
+                        users: this.client.userList.getSpectatorsList(this.getFilter())
+                    }));
+                    break;
+                default: console.warn('unknown tab', this.currentActiveTabName);
             }
         },
         onRejectInvite: function(invite) {
@@ -1616,7 +1705,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
     return UserListView;
 });
 
-define('text!tpls/v6-dialogRoundResult.ejs',[],function () { return '<p><%= result %></p>\r\n<p><%= rankResult %></p>\r\n<br>\r\n<span class="dialogGameAction">Сыграть с соперником еще раз?</span>\r\n<div class="roundResultTime">Осталось: <span>30</span> секунд</div>';});
+define('text!tpls/v6-dialogRoundResult.ejs',[],function () { return '<p><%= result %></p>\r\n<p><%= rankResult %></p>\r\n<%= vkPost ? \'<span class="vkWallPost">Рассказать друзьям</span>\' : \'<br>\'%>\r\n<span class="dialogGameAction">Сыграть с соперником еще раз?</span>\r\n<div class="roundResultTime">Осталось: <span>30</span> секунд</div>\r\n';});
 
 define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoundResultStr) {
     
@@ -1782,7 +1871,9 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             var oldRank = +client.getPlayer()[data.mode].rank;
             var newElo = +data['ratings'][client.getPlayer().userId].ratingElo;
             var newRank = +data['ratings'][client.getPlayer().userId].rank;
-            var eloDif = newElo - oldElo;
+            var eloDif = newElo - oldElo,
+                vkPost = false,
+                vkText = '';
             console.log('round_end;', data, oldElo, newElo, oldRank, newRank);
             hideDialogs();
             var result = "";
@@ -1805,8 +1896,17 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                     rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
                 } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
             }
-            var html = tplRoundResult({result: result, rankResult: rankResult});
-
+            // check vk post
+            if (this.client.vkWallPost) {
+                if (client.getPlayer()[data.mode].win == 0 && data['ratings'][client.getPlayer().userId].win == 1){
+                    vkPost = true;
+                    vkText = 'Моя первая победа';
+                } else if (data.result == 'win' && oldRank > 0 && newRank < oldRank){
+                    vkPost = true;
+                    vkText = 'Я занимаю ' + newRank + ' место в рейтинге';
+                }
+            }
+            var html = tplRoundResult({result: result, rankResult: rankResult, vkPost: vkPost});
             var div = showDialog(html, {
                 width: 350,
                 buttons: {
@@ -1875,6 +1975,12 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                     client.gameManager.leaveGame();
                 }
             }.bind(div), 250);
+
+            if (vkPost) {
+                div.find('.vkWallPost').on('click', function(){
+                    this.client.vkWallPostResult(vkText);
+                }.bind(this))
+            }
         }
 
         function userLeave(user) {
@@ -2025,7 +2131,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
 });
 
 
-define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий чат</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected style="font-style: italic;">Готовые сообщения</option>\r\n        <option>Ваш ход!</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
+define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public">Общий</div>\r\n    <div class="tab" data-type="room" style="display: none;">Стол</div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn">Отправить</div>\r\n    <select id="chat-select">\r\n        <option selected style="font-style: italic;">Готовые сообщения</option>\r\n        <option>Ваш ход!</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Спасибо, интересная игра! Сдаюсь!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Ты мог выиграть</option>\r\n        <option>Ты могла выиграть</option>\r\n        <option>Ходи!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n\r\n    <span class="chatRules">Правила чата</span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="answer"><span>Ответить</span></li>\r\n    <li data-action="invite"><span>Пригласить в игру</span></li>\r\n    <li data-action="showProfile"><span>Показать профиль</span></li>\r\n    <li data-action="ban"><span>Забанить в чате</span></li>\r\n</ul>';});
 
 
 define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName" data-userId="<%= msg.userId%>" title="<%= msg.userName %>">\r\n            <span class="userName"><%= msg.userName %></span>\r\n        </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="Удалить сообщение" style="background-image: url(<%= imgDel %>);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
@@ -2082,6 +2188,18 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 }).parent().draggable();
             },
 
+            answerUser: function(userId, userName){
+                var text = this.$inputMsg.text();
+                console.log('answer', userName, text);
+                if (this.$inputMsg.has(this.$placeHolderSpan).length) {
+                   text = '';
+                }
+                if (text.length && text.substr(0,userName.length) == userName){
+                    return;
+                }
+                this.$inputMsg.text(userName+ ', '+ text);
+            },
+
             showChatRules: function() {
                 this.$rules.css({
                     top: ($(window).height() / 2) - (this.$rules.outerHeight() / 2),
@@ -2100,6 +2218,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     case 'showProfile': this.client.onShowProfile(actionObj.userId, actionObj.userName); break;
                     case 'invite': this.client.viewsManager.userListView.invitePlayer(actionObj.userId); break;
                     case 'ban': this.banUser(actionObj.userId, actionObj.userName); break;
+                    case 'answer': this.answerUser(actionObj.userId, actionObj.userName); break;
                 }
             },
 
@@ -2182,7 +2301,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     alert(this.MAX_LENGTH_MSG);
                     return;
                 }
-                this.manager.sendMessage(text, null, $('#chatIsAdmin')[0].checked);
+                this.manager.sendMessage(text, null, this.currentActiveTabName, $('#chatIsAdmin')[0].checked);
                 this.$inputMsg.empty();
                 this.$inputMsg.focus();
             },
@@ -2213,7 +2332,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                 this.currentActiveTabName = tabName;
                 this._setActiveTab(this.currentActiveTabName);
-                this.manager.loadCachedMessages(this.tabs[tabName].target);
+                this.manager.loadCachedMessages(this.tabs[tabName].target, this.currentActiveTabName);
             },
 
             initialize: function(_client) {
@@ -2258,8 +2377,9 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.currentActiveTabName = 'public';
                 this.currentActiveTabTitle = _client.game;
                 this.tabs = {
-                    'public': { target: _client.game, title: 'Общий чат' },
-                    'private': null
+                    'public': { target: _client.game, title: 'Общий' },
+                    'private': null,
+                    'room': null
                 };
 
                 this._setActiveTab(this.currentActiveTabName);
@@ -2298,7 +2418,6 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.$msgsList.html('');
                 this._setLoadingState();
                 this.currentActiveTabTitle = this.tabs[tabName].target;
-
             },
 
             render: function() {
@@ -2308,15 +2427,21 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             _openDialog: function(dialog){
                 if (dialog.userId) {
                     this.tabs['private'] = {target: dialog.userId, title: dialog.userName};
+                    this.currentActiveTabName = 'private';
+                    this._setActiveTab('private');
+                } else if (dialog.roomId) {
+                    this.tabs['room'] = {target: dialog.roomId, title:'Стол'};
+                    this.currentActiveTabName = 'room';
+                    this._setActiveTab('room');
                 }
-                this.currentActiveTabName = 'private';
-                this._setActiveTab('private');
+
             },
 
             _closeDialog: function(target){
                 this.currentActiveTabName = 'public';
                 this._setActiveTab('public');
                 this.$el.find('.tabs div[data-type="' + 'private' + '"]').hide();
+                this.$el.find('.tabs div[data-type="' + 'room' + '"]').hide();
             },
 
             _deleteMsg: function(e) {
@@ -2884,6 +3009,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         this.fullLoaded = {};
         this.messages = {};
         this.current = client.game;
+        this.currentType = 'public';
         this.MSG_COUNT = 10;
         this.MSG_INTERVBAL = 1500;
 
@@ -2891,6 +3017,9 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         client.on('relogin', this.onLogin.bind(this));
 
         client.gameManager.on('game_start', function(room){
+            if (this.client.opts.showSpectators){
+                this.openDialog(room.id, 'room', true);
+            }
             if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
@@ -2900,6 +3029,9 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         }.bind(this));
 
         client.gameManager.on('game_leave', function(room){
+            if (this.client.opts.showSpectators){
+                this.closeDialog(room.id, 'room');
+            }
             if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
@@ -2940,7 +3072,6 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
     ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
 
     ChatManager.prototype.onLogin = function() {
-        this.current = this.client.game;
         this.first = {};
         this.last = {};
         this.fullLoaded = {};
@@ -2966,7 +3097,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
                 this.emit('message', message);
                 this.last[message.target] = message;
 
-                if (message.target != this.client.game && message.target != this.current) this.openDialog(message.userId, message.userName);
+                if (this.client.getUser(message.target) && message.target != this.current) this.openDialog(message.userId, message.userName);
                 break;
             case 'load':
                 if (!data.length || data.length<1) {
@@ -2989,7 +3120,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
     };
 
 
-    ChatManager.prototype.sendMessage = function (text, target, admin){
+    ChatManager.prototype.sendMessage = function (text, target, type, admin){
         if (this.ban){
             this.emit('show_ban', this.ban);
             return;
@@ -3008,11 +3139,14 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         };
         if (admin) message.admin = true;
         if (!target) message.target = this.current;
+        type = type || this.currentType;
+        console.log('chat_manager;', 'send message', text, target, type, admin);
         this.client.send('chat_manager', 'message', 'server', message);
     };
 
 
-    ChatManager.prototype.loadMessages = function (count, time, target) {
+    ChatManager.prototype.loadMessages = function (count, time, target, type) {
+        type = type || this.currentType;
         if (this.fullLoaded[this.current]){
             console.log('chat_manager;', 'all messages loaded!', count, time, this.first);
             this.emit('load', null);
@@ -3021,8 +3155,8 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         count = count || this.MSG_COUNT;
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
-        console.log('chat_manager;', 'loading messages', count, time, this.first);
-        this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target});
+        console.log('chat_manager;', 'loading messages', count, time, this.first, type);
+        this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target, type: type});
     };
 
 
@@ -3035,21 +3169,30 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
     };
 
 
-    ChatManager.prototype.openDialog = function(userId, userName){
+    ChatManager.prototype.openDialog = function(userId, userName, room){
         this.current = userId;
-        this.emit('open_dialog', {userId: userId, userName:userName});
+        if (room) {
+            this.currentType = 'room';
+            this.emit('open_dialog', { roomId: userId });
+        }
+        else {
+            this.currentType = 'private';
+            this.emit('open_dialog', { userId: userId, userName: userName });
+        }
         this.loadCachedMessages(userId);
     };
 
 
     ChatManager.prototype.closeDialog = function (target){
+        this.currentType = 'public';
         this.emit('close_dialog', target || this.current);
         this.loadCachedMessages(this.client.game);
     };
 
 
-    ChatManager.prototype.loadCachedMessages = function (target){
+    ChatManager.prototype.loadCachedMessages = function (target, type){
         this.current = target;
+        this.currentType = type || this.currentType;
         this.first[target] = this.last[target] = null;
         if (this.messages[target] && this.messages[target].length>0){ // load cached messages;
             for (var i = this.messages[target].length - 1; i >= 0; i-- ){
@@ -4234,7 +4377,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.10";
+        this.version = "0.9.12";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -4248,6 +4391,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.autoShowProfile = !!opts.autoShowProfile || false;
         opts.shortGuestNames = !!opts.shortGuestNames || false;
         opts.newGameFormat = !!opts.newGameFormat || false;
+        opts.vk = opts.vk || {};
+        opts.showSpectators =  opts.showSpectators || false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -4272,6 +4417,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.ratingManager = new RatingManager(this);
         this.soundManager = new SoundManager(this);
         this.adminManager = new AdminManager(this);
+
+        this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
 
         this.currentMode = null;
         this.reconnectTimeout = null;
@@ -4587,6 +4734,32 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype._onSettingsChanged = function(property){
         this.emit('settings_changed', property);
     };
+
+
+    Client.prototype.checkVKWallPostEnabled = function () {
+        this.vkWallPost = false;
+        if (!window.VK || !window.VK.api || !window._isVk) return;
+        window.VK.api('account.getAppPermissions', function(r) {
+            if (r && r.response)
+                console.log('client; checkVKWallPostEnabled; permissions', r.response);
+                this.vkWallPost = !!(r.response & 8192);
+        }.bind(this))
+    };
+
+
+    Client.prototype.vkWallPostResult = function (text) {
+        console.log('client;', 'vkWallPostResult', text);
+        if (this.opts.vk.title){
+            text  += ' в ' + this.opts.vk.title;
+        }
+        var attachments = (this.opts.vk.photo || '') + ',' + (this.opts.vk.url || '');
+        try{
+            VK.api('wall.post', {message: text, attachments:attachments}, function(r) {console.log(r)})
+        } catch (e) {
+            console.log('client;', 'vkWallPostResult', e);
+        }
+    };
+
 
     var defaultSettings = {
         disableInvite: false,

@@ -7,6 +7,7 @@ define(['EE', 'antimat'], function(EE) {
         this.fullLoaded = {};
         this.messages = {};
         this.current = client.game;
+        this.currentType = 'public';
         this.MSG_COUNT = 10;
         this.MSG_INTERVBAL = 1500;
 
@@ -14,6 +15,9 @@ define(['EE', 'antimat'], function(EE) {
         client.on('relogin', this.onLogin.bind(this));
 
         client.gameManager.on('game_start', function(room){
+            if (this.client.opts.showSpectators){
+                this.openDialog(room.id, 'room', true);
+            }
             if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
@@ -23,6 +27,9 @@ define(['EE', 'antimat'], function(EE) {
         }.bind(this));
 
         client.gameManager.on('game_leave', function(room){
+            if (this.client.opts.showSpectators){
+                this.closeDialog(room.id, 'room');
+            }
             if (!room.isPlayer) return;
             for (var i = 0; i < room.players.length; i++){
                 if (!room.players[i].isPlayer) {
@@ -63,7 +70,6 @@ define(['EE', 'antimat'], function(EE) {
     ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
 
     ChatManager.prototype.onLogin = function() {
-        this.current = this.client.game;
         this.first = {};
         this.last = {};
         this.fullLoaded = {};
@@ -89,7 +95,7 @@ define(['EE', 'antimat'], function(EE) {
                 this.emit('message', message);
                 this.last[message.target] = message;
 
-                if (message.target != this.client.game && message.target != this.current) this.openDialog(message.userId, message.userName);
+                if (this.client.getUser(message.target) && message.target != this.current) this.openDialog(message.userId, message.userName);
                 break;
             case 'load':
                 if (!data.length || data.length<1) {
@@ -112,7 +118,7 @@ define(['EE', 'antimat'], function(EE) {
     };
 
 
-    ChatManager.prototype.sendMessage = function (text, target, admin){
+    ChatManager.prototype.sendMessage = function (text, target, type, admin){
         if (this.ban){
             this.emit('show_ban', this.ban);
             return;
@@ -131,11 +137,14 @@ define(['EE', 'antimat'], function(EE) {
         };
         if (admin) message.admin = true;
         if (!target) message.target = this.current;
+        type = type || this.currentType;
+        console.log('chat_manager;', 'send message', text, target, type, admin);
         this.client.send('chat_manager', 'message', 'server', message);
     };
 
 
-    ChatManager.prototype.loadMessages = function (count, time, target) {
+    ChatManager.prototype.loadMessages = function (count, time, target, type) {
+        type = type || this.currentType;
         if (this.fullLoaded[this.current]){
             console.log('chat_manager;', 'all messages loaded!', count, time, this.first);
             this.emit('load', null);
@@ -144,8 +153,8 @@ define(['EE', 'antimat'], function(EE) {
         count = count || this.MSG_COUNT;
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
-        console.log('chat_manager;', 'loading messages', count, time, this.first);
-        this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target});
+        console.log('chat_manager;', 'loading messages', count, time, this.first, type);
+        this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target, type: type});
     };
 
 
@@ -158,21 +167,30 @@ define(['EE', 'antimat'], function(EE) {
     };
 
 
-    ChatManager.prototype.openDialog = function(userId, userName){
+    ChatManager.prototype.openDialog = function(userId, userName, room){
         this.current = userId;
-        this.emit('open_dialog', {userId: userId, userName:userName});
+        if (room) {
+            this.currentType = 'room';
+            this.emit('open_dialog', { roomId: userId });
+        }
+        else {
+            this.currentType = 'private';
+            this.emit('open_dialog', { userId: userId, userName: userName });
+        }
         this.loadCachedMessages(userId);
     };
 
 
     ChatManager.prototype.closeDialog = function (target){
+        this.currentType = 'public';
         this.emit('close_dialog', target || this.current);
         this.loadCachedMessages(this.client.game);
     };
 
 
-    ChatManager.prototype.loadCachedMessages = function (target){
+    ChatManager.prototype.loadCachedMessages = function (target, type){
         this.current = target;
+        this.currentType = type || this.currentType;
         this.first[target] = this.last[target] = null;
         if (this.messages[target] && this.messages[target].length>0){ // load cached messages;
             for (var i = this.messages[target].length - 1; i >= 0; i-- ){

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css"/>
+    <link rel="stylesheet" href="css/_jquery-ui.css" />
+    <link rel="stylesheet" href="css/userList.css"/>
+    <link rel="stylesheet" href="css/dialog.css"/>
+    <link rel="stylesheet" href="css/v6-chat.css"/>
+    <link rel="stylesheet" href="css/v6-rating.css"/>
+    <link rel="stylesheet" href="css/v6-history.css"/>
+    <link rel="stylesheet" href="css/v6-settings.css"/>
+    <link rel="stylesheet" href="css/v6-profile.css"/>
+    <link rel="stylesheet" href="css/v6-game-client.css"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>StepByStep</title>
+
+</head>
+<body>
+<div id="userListDiv"></div>
+<div id="chatDiv"></div>
+
+
+<div id="playerListWrapper" style="  position: absolute;
+  left: 326px;
+  top: 12px;">
+    <div id="userList" class="v6-block-border">
+        <div class="tabs inGame">
+            <div data-type="free" class="activeTab">Свободны <span>(10)</span></div>
+            <div data-type="inGame" class="activeTab">Играют <span>(16)</span></div>
+            <div data-type="spectators" >Смотрят <span>(2)</span></div>
+        </div>
+        <div id="userListSearch">
+            <label for="filterUserList">Поиск по списку:</label><input type="text" id="filterUserList">
+        </div>
+        <div class="tableWrap">
+            <table cellspacing="0" class="playerList">
+                <tr class="userListGame" data-id="gomoku_pro_swap2_7378996_iqaOYnbiR34OcQhLktcKKA==_15:30:28">
+                    <td class="userName" title="Гость 6198637 (93)">Гость 6198637</td>
+                    <td>:</td>
+                    <td class="userName" title="Евгений Брылев (185)">Евгений Брылев</td>
+                </tr>
+
+                <tr class="userListGame" data-id="gomoku_pro_gomoku_4221852_k+pNXZU6K68apfMVP9roMQ==_15:27:46">
+                    <td class="userName" title="Руслан Якубов (2331)">Руслан Якубов</td>
+                    <td>:</td>
+                    <td class="userName" title="Марина Коваль (117)">Марина Коваль</td>
+                </tr>
+
+            </table>
+        </div>
+        <div class="btn" id="randomPlay">
+            <span>Играть с любым</span>
+        </div>
+    </div>
+</div>
+
+
+<div id="chatWrapper" style="position: absolute;  left: 326px;  top: 338px;">
+    <div id="v6Chat" class="v6-block-border">
+        <div class="tabs">
+            <div class="tab" data-type="public" style="display: block;">Общий</div>
+            <div class="tab" data-type="room" style="">Стол</div>
+            <div class="tab activeTab" data-type="private" style="">Евгений Брылев</div>
+        </div>
+        <div class="clear"></div>
+        <div class="messagesWrap">
+            <ul>
+                <li class="chatDay" data-day-msgid="1435843354055">
+                    <div>
+                        2 Июля 2015
+                    </div>
+                </li>
+                <li class="chatMsg" data-msgid="1435843360538">
+                    <div class="msgRow1">
+                        <div class="smallRight time">16:22</div>
+                        <div class="smallRight rate">—</div>
+                        <div class="chatUserName" data-userid="8427676" title="Гость 6982108">
+                            <span class="userName">Гость 6982108</span>
+                        </div>
+                    </div>
+                    <div class="msgRow2">
+                        <div class="delete" title="Удалить сообщение"
+                             style="background-image: url(//logic-games.spb.ru/v6-game-client/app/i/delete.png);"></div>
+                        <div class="msgTextWrap">
+                            <span class="v6-msgText">Снимаю шляпу!</span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="inputMsg" contenteditable="true"><span
+                class="placeHolderSpan">Введите ваше сообщение..</span></div>
+        <div class="layer1">
+            <div class="sendMsgBtn">Отправить</div>
+            <select id="chat-select">
+                <option selected="selected" style="font-style: italic;">Готовые сообщения</option>
+                <option>Ваш ход!</option>
+            </select>
+        </div>
+        <div class="layer2">
+    <span class="">
+        <input type="checkbox" id="chatIsAdmin"><label for="chatIsAdmin">От админа</label>
+    </span>
+
+            <span class="chatRules">Правила чата</span>
+        </div>
+
+        <ul class="menuElement noselect" style="display: none;">
+            <li data-action="invite"><span>Пригласить в игру</span></li>
+            <li data-action="showProfile"><span>Показать профиль</span></li>
+            <li data-action="ban"><span>Забанить в чате</span></li>
+        </ul>
+    </div>
+</div>
+
+
+<div id="ratingDiv" style="width: 700px; margin: 10px;"></div>
+<div id="historyDiv" style="width: 700px; margin: 10px;"></div>
+<script src="lib/require.js" data-main="app"></script>
+</body>
+</html>

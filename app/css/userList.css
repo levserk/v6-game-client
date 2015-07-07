@@ -45,11 +45,21 @@
 
 
 #userList .tabs div {
-    width: 50%;
-    float: left;
+    display: inline-block;
     text-align: center;
-    padding-top: 3px;
+    padding-top: 2px;
     height: 20px;
+    line-height: 18px;
+}
+
+#userList .tabs.notInGame div {
+    width: 49%;
+}
+
+#userList .tabs.inGame div {
+    font-size: 12px;
+    width: auto;
+    padding-right: 2px;
 }
 
 #userList .tableWrap {
@@ -116,6 +126,10 @@
 }
 
 #userList .userListGame:hover{
+    background-color: #E2EAED;
+}
+
+#userList .userListGame.currentGame{
     background-color: #edf1f5;
 }
 
@@ -134,7 +148,8 @@
 }
 
 #userList .inGame {
-    display: none;
+    /*display: none;*/
+
 }
 
 #userList tr.disconnected {

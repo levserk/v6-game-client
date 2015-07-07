@@ -25,6 +25,7 @@ require(['require-cnf'], function () {
                 idleTimeout: 0,
                 shortGuestNames: false,
                 newGameFormat: true,
+                showSpectators: true,
                 getUserParams: function(){
                     var inviteData = {
                         gameType:'Main Mode',

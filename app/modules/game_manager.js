@@ -47,7 +47,8 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.onMessage = function(message){
-        var data = message.data, player = this.client.getPlayer(), i, user;
+        var data = message.data, player = this.client.getPlayer(),
+            i, user, spectatorInd;
         console.log('game_manager;', 'message', message);
         switch (message.type) {
             case 'new_game':
@@ -90,10 +91,16 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
                 this.onSpectateStart(data);
                 break;
             case 'spectator_join':
-                console.log('game_manager;', 'spectate_join', data);
+                console.log('game_manager;', 'spectator_join', data);
+                user = this.client.getUser(data.user);
+                spectatorInd = this.currentRoom.spectators.indexOf(user);
+                if (user && spectatorInd < 0){
+                    this.currentRoom.spectators.push(user);
+                    this.emit('spectator_join', user);
+                }
                 break;
             case 'spectator_leave':
-                console.log('game_manager;', 'spectate_leave', data);
+                console.log('game_manager;', 'spectator_leave', data);
                 if (this.currentRoom && this.currentRoom.id != data.room){
                     console.error('game_manager;', 'user leave wrong room, roomId:', data.room, 'current room: ', this.currentRoom);
                     return;
@@ -101,6 +108,13 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
                 if (data.user == this.client.getPlayer().userId && this.currentRoom) {
                     this.currentRoom.isClosed = true;
                     this.leaveRoom();
+                } else {
+                    user = this.getSpectator(data.user);
+                    spectatorInd = this.currentRoom.spectators.indexOf(user);
+                    if (user && spectatorInd >= 0){
+                        this.currentRoom.spectators.splice(spectatorInd, 1);
+                        this.emit('spectator_leave', user);
+                    }
                 }
                 break;
             case 'error':
@@ -174,8 +188,10 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         console.log('game_manager;', 'spectate start', data);
         //start game
         var room = new Room(data['roomInfo'], this.client);
-        // TODO: server send spectators
-        room.spectators.push(this.client.getPlayer());
+        // for old server version add user to spectators
+        if (!room.spectators.length) {
+            room.spectators.push(this.client.getPlayer());
+        }
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         room.score = data.score || room.score;
@@ -427,7 +443,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         }
         if (!this.enableGames){
             this.leaveGame();
-            this.client.viewsManager.dialogsView.showDialog('новые игры временно отключены',{}, true, false, false);
+            this.client.viewsManager.dialogsView.showDialog('Новые игры временно отключены',{}, true, false, false);
         }
         this.client.send('game_manager', 'ready', 'server', true);
     };
@@ -562,6 +578,13 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         if (this.currentRoom)
             for (var i = 0; i < this.currentRoom.players.length; i++)
                 if (this.currentRoom.players[i].userId == id) return this.currentRoom.players[i];
+        return null;
+    };
+
+
+    GameManager.prototype.getSpectator = function(id){
+        for (var i = 0; i < this.currentRoom.spectators.length; i++)
+            if (this.currentRoom.spectators[i].userId == id) return this.currentRoom.spectators[i];
         return null;
     };
 

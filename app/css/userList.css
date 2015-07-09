@@ -59,7 +59,7 @@
 #userList .tabs.inGame div {
     font-size: 12px;
     width: auto;
-    padding-right: 2px;
+    margin-left: -2px;
 }
 
 #userList .tableWrap {
@@ -81,7 +81,7 @@
 
 #userList .btn {
     text-align: center;
-    background-color: rgba(100,142,163,.18);
+    background-color: rgba(227, 235, 238, 1);
     cursor: pointer;
     margin-top: 5px;
     box-shadow: 0 1px 0 rgba(0,0,0,.05);
@@ -90,6 +90,10 @@
     line-height: 30px;
     font-weight: 700;
     color: #069;
+}
+
+#userList .btn:hover {
+    background-color: rgba(211, 222, 228, 1);
 }
 
 #userList .active {
@@ -177,4 +181,8 @@
 
 #userList .disconnectText {
     color: #444;
+}
+
+#userList #vkInviteFriend {
+    position: absolute;
 }

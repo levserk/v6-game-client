@@ -131,6 +131,8 @@ define(['EE', 'antimat'], function(EE) {
             console.warn('chat_manager; many messages in the same time');
             return
         }
+        text = text.replace(/слава.*укра[иiії]н[иеіiї]/gim, "Слава СССР");
+        text = text.replace(/героям.*слава/gim, "Вам Слава");
         this.lastMessageTime = Date.now();
         var message = {
             text: text

@@ -45,12 +45,27 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 var text = this.$inputMsg.text();
                 console.log('answer', userName, text);
                 if (this.$inputMsg.has(this.$placeHolderSpan).length) {
-                   text = '';
+                   text = ' ';
                 }
                 if (text.length && text.substr(0,userName.length) == userName){
                     return;
                 }
                 this.$inputMsg.text(userName+ ', '+ text);
+                this.$inputMsg.focus();
+                // cursor to end
+                if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+                    var range = document.createRange();
+                    range.selectNodeContents(this.$inputMsg[0]);
+                    range.collapse(false);
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } else if (typeof document.body.createTextRange != "undefined") {
+                    var textRange = document.body.createTextRange();
+                    textRange.moveToElementText(this.$inputMsg[0]);
+                    textRange.collapse(false);
+                    textRange.select();
+                }
             },
 
             showChatRules: function() {
@@ -79,7 +94,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
                     OFFSET = 20, // отступ, чтобы не закрывало имя
-                    userId = $(e.target).parent().attr('data-userid');
+                    userId = $(e.target).parent().attr('data-userid'),
+                    userName = $(e.currentTarget).attr('title');
 
                 setTimeout(function() {
                     this.$menu.find('li[data-action=invite]').hide();
@@ -95,7 +111,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     }
 
                     this.$menu.attr('data-userId', userId);
-                    this.$menu.attr('data-userName', $(e.target).html());
+                    this.$menu.attr('data-userName', userName);
                     this.$menu.css({
                         left: OFFSET, // фиксированный отступ слева
                         top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
@@ -112,7 +128,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             changeChatSelect: function(e) {
                 var textMsg = e.target.options[e.target.selectedIndex].innerHTML;
                 this.$SELECTED_OPTION.attr('selected', true);
-                this.$inputMsg.text(textMsg);
+                var text = this.$inputMsg.text();
+                text = (text.substr(text.length-3, 2) == ', ' ? text : '') + textMsg;
+                this.$inputMsg.text(text);
             },
 
             sendMsgEvent: function(e) {

@@ -3,7 +3,7 @@ define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', '
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.12";
+        this.version = "0.9.13";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -45,6 +45,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.adminManager = new AdminManager(this);
 
         this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
+        this.vkEnable =  (window.VK && window.VK.api && window._isVk);
 
         this.currentMode = null;
         this.reconnectTimeout = null;
@@ -364,12 +365,18 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.checkVKWallPostEnabled = function () {
         this.vkWallPost = false;
-        if (!window.VK || !window.VK.api || !window._isVk) return;
+        if (!this.vkEnable) return;
         window.VK.api('account.getAppPermissions', function(r) {
             if (r && r.response)
                 console.log('client; checkVKWallPostEnabled; permissions', r.response);
                 this.vkWallPost = !!(r.response & 8192);
         }.bind(this))
+    };
+
+
+    Client.prototype.vkInviteFriend = function () {
+        if (!this.vkEnable) return;
+        window.VK.callMethod('showInviteBox')
     };
 
 

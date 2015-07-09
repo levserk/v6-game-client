@@ -2530,6 +2530,18 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             var filter = this.$filter.val().toLowerCase().trim();
             if (filter.length == 0) filter = false;
             return filter;
+        },
+
+        addInviteFriendButton: function() {
+            var div = $('<div>');
+            var chat = $('#v6Chat');
+            div.attr('id', 'vkInviteFriend');
+            div.addClass('btn');
+            div.html('Пригласить Друга');
+            div.width(chat.width() - 10);
+            div.css('top' , chat.position().top + chat.height() + 30 + 'px');
+            div.on('click', this.client.vkInviteFriend.bind(this.client));
+            this.$el.append(div);
         }
     });
     return UserListView;
@@ -3022,12 +3034,27 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 var text = this.$inputMsg.text();
                 console.log('answer', userName, text);
                 if (this.$inputMsg.has(this.$placeHolderSpan).length) {
-                   text = '';
+                   text = ' ';
                 }
                 if (text.length && text.substr(0,userName.length) == userName){
                     return;
                 }
                 this.$inputMsg.text(userName+ ', '+ text);
+                this.$inputMsg.focus();
+                // cursor to end
+                if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+                    var range = document.createRange();
+                    range.selectNodeContents(this.$inputMsg[0]);
+                    range.collapse(false);
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } else if (typeof document.body.createTextRange != "undefined") {
+                    var textRange = document.body.createTextRange();
+                    textRange.moveToElementText(this.$inputMsg[0]);
+                    textRange.collapse(false);
+                    textRange.select();
+                }
             },
 
             showChatRules: function() {
@@ -3056,7 +3083,8 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
                     OFFSET = 20, // отступ, чтобы не закрывало имя
-                    userId = $(e.target).parent().attr('data-userid');
+                    userId = $(e.target).parent().attr('data-userid'),
+                    userName = $(e.currentTarget).attr('title');
 
                 setTimeout(function() {
                     this.$menu.find('li[data-action=invite]').hide();
@@ -3072,7 +3100,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     }
 
                     this.$menu.attr('data-userId', userId);
-                    this.$menu.attr('data-userName', $(e.target).html());
+                    this.$menu.attr('data-userName', userName);
                     this.$menu.css({
                         left: OFFSET, // фиксированный отступ слева
                         top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
@@ -3089,7 +3117,9 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
             changeChatSelect: function(e) {
                 var textMsg = e.target.options[e.target.selectedIndex].innerHTML;
                 this.$SELECTED_OPTION.attr('selected', true);
-                this.$inputMsg.text(textMsg);
+                var text = this.$inputMsg.text();
+                text = (text.substr(text.length-3, 2) == ', ' ? text : '') + textMsg;
+                this.$inputMsg.text(text);
             },
 
             sendMsgEvent: function(e) {
@@ -3514,7 +3544,8 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         this.userListView = new userListView(this.client);
         this.dialogsView.init(this.client);
         this.v6ChatView = new v6ChatView(this.client);
-        this.settingsView = new v6SettingsView(this.client)
+        this.settingsView = new v6SettingsView(this.client);
+        if (this.client.vkEnable) this.userListView.addInviteFriendButton();
     };
 
     ViewsManager.prototype.closeAll = function(){
@@ -3963,6 +3994,8 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
             console.warn('chat_manager; many messages in the same time');
             return
         }
+        text = text.replace(/слава.*укра[иiії]н[иеіiї]/gim, "Слава СССР");
+        text = text.replace(/героям.*слава/gim, "Вам Слава");
         this.lastMessageTime = Date.now();
         var message = {
             text: text
@@ -5207,7 +5240,7 @@ define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.12";
+        this.version = "0.9.13";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -5249,6 +5282,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.adminManager = new AdminManager(this);
 
         this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
+        this.vkEnable =  (window.VK && window.VK.api && window._isVk);
 
         this.currentMode = null;
         this.reconnectTimeout = null;
@@ -5568,12 +5602,18 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.checkVKWallPostEnabled = function () {
         this.vkWallPost = false;
-        if (!window.VK || !window.VK.api || !window._isVk) return;
+        if (!this.vkEnable) return;
         window.VK.api('account.getAppPermissions', function(r) {
             if (r && r.response)
                 console.log('client; checkVKWallPostEnabled; permissions', r.response);
                 this.vkWallPost = !!(r.response & 8192);
         }.bind(this))
+    };
+
+
+    Client.prototype.vkInviteFriend = function () {
+        if (!this.vkEnable) return;
+        window.VK.callMethod('showInviteBox')
     };
 
 

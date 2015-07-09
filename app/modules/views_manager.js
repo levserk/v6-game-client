@@ -14,7 +14,8 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
         this.userListView = new userListView(this.client);
         this.dialogsView.init(this.client);
         this.v6ChatView = new v6ChatView(this.client);
-        this.settingsView = new v6SettingsView(this.client)
+        this.settingsView = new v6SettingsView(this.client);
+        if (this.client.vkEnable) this.userListView.addInviteFriendButton();
     };
 
     ViewsManager.prototype.closeAll = function(){

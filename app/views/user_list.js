@@ -219,6 +219,18 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             var filter = this.$filter.val().toLowerCase().trim();
             if (filter.length == 0) filter = false;
             return filter;
+        },
+
+        addInviteFriendButton: function() {
+            var div = $('<div>');
+            var chat = $('#v6Chat');
+            div.attr('id', 'vkInviteFriend');
+            div.addClass('btn');
+            div.html('Пригласить Друга');
+            div.width(chat.width() - 10);
+            div.css('top' , chat.position().top + chat.height() + 30 + 'px');
+            div.on('click', this.client.vkInviteFriend.bind(this.client));
+            this.$el.append(div);
         }
     });
     return UserListView;

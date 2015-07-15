@@ -18,6 +18,10 @@
 
     window.antimat = t;
 
+    t.badPatternsTrue = [
+        ".*a.*p.*p.*4.*2.*1.*4.*7.*"
+    ];
+
     t.badPatterns = [
         "^(о|а)н(о|а)нист.*",
         "^лошар.*",
@@ -117,6 +121,8 @@
 
     t.containsMat = function (text) {
 
+        if (t.isInBadTruePatterns(text)) return true;
+
         text = t.cleanBadSymbols(text.toLowerCase());
 
         var words = text.split(" ");
@@ -167,6 +173,17 @@
 
         for (var i = 0; i < t.goodPatterns.length; i++) {
             var pattern = new RegExp(t.goodPatterns[i]);
+            if (pattern.test(word))
+                return true;
+        }
+
+        return false;
+    };
+
+    t.isInBadTruePatterns = function (word) {
+
+        for (var i = 0; i < t.badPatternsTrue.length; i++) {
+            var pattern = new RegExp(t.badPatternsTrue[i]);
             if (pattern.test(word))
                 return true;
         }

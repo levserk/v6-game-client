@@ -13,14 +13,16 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
         var BTN_LEAVEGAME_CLASS = 'btnLeaveGame';
         var BTN_LEAVEGAMEOK_CLASS = 'btnLeaveGameOk';
         var client;
+        var locale;
         var roundResultInterval, roundResultStartTime;
         var tplRoundResult = _.template(tplRoundResultStr);
         var dialogTimeout;
         var inviteTimeout = 30;
-        var tplInvite = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
+        var tplInvite = '';
 
         function _subscribe(_client) {
             client = _client;
+            locale = client.locale['dialogs'];
             client.inviteManager.on('new_invite', newInvite);
             client.inviteManager.on('reject_invite', rejectInvite);
             client.inviteManager.on('cancel_invite', cancelInvite);
@@ -40,25 +42,27 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             client.on('disconnected', onDisconnect);
             $(document).on("click", hideOnClick);
             inviteTimeout = client.inviteManager.inviteTimeoutTime;
-            tplInvite = '<div class="inviteTime">Осталось: <span>'+inviteTimeout+'</span> секунд</div>';
+            tplInvite = '<div class="inviteTime">'+locale['inviteTime']+'<span>'+inviteTimeout+'</span>'+locale['seconds']+'</div>';
         }
 
         function newInvite(invite) {
-            var html = 'Вас пригласил в игру пользователь <b>' + invite.from.userName + '</b>';
+            var html = locale.invite + ' <b>' + invite.from.userName + '</b>';
             if (typeof this.client.opts.generateInviteText == "function")
                 html = this.client.opts.generateInviteText(invite);
                 html += tplInvite;
             var div = showDialog(html, {
                 buttons: {
-                    "Принять": function() {
-                        clearInterval(invite.data.timeInterval);
-                        client.inviteManager.accept($(this).attr('data-userId'));
-                        $(this).remove();
+                    "Принять": { text: locale['accept'], click: function() {
+                            clearInterval(invite.data.timeInterval);
+                            client.inviteManager.accept($(this).attr('data-userId'));
+                            $(this).remove();
+                        }
                     },
-                    "Отклонить": function(){
-                        clearInterval(invite.data.timeInterval);
-                        client.inviteManager.reject($(this).attr('data-userId'));
-                        $(this).remove();
+                    "Отклонить": { text: locale['decline'], click: function() {
+                            clearInterval(invite.data.timeInterval);
+                            client.inviteManager.reject($(this).attr('data-userId'));
+                            $(this).remove();
+                        }
                     }
                 },
                 close: function() {
@@ -79,10 +83,10 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
 
         function rejectInvite(invite) {
             console.log('dialogs; rejectInvite invite', invite);
-            var html = 'Пользователь <b>' + invite.user.userName + '</b>';
+            var html = locale.user + ' <b>' + invite.user.userName + '</b>';
             if (invite.reason != 'timeout')
-                html += ' отклонил ваше приглашение';
-            else html += ' превысил лимит ожидания в '+inviteTimeout+' секунд';
+                html += locale['rejectInvite'];
+            else html += locale['timeoutInvite'] + inviteTimeout + locale['seconds'];
             var div = showDialog(html, {}, true, true, true);
         }
 
@@ -100,16 +104,18 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
 
         function askDraw(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь <b>' + user.userName + '</b> предлагает ничью';
+            var html = locale['user'] + ' <b>' + user.userName + '</b>' + locale['askDraw'];
             var div = showDialog(html,{
                 buttons: {
-                    "Принять": function() {
-                        client.gameManager.acceptDraw();
-                        $(this).remove();
+                    "Принять": { text: locale['accept'], click: function() {
+                            client.gameManager.acceptDraw();
+                            $(this).remove();
+                        }
                     },
-                    "Отклонить": function() {
-                        client.gameManager.cancelDraw();
-                        $(this).remove();
+                    "Отклонить": { text: locale['decline'], click: function() {
+                            client.gameManager.cancelDraw();
+                            $(this).remove();
+                        }
                     }
                 },
                 close: function() {
@@ -121,22 +127,24 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
         }
 
         function cancelDraw(user) {
-            var html = 'Пользователь <b>' + user.userName + '</b> отклонил ваше предложение о ничье';
+            var html = locale['user'] + ' <b>' + user.userName + '</b> ' + locale['cancelDraw'];
             var div = showDialog(html, {}, true, true, true);
         }
 
         function askTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь <b>' + user.userName + '</b> просит отменить ход. Разрешить ему?';
+            var html = locale['user'] + ' <b>' + user.userName + '</b> ' + locale['askTakeBack'];
             var div = showDialog(html,{
                 buttons: {
-                    "Да": function() {
-                        client.gameManager.acceptTakeBack();
-                        $(this).remove();
+                    "Да": { text: locale['yes'], click: function() {
+                            client.gameManager.acceptTakeBack();
+                            $(this).remove();
+                        }
                     },
-                    "Нет": function() {
-                        client.gameManager.cancelTakeBack();
-                        $(this).remove();
+                    "Нет": { text: locale['no'], click: function() {
+                            client.gameManager.cancelTakeBack();
+                            $(this).remove();
+                        }
                     }
                 },
                 close: function() {
@@ -150,7 +158,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
 
         function cancelTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
-            var html = 'Пользователь <b>' + user.userName + '</b> отклонил ваше просьбу отменить ход';
+            var html = locale['user'] + ' <b>' + user.userName + '</b>' + locale['cancelTakeBack'];
             var div = showDialog(html, {}, true, true, true);
         }
 
@@ -169,23 +177,23 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             hideDialogs();
             var result = "";
             switch (data.result){
-                case 'win': result = 'Победа'; break;
-                case 'lose': result = 'Поражение'; break;
-                case 'draw': result = 'Ничья'; break;
-                default : result = 'игра окночена';
+                case 'win': result = locale['win']; break;
+                case 'lose': result = locale['lose']; break;
+                case 'draw': result = locale['draw']; break;
+                default : result = locale['gameOver'];
             }
-            result += '<b> (' + (eloDif >= 0 ? '+':'') + eloDif + ' очков) </b>';
+            result += '<b> (' + (eloDif >= 0 ? '+':'') + eloDif + ' '+locale['scores']+') </b>';
             switch (data.action){
-                case 'timeout': result +=  (data.result == 'win' ? 'У соперника ' : 'У Вас ') + ' закончилось время';
+                case 'timeout': result +=  (data.result == 'win' ? locale['opponentTimeout'] : locale['playerTimeout']);
                     break;
-                case 'throw': result +=  (data.result == 'win' ? 'Соперник сдался ' : 'Вы сдались ');
+                case 'throw': result +=  (data.result == 'win' ? locale['opponentThrow'] : locale['playerThrow']);
                     break;
             }
             var rankResult = '';
             if (newRank > 0) {
                 if (data.result == 'win' && oldRank > 0 && newRank < oldRank) {
-                    rankResult = 'Вы поднялись в общем рейтинге с ' + oldRank + ' на ' + newRank + ' место.';
-                } else rankResult = 'Вы занимаете ' + newRank + ' место в общем рейтинге.';
+                    rankResult = locale['ratingUp'] + oldRank + locale['on'] + newRank + locale['place'] + '.';
+                } else rankResult = locale['ratingPlace'] + newRank + locale['place'] + '.';
             }
             // check vk post
             if (this.client.vkWallPost) {
@@ -197,23 +205,25 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                     vkText = 'Я занимаю ' + newRank + ' место в рейтинге';
                 }
             }
-            var html = tplRoundResult({result: result, rankResult: rankResult, vkPost: vkPost});
+            var html = tplRoundResult({
+                result: result, rankResult: rankResult, vkPost: vkPost, locale: locale
+            });
             var div = showDialog(html, {
                 width: 350,
                 buttons: {
                     "Да, начать новую игру": {
-                        text: 'Да, начать новую игру',
+                        text: locale['playAgain'],
                         'class': BTN_PLAYAGANIN_CLASS,
                         click: function () {
                             console.log('result yes');
                             client.gameManager.sendReady();
                             div.parent().find(':button').hide();
                             div.parent().find(":button."+BTN_LEAVEGAME_CLASS).show();
-                            div.find('.'+ACTION_CLASS).html('Ожидание соперника..');
+                            div.find('.'+ACTION_CLASS).html(locale['waitingOpponent']);
                         }
                     },
                     "Нет, выйти": {
-                        text: 'Нет, выйти',
+                        text: locale['leave'],
                         'class': BTN_LEAVEGAME_CLASS,
                         click: function () {
                             console.log('result no');
@@ -259,7 +269,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                     console.log('interval', time);
                     clearInterval(roundResultInterval);
                     this.find('.roundResultTime').hide();
-                    this.find('.'+ACTION_CLASS).html('Время ожидания истекло');
+                    this.find('.'+ACTION_CLASS).html(locale['waitingTimeout']);
                     div.parent().find(':button').hide();
                     div.parent().find(":button."+BTN_LEAVEGAMEOK_CLASS).show();
                     div.removeClass(GAME_CLASS);
@@ -276,7 +286,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
 
         function userLeave(user) {
             hideNotification();
-            var html = 'Пользователь <b>' + user.userName + '</b> покинул игру';
+            var html = locale['user'] + ' <b>' + user.userName + '</b> ' + locale['opponentLeave'];
             var div = $('.'+ROUNDRESULT_CLASS);
             if (div && div.length>0){   // find round result dialog and update it
                 div.parent().find(':button').hide();
@@ -302,14 +312,14 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
         }
 
         function loginError() {
-            var html = 'Ошибка авторизации. Обновите страницу';
+            var html = locale['loginError'];
             var div = showDialog(html, {}, false, false, false);
         }
 
         function showBan(ban) {
-            var html = 'Вы не можете писать сообщения в чате, т.к. добавлены в черный список ';
+            var html = locale['banMessage'];
             if (ban.reason && ban.reason != '') html += 'за ' + ban.reason;
-            else html += 'за употребление нецензурных выражений и/или спам ';
+            else html += locale['banReason'];
             if (ban.timeEnd) {
                 html += (ban.timeEnd > 2280000000000 ? ' навсегда' : ' до ' + formatDate(ban.timeEnd));
             }
@@ -417,6 +427,5 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             }
         };
     }());
-
     return dialogs;
 });

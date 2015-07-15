@@ -1,21 +1,23 @@
 define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], function(EE, HistoryView, Turn, GameEvent) {
     'use strict';
 
+    var locale;
     var HistoryManager = function (client) {
         this.client = client;
+        locale = client.locale['history'];
         this.conf = {
             tabs:[],
             subTabs:[],
             columns:[
-                {  id:'date',       source:'date',      title:'Дата' },
-                {  id:'opponent',   source:'opponent',  title:'Противник' },
-                {  id:'time',       source:'time',      title:'Время'     },
-                {  id:'number',     source:'number',    title:'#' },
-                {  id:'elo',        source:'elo',       title:'Рейтинг', dynamic:true, startValue:1600 }
+                {  id:'date',       source:'date',      title: locale.columns.date },
+                {  id:'opponent',   source:'opponent',  title: locale.columns.opponent },
+                {  id:'time',       source:'time',      title: locale.columns.time    },
+                {  id:'number',     source:'number',    title: locale.columns.number },
+                {  id:'elo',        source:'elo',       title: locale.columns.elo, dynamic:true, startValue:1600 }
             ]
         };
 
-        if (typeof client.opts.initHistory== "function") this.conf =  client.opts.initHistory(this.conf);
+        if (typeof client.opts.initHistory== "function") this.conf =  client.opts.initHistory(this.conf, this.client);
         this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.historyId?$('#'+client.opts.blocks.historyId):$('body'));
@@ -34,7 +36,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
     HistoryManager.prototype = new EE();
 
 
-    HistoryManager.prototype.init = function(conf){
+    HistoryManager.prototype.init = function(){
         this.conf.tabs = [];
         if (this.client.modes.length > 1)
             for (var i = 0 ; i < this.client.modes.length; i++)
@@ -51,7 +53,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
         var data = message.data;
         console.log('history_manager;', 'message', message);
         switch (message.type) {
-            case 'history': this.onHistoryLoad(data.mode, data.history, data.penalties, data.userId); break;
+            case 'history': this.onHistoryLoad(data['mode'], data['history'], data['penalties'], data.userId); break;
             case 'game': this.onGameLoad(data.mode, data.game); break;
         }
     };
@@ -295,7 +297,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
     };
 
     function formatDate(time) {
-        var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        var months = locale.months;
         var date = new Date(time);
         var day = date.getDate();
         var month = months[date.getMonth()];

@@ -65,15 +65,15 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 // cancel invite
                 this.client.inviteManager.cancel();
                 target.removeClass(this.ACTIVE_INVITE_CLASS);
-                target.html('Пригласить');
+                target.html(this.locale.buttons.invite);
             } else {
                 // send invite
-                this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
+                this.$el.find('.' + this.ACTIVE_INVITE_CLASS).html(this.locale.buttons.invite).removeClass(this.ACTIVE_INVITE_CLASS);
                 var params = (typeof this.client.opts.getUserParams == 'function' ? this.client.opts.getUserParams() : {});
                 params = $.extend(true, {}, params);
                 this.client.inviteManager.sendInvite(userId, params);
                 target.addClass(this.ACTIVE_INVITE_CLASS);
-                target.html('Отмена');
+                target.html(this.locale.buttons.cancel);
             }
         },
         playClicked: function (e) {
@@ -87,15 +87,16 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             var bindedRender = this.render.bind(this);
 
             this.client = _client;
+            this.locale = _client.locale.userList;
 
             this.$disconnectedTab = $('<tr class="disconnected"><td><div>' +
-                '<span class="disconnectText">Соединение с сервером отсутствует</span>' +
+                '<span class="disconnectText">' + this.locale.disconnected.text + '</span>' +
                 '<br>' +
                 '<br>' +
-                '<span class="disconnectButton">Переподключиться</span>' +
+                '<span class="disconnectButton">' + this.locale.disconnected.button + '</span>' +
                 '</div></td></tr>');
-            this.$loadingTab = $('<tr><td>Загрузка..</td></tr>');
-            this.$el.html(this.tplMain());
+            this.$loadingTab = $('<tr><td>' + this.locale.disconnected.status + '</td></tr>');
+            this.$el.html(this.tplMain(this.locale));
             this.$el.addClass('v6-block-border');
 
             // append user list
@@ -107,8 +108,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
 
-            this.TEXT_PLAY_ACTIVE = 'Идет подбор игрока...';
-            this.TEXT_PLAY_UNACTIVE = 'Играть с любым';
+            this.TEXT_PLAY_ACTIVE = this.locale.buttons.cancelPlayRandom;
+            this.TEXT_PLAY_UNACTIVE = this.locale.buttons.playRandom;
 
             this.IN_GAME_CLASS = 'inGame';
             this.NOT_IN_GAME_CLASS = 'NotInGame';
@@ -190,7 +191,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             switch(this.currentActiveTabName) {
                 case 'free':
                     this.$list.html(this.tplFree({
-                        users: this.client.userList.getUserList(this.getFilter())
+                        users: this.client.userList.getUserList(this.getFilter()),
+                        locale: this.locale
                     }));
                     break;
                 case 'inGame':
@@ -200,14 +202,15 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                     break;
                 case 'spectators':
                     this.$list.html(this.tplFree({
-                        users: this.client.userList.getSpectatorsList(this.getFilter())
+                        users: this.client.userList.getSpectatorsList(this.getFilter()),
+                        locale: this.locale
                     }));
                     break;
                 default: console.warn('unknown tab', this.currentActiveTabName);
             }
         },
         onRejectInvite: function(invite) {
-            this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html('Пригласить').removeClass(this.ACTIVE_INVITE_CLASS);
+            this.$el.find('.' + this.ACTIVE_INVITE_CLASS + '[data-userId="' + invite.user.userId + '"]').html(this.locale.buttons.invite).removeClass(this.ACTIVE_INVITE_CLASS);
         },
         render: function() {
             if (this.client.unload) return;

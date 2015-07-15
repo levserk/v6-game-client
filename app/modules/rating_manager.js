@@ -1,25 +1,27 @@
 define(['EE', 'views/rating'], function(EE, RatingView) {
     'use strict';
 
+    var locale;
     var RatingManager = function (client) {
         this.client = client;
+        locale = client.locale['rating'];
         this.conf = {
             tabs:[
-                {id: 'all_players', title: 'все игроки'}
+                {id: 'all_players', title: locale.tabs['allPlayers']}
             ],
             subTabs:[
             ],
             columns:[
-                {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
-                {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
-                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> Эло',         canOrder:true },
-                {  id:'win',            source:'win',         title:'Выиграл',                  canOrder:true },
-                {  id:'lose',           source:'lose',        title:'Проиграл',                 canOrder:false },
-                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> регистрации',    canOrder:true }
+                {  id:'rank',           source:'rank',        title: locale.columns.rank,       canOrder:false },
+                {  id:'userName',       source:'userName',    title: locale.columns.userName,   canOrder:false },
+                {  id:'ratingElo',      source:'ratingElo',   title: locale.columns.ratingElo,  canOrder:true },
+                {  id:'win',            source:'win',         title: locale.columns.win,        canOrder:true },
+                {  id:'lose',           source:'lose',        title: locale.columns.lose,       canOrder:false },
+                {  id:'dateCreate',     source:'dateCreate',  title: locale.columns.dateCreate, canOrder:true }
             ]
         };
 
-        if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf);
+        if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf, this.client);
         this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));

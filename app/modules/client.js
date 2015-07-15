@@ -1,9 +1,11 @@
 define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
-        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager', 'EE', 'idleTimer'],
-function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager, SoundManager, AdminManager, EE) {
+        'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager',
+        'modules/localization_manager', 'EE', 'idleTimer'],
+function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,
+         SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.13";
+        this.version = "0.9.15";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -19,6 +21,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.newGameFormat = !!opts.newGameFormat || false;
         opts.vk = opts.vk || {};
         opts.showSpectators =  opts.showSpectators || false;
+        opts.localization = opts.localization || {};
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -33,7 +36,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.game = opts.game || 'test';
         this.defaultSettings = $.extend(true, {}, defaultSettings, opts.settings || {});
         this.settings = $.extend(true, {}, this.defaultSettings);
+        this.lang = opts.lang;
+        this.locale = opts.localization;
         this.modesAlias = {};
+        this.localizationManager = new LocalizationManager(this);
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
         this.inviteManager = new InviteManager(this);
@@ -206,6 +212,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.game = this.opts.game = opts.game;
         this.modes = this.opts.modes = opts.modes;
         this.modesAlias = this.opts.modesAlias = opts.modesAlias || this.modesAlias;
+        this.locale.modes = $.extend(true, this.modesAlias, this.locale.modes);
         this.opts.turnTime = opts.turnTime;
         this.opts.loadRanksInRating = !!opts.loadRanksInRating;
         this.chatManager.ban = ban;

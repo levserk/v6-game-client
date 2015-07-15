@@ -5,9 +5,9 @@
     <% if (user.isPlayer) { %>
     <td></td>
     <% } else if (user.isInvited) { %>
-    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">Отмена</td>
+    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">"<%= locale.buttons.cancel %></td>
     <% } else { %>
-    <td class="inviteBtn" data-userId="<%= user.userId %>">Пригласить</td>
+    <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>
     <% } %>
 
 </tr>

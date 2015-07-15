@@ -87,10 +87,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             initialize: function(_conf, _manager) {
                 this.conf = _conf;
                 this.manager = _manager;
+                this.locale = _manager.client.locale.rating;
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain({close:this.conf.images.close, spin: this.conf.images.spin}));
+                this.$el.html(this.tplMain({
+                    close:this.conf.images.close, spin: this.conf.images.spin, locale: this.locale
+                }));
 
                 this.$tabs = $(this.$el.find('.filterPanel').children()[0]);
                 this.$titles = this.$el.find('.headTitles');
@@ -100,14 +103,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 this.$showMore = $(this.$el.find('#ratingShowMore'));
 
 
-                this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
+                this.NOVICE = '<span style="color: #C42E21 !important;">' + this.locale['novice'] + '</span>';
                 this.IMG_BOTH = '<img src="' + _conf.images.sortBoth + '">';
                 this.IMG_ASC= '<img src="' + _conf.images.sortAsc + '">';
                 this.IMG_DESC = '<img src="' + _conf.images.sortDesc + '">';
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
                 this.SORT = 'sorted';
-                this.YOU = 'Вы:';
+                this.YOU = this.locale['you'] + ':';
                 this.HEAD_USER_CLASS = 'headUser';
                 this.ACTIVE_CLASS = 'active';
                 this.ONLINE_CLASS = 'online';
@@ -153,7 +156,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     this.$titles.append(this.tplTH(th));
                     th.value = col.canOrder?this.IMG_BOTH:'';
                     if (col.id == 'rank') th.value= "";
-                    if (col.id == 'userName') th.value = this.tplSearch({imgDel: this.conf.images.del});
+                    if (col.id == 'userName') {
+                        th.value = this.tplSearch({
+                            imgDel: this.conf.images.del, locale: this.locale
+                        });
+                    }
                     this.$icons.append(this.tplTH(th));
                 }
                 this.setColumnOrder('ratingElo');
@@ -205,7 +212,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     });
                     if (isUser){ // Render user rating row (infoUser)
                         if (col.id == 'rank') col.value = this.YOU;
-                        if (col.id == 'userName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + ' место)';
+                        if (col.id == 'userName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + this.locale['place'] + ')';
                     }
                     if (col.id == 'userName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
                     columns += this.tplTD(col);

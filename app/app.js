@@ -14,7 +14,7 @@ require(['require-cnf'], function () {
                 userName: userName,
                 sign: sign
             };
-
+            window.$ = jQuery;
             window.LogicGame = {isSuperUser:function(){return true;}};
 
             window._client = new Client({
@@ -38,16 +38,16 @@ require(['require-cnf'], function () {
                     return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
                         + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);
                 },
-                initRating: function(conf){
+                initRating: function(conf, client){
                     conf.columns.splice(conf.columns.length-1, 0, {
-                        id:'score', source:'score', title:'Очки', canOrder:true, undef: 100,
+                        id:'score', source:'score', title: client.locale.rating.columns.score, canOrder:true, undef: 100,
                         func: function(value) { return value * 10 }
                     });
                     return conf;
                 },
-                initHistory: function(conf){
+                initHistory: function(conf, client){
                     conf.columns.push({
-                        id:'score', source:'score', title:'Очки', undef: 100
+                        id:'score', source:'score', title: client.locale.history.columns.score, undef: 100
                     });
                     return conf;
                 },
@@ -98,7 +98,25 @@ require(['require-cnf'], function () {
                     color: 'red',
                     sounds: false
                 },
-                settingsTemplate: settingsTemplate
+                settingsTemplate: settingsTemplate,
+                lang: 'en',
+                localization: {
+                    "ru": {
+                        "history": {
+                            "columns": {
+                                "score": "Очки"
+                            }
+                        },
+                        "rating": {
+                          "columns": {
+                              "score": "Очки"
+                          }
+                        },
+                        "modes": {
+                            "mode_1": "Режим №1"
+                        }
+                    }
+                }
             }).init(user);
 
             var _client = window._client;

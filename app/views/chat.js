@@ -47,7 +47,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 if (this.$inputMsg.has(this.$placeHolderSpan).length) {
                    text = ' ';
                 }
-                if (text.length && text.substr(0,userName.length) == userName){
+                if (text.indexOf(userName+',') != -1){
                     return;
                 }
                 this.$inputMsg.text(userName+ ', '+ text);
@@ -208,9 +208,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
             initialize: function(_client) {
                 this.client = _client;
+                this.locale = _client.locale.chat;
                 this.manager = _client.chatManager;
                 this.images = _client.opts.images;
-                this.$el.html(this.tplMain());
+                this.$el.html(this.tplMain({locale: this.locale}));
                 this.$el.addClass('v6-block-border');
 
                 this.MAX_MSG_LENGTH = 128;
@@ -237,7 +238,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     this.$rules.hide();
                 }.bind(this));
 
-                this.$placeHolderSpan = $('<span class="placeHolderSpan">Введите ваше сообщение..</span>');
+                this.$placeHolderSpan = $('<span class="placeHolderSpan">'+this.locale.inputPlaceholder+'..</span>');
 
                 this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner" style="background: url(' + this.images.spin + ');"></div></li>');
                 this.$messagesWrap = this.$el.find('.messagesWrap');
@@ -248,7 +249,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.currentActiveTabName = 'public';
                 this.currentActiveTabTitle = _client.game;
                 this.tabs = {
-                    'public': { target: _client.game, title: 'Общий' },
+                    'public': { target: _client.game, title: this.locale.tabs.main },
                     'private': null,
                     'room': null
                 };
@@ -301,7 +302,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     this.currentActiveTabName = 'private';
                     this._setActiveTab('private');
                 } else if (dialog.roomId) {
-                    this.tabs['room'] = {target: dialog.roomId, title:'Стол'};
+                    this.tabs['room'] = {target: dialog.roomId, title: this.locale.tabs.room};
                     this.currentActiveTabName = 'room';
                     this._setActiveTab('room');
                 }

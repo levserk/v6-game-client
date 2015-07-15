@@ -1,0 +1,115 @@
+{
+  "name": "en",
+  "userList":{
+    "tabs":{
+      "free":"Free",
+      "inGame":"In Game",
+      "spectators": "Spectators"
+    },
+    "disconnected": {
+      "text": "No connection",
+      "button": "Reconnect",
+      "status": "Loading.."
+    },
+    "search": "Search in list",
+    "buttons":{
+      "playRandom": "Play with a anyone",
+      "cancelPlayRandom": "Waiting a opponent...",
+      "invite": "Invite",
+      "cancel": "Cancel"
+    }
+  },
+  "chat":{
+    "tabs":{
+      "main": "Main",
+      "room": "Room"
+    },
+    "inputPlaceholder": "Type your message",
+    "templateMessages": {
+      "header": "Template messages"
+    },
+    "buttons":{
+      "send": "Send",
+      "chatRules": "Chat rules"
+    },
+    "menu":{
+      "answer": "Answer",
+      "showProfile": "Show profile",
+      "invite": "Send invite",
+      "ban": "ban"
+    }
+  },
+  "dialogs":{
+    "invite": "You are invited to play by ",
+    "inviteTime": "Remaining: ",
+    "user": "User",
+    "rejectInvite": " has declined your invitation",
+    "timeoutInvite": " limit exceeded expectations ",
+    "seconds": " seconds",
+    "askDraw": " offers a draw",
+    "cancelDraw": "declined your proposal for a draw",
+    "askTakeBack": "asks to cancel turn. Allow him?",
+    "cancelTakeBack": " declined your request to cancel turn",
+    "accept": "Accept",
+    "decline": "Decline",
+    "yes": "Yes",
+    "no": "No",
+    "win": "Win",
+    "lose": "Lose",
+    "draw": "Draw",
+    "gameOver": "Game over",
+    "scores": "scores",
+    "opponentTimeout": "Opponent time is over",
+    "playerTimeout": "Your time is over",
+    "opponentThrow": "Opponent surrendered",
+    "playerThrow": "You surrendered",
+    "ratingUp": "You have risen in the overall ranking from ",
+    "ratingPlace": "You take ",
+    "on": " to ",
+    "place": " place in ranking",
+    "dialogPlayAgain": "Play with your opponent again?",
+    "playAgain": "Yes, play again",
+    "leave": "No, leave",
+    "waitingOpponent": "Waiting for opponent..",
+    "waitingTimeout": "Timeout",
+    "opponentLeave": "left the game",
+    "banMessage": "You can not write messages in chat since added to the black list ",
+    "banReason": "for the use of foul language and / or spam  ",
+    "loginError": "Authorisation Error. Refresh the page"
+  },
+  "history": {
+    "columns": {
+      "date": "Date",
+      "opponent": "Opponent",
+      "time": "Time",
+      "number": "#",
+      "elo": "Rating"
+    },
+    "close": "Close history window",
+    "showMore": "Show more",
+    "noHistory": "no history",
+    "placeholder": "Search by name",
+    "months": ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+  },
+  "rating": {
+    "tabs": {
+      "allPlayers": "All players"
+    },
+    "columns": {
+      "rank": "Place",
+      "userName": "Name",
+      "ratingElo": "Rating <br> Elo",
+      "win": "Win",
+      "lose": "Lose",
+      "dateCreate": "Registration <br> date"
+    },
+    "close": "Close rating window",
+    "placeholder": "Search by name",
+    "showMore": "More 500 players",
+    "jumpTop": "to rating top",
+    "place": " place",
+    "you": "You",
+    "search": "Search",
+    "novice": "novice"
+  }
+}

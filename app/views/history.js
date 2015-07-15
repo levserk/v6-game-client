@@ -24,9 +24,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             initialize: function(_conf, manager) {
                 this.conf = _conf;
                 this._manager = manager;
+                this.locale = manager.client.locale.history;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain({close: _conf.images.close, imgDel: _conf.images.del, spin: _conf.images.spin}));
+                this.$el.html(this.tplMain({
+                    close: _conf.images.close, imgDel: _conf.images.del, spin: _conf.images.spin, locale: this.locale
+                }));
 
                 this.$head = this.$el.find('.historyHeader');
                 this.$titles = $(this.$el.find('.historyTable thead tr')[0]);

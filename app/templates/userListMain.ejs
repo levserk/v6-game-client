@@ -1,15 +1,15 @@
 <div class="tabs notInGame">
-    <div data-type="free">Свободны <span></span></div>
-    <div data-type="inGame">Играют <span></span></div>
-    <div data-type="spectators" style="display: none">Смотрят <span></span></div>
+    <div data-type="free"> <%= tabs.free %> <span></span></div>
+    <div data-type="inGame"> <%= tabs.inGame %>  <span></span></div>
+    <div data-type="spectators" style="display: none"> <%= tabs.spectators %>  <span></span></div>
 </div>
 <div id="userListSearch">
-    <label for="filterUserList">Поиск по списку:</label><input type="text" id="filterUserList"/>
+    <label for="filterUserList"> <%= search %>:</label><input type="text" id="filterUserList"/>
 </div>
 <div class="tableWrap">
     <table cellspacing="0" class="playerList"></table>
 </div>
 
 <div class="btn" id="randomPlay">
-    <span>Играть с любым</span>
+    <span><%= buttons.playRandom %></span>
 </div>

@@ -19,7 +19,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                 this.images  = client.opts.images;
                 this.changedProperties = [];
                 this.$el.html(this.tplMain({close:this.images.close, settings: client.opts.settingsTemplate ? _.template(client.opts.settingsTemplate)() : this.tplDefault()}));
-
+                this.listenTo(client, 'login', this.load.bind(this));
                 $('body').append(this.$el);
                 this.$el.hide();
                 this.$el.draggable();
@@ -123,6 +123,31 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                     left: ($(window).width() / 2) - (this.$el.outerWidth() / 2)
                 }).show();
                 this.load();
+            },
+
+            getCurrentSettings: function() {
+                var defaultSettings = this.client.defaultSettings,
+                    settings = $.extend({}, this.client.settings),
+                    value, $input;
+                for (var property in defaultSettings){
+                    if (defaultSettings.hasOwnProperty(property)){
+                        value = settings[property];
+                        if (typeof value == "boolean") {
+                            $input = this.$el.find('input[name=' + property + ']');
+                            value = $input.prop('checked');
+                        }
+                        else {
+                            $input = this.$el.find('input[name=' + property + ']:checked');
+                            value = $input.val();
+                        }
+                        if ($input) {
+                            settings[property] = value;
+                        } else {
+                            settings[property] = this.client.settings[property]
+                        }
+                    }
+                }
+                return settings;
             }
 
         });

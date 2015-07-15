@@ -1,5 +1,5 @@
 <p><%= result %></p>
 <p><%= rankResult %></p>
 <%= vkPost ? '<span class="vkWallPost">Рассказать друзьям</span>' : '<br>'%>
-<span class="dialogGameAction">Сыграть с соперником еще раз?</span>
-<div class="roundResultTime">Осталось: <span>30</span> секунд</div>
+<span class="dialogGameAction"><%= locale.dialogPlayAgain %></span>
+<div class="roundResultTime"><%= locale.inviteTime %><span>30</span><%= locale.seconds %></div>

@@ -1,15 +1,15 @@
 <div class="tabs">
-    <div class="tab" data-type="public">Общий</div>
-    <div class="tab" data-type="room" style="display: none;">Стол</div>
+    <div class="tab" data-type="public"><%= locale.tabs.main %></div>
+    <div class="tab" data-type="room" style="display: none;"><%= locale.tabs.room %></div>
     <div class="tab" data-type="private" style="display: none;">игрок</div>
 </div>
 <div class="clear"></div>
 <div class="messagesWrap"><ul></ul></div>
 <div class="inputMsg" contenteditable="true"></div>
 <div class="layer1">
-    <div class="sendMsgBtn">Отправить</div>
+    <div class="sendMsgBtn"><%= locale.buttons.send %></div>
     <select id="chat-select">
-        <option selected style="font-style: italic;">Готовые сообщения</option>
+        <option selected style="font-style: italic;"><%= locale.templateMessages.header %></option>
         <option>Ваш ход!</option>
         <option>Привет!</option>
         <option>Молодец!</option>
@@ -38,12 +38,12 @@
         <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>
     </span>
 
-    <span class="chatRules">Правила чата</span>
+    <span class="chatRules"><%= locale.buttons.chatRules %></span>
 </div>
 
 <ul class="menuElement noselect">
-    <li data-action="answer"><span>Ответить</span></li>
-    <li data-action="invite"><span>Пригласить в игру</span></li>
-    <li data-action="showProfile"><span>Показать профиль</span></li>
-    <li data-action="ban"><span>Забанить в чате</span></li>
+    <li data-action="answer"><span><%= locale.menu.answer %></span></li>
+    <li data-action="invite"><span><%= locale.menu.invite %></span></li>
+    <li data-action="showProfile"><span><%= locale.menu.showProfile %></span></li>
+    <li data-action="ban"><span><%= locale.menu.ban %></span></li>
 </ul>

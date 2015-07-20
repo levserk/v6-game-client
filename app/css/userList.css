@@ -92,10 +92,6 @@
     color: #069;
 }
 
-#userList .btn:hover {
-    background-color: rgba(211, 222, 228, 1);
-}
-
 #userList .active {
     background-color: #f7f791;
 }
@@ -119,7 +115,7 @@
 }
 
 #userList .userListFree .userName:hover {
-    background-color: #edf1f5;
+    text-decoration: underline;
 }
 
 #userList .userRank {
@@ -127,10 +123,6 @@
     font-size: 9px;
     text-align: right;
     padding-right: 25px;
-}
-
-#userList .userListGame:hover{
-    background-color: #E2EAED;
 }
 
 #userList .userListGame.currentGame{

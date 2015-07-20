@@ -152,10 +152,6 @@
     display: inline-block;
 }
 
-#v6Chat .chatMsg:hover {
-    background-color: #edf1f5!important;
-}
-
 #v6Chat .chatMsg.newMsg {
     background-color: rgb(237, 241, 245);
 }

@@ -12,6 +12,7 @@
       "status": "Loading.."
     },
     "search": "Search in list",
+    "disableInvite": "Invites disable",
     "buttons":{
       "playRandom": "Play with a anyone",
       "cancelPlayRandom": "Waiting a opponent...",

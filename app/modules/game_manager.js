@@ -145,6 +145,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         this.currentRoom.cancelsAscTakeBack = 0;
         this.currentRoom.cancelsAscDraw = 0;
         this.currentRoom.history = [];
+        this.currentRoom.initData = data;
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
 
         this.emit('round_start', {
@@ -152,6 +153,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             first: this.getPlayer(data.first),
             id: data.id,
             inviteData: data.inviteData,
+            initData: data,
             score: this.currentRoom.score,
             isPlayer: this.currentRoom.isPlayer,
             loading: !!loading

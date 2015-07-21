@@ -85,7 +85,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         },
         initialize: function(_client) {
             var bindedRender = this.render.bind(this);
-
+            this.images = _client.opts.images;
             this.client = _client;
             this.locale = _client.locale.userList;
 
@@ -192,7 +192,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 case 'free':
                     this.$list.html(this.tplFree({
                         users: this.client.userList.getUserList(this.getFilter()),
-                        locale: this.locale
+                        locale: this.locale,
+                        imgBlock: this.images.block
                     }));
                     break;
                 case 'inGame':
@@ -203,7 +204,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                 case 'spectators':
                     this.$list.html(this.tplFree({
                         users: this.client.userList.getSpectatorsList(this.getFilter()),
-                        locale: this.locale
+                        locale: this.locale,
+                        imgBlock: this.images.block
                     }));
                     break;
                 default: console.warn('unknown tab', this.currentActiveTabName);

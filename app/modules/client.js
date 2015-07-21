@@ -11,7 +11,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.reload = false;
         opts.turnTime = opts.turnTime || 60;
         opts.blocks = opts.blocks || {};
-        opts.images = opts.images || defaultImages;
+        opts.images = defaultImages;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
         opts.autoReconnect = opts.autoReconnect != false;
         opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
@@ -365,8 +365,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     };
 
 
-    Client.prototype._onSettingsChanged = function(property){
-        this.emit('settings_changed', property);
+    Client.prototype._onSettingsChanged = function(data){
+        this.emit('settings_changed', data);
+        if (data.property == 'disableInvite'){
+            this.getPlayer().disableInvite = data.value;
+            this.userList.onUserChanged(this.getPlayer());
+        }
     };
 
 
@@ -412,29 +416,30 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         sortAsc:    '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
         sortDesc:   '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
         sortBoth:   '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
-        del:        '//logic-games.spb.ru/v6-game-client/app/i/delete.png'
+        del:        '//logic-games.spb.ru/v6-game-client/app/i/delete.png',
+        block:      '//logic-games.spb.ru/v6-game-client/app/i/stop.png'
     };
 
     var defaultSounds = {
         start: {
-            src: 'audio/v6-game-start.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-start.ogg'
         },
         turn: {
-            src: 'audio/v6-game-turn.ogg',
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-turn.ogg',
             volume: 0.5,
             enable: false
         },
         win: {
-            src: 'audio/v6-game-win.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-win.ogg'
         },
         lose: {
-            src: 'audio/v6-game-lose.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-lose.ogg'
         },
         invite: {
-            src: 'audio/v6-invite.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-invite.ogg'
         },
         timeout: {
-            src: 'audio/v6-timeout.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-timeout.ogg'
         }
     };
 

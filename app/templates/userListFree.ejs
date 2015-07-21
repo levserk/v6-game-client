@@ -1,15 +1,19 @@
 <% _.each(users, function(user) { %>
 <tr class="userListFree">
-    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>"><%= user.userName %></td>
+    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>">
+        <%= user.userName %>
+    </td>
     <td class="userRank"><%= user.getRank() %></td>
     <% if (user.isPlayer) { %>
-    <td></td>
+    <td class="userListPlayerInvite">
+        <% if (user.disableInvite ) { %>
+        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >
+        <% } %>
+    </td>
     <% } else if (user.isInvited) { %>
     <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>">"<%= locale.buttons.cancel %></td>
     <% } else { %>
     <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>
     <% } %>
-
 </tr>
-
 <% }) %>

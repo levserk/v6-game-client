@@ -64,14 +64,6 @@ require(['require-cnf'], function () {
                     historyId:'ratingDiv',
                     profileId:'ratingDiv'
                 },
-                images:{
-                    close: 'i/close.png',
-                    spin:  'i/spin.gif',
-                    sortAsc:  'i/sort-asc.png',
-                    sortDesc:  'i/sort-desc.png',
-                    sortBoth:  'i/sort-both.png',
-                    del: 'i/delete.png'
-                },
                 sounds: {
                         start: {
                             src: 'audio/v6-game-start.ogg'
@@ -99,7 +91,7 @@ require(['require-cnf'], function () {
                     sounds: false
                 },
                 settingsTemplate: settingsTemplate,
-                lang: 'en',
+                lang: 'ru',
                 localization: {
                     "ru": {
                         "history": {

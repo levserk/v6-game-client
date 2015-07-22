@@ -2814,8 +2814,9 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             // show dialog result with delay
             div.parent().hide();
             dialogTimeout = setTimeout(function(){
-                div.parent().show()
-            }, data.action == 'user_leave' ? 1000 : client.opts.resultDialogDelay);
+                div.parent().show();
+                this.client.soundManager._playSound(data.result);
+            }.bind(this), data.action == 'user_leave' ? 1000 : client.opts.resultDialogDelay);
             div.addClass(GAME_CLASS);
 
             // add timer to auto close
@@ -3661,6 +3662,9 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         } catch (e){
             console.error('views_manager;', 'show_panel', e);
         }
+        $('html, body').animate({
+            scrollTop: $panel.offset().top - 350
+        }, 500);
     };
 
     return ViewsManager;
@@ -5189,18 +5193,12 @@ define('modules/sound_manager',['EE', 'underscore'], function(EE, _) {
             this._playSound('turn');
         }.bind(this));
 
-        this.client.gameManager.on('round_end', function(data){
-            if (data.result) {
-                this._playSound(data.result);
-            }
-        }.bind(this));
-
         this.client.inviteManager.on('new_invite', function(data){
             this._playSound('invite');
         }.bind(this));
 
         this.client.gameManager.on('time', _.throttle(function(data){       // alert sound time bound in one second
-            if (data.user == client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000) {
+            if (data.user == client.getPlayer() && data.userTimeMS <= this.msAlerTimeBound && data.userTimeMS > 1000) {
                 this._playSound('timeout', 0.5 + (this.msAlerTimeBound - data.userTimeMS) / this.msAlerTimeBound / 2);
             }
         }.bind(this), 1000));

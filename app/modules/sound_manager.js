@@ -18,18 +18,12 @@ define(['EE', 'underscore'], function(EE, _) {
             this._playSound('turn');
         }.bind(this));
 
-        this.client.gameManager.on('round_end', function(data){
-            if (data.result) {
-                this._playSound(data.result);
-            }
-        }.bind(this));
-
         this.client.inviteManager.on('new_invite', function(data){
             this._playSound('invite');
         }.bind(this));
 
         this.client.gameManager.on('time', _.throttle(function(data){       // alert sound time bound in one second
-            if (data.user == client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000) {
+            if (data.user == client.getPlayer() && data.userTimeMS <= this.msAlerTimeBound && data.userTimeMS > 1000) {
                 this._playSound('timeout', 0.5 + (this.msAlerTimeBound - data.userTimeMS) / this.msAlerTimeBound / 2);
             }
         }.bind(this), 1000));

@@ -89,6 +89,9 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
         } catch (e){
             console.error('views_manager;', 'show_panel', e);
         }
+        $('html, body').animate({
+            scrollTop: $panel.offset().top - 350
+        }, 500);
     };
 
     return ViewsManager;

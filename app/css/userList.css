@@ -127,6 +127,32 @@
     height: 13px
 }
 
+#userList .userListFree.userListInactive {
+    color: rgb(194, 194, 194);
+}
+
+#userList .userListFree.userListWaiting .userName {
+    color: rgb(61, 155, 40);
+    font-weight: bold;
+}
+
+#userList .userListFree.userListWaiting .inviteBtn {
+    color: rgb(61, 155, 40);
+    font-weight: bold;
+}
+
+#userList .userListFree .userListUserInvite {
+    text-align: right;
+    padding-right: 20px;
+}
+
+#userList .userListFree .userListUserInvite img{
+    height: 13px;
+    -webkit-filter: grayscale(100%);
+    -moz-filter: grayscale(100%);
+    filter: grayscale(100%);
+}
+
 #userList .userRank {
     color: #AAA;
     font-size: 9px;

@@ -58,6 +58,8 @@ define(['EE'], function(EE) {
             case 'invite': this.onInvite(message.data); break;
             case 'reject': this.onReject(message.data.target, message.data.from, 'rejected'); break;
             case 'cancel': this.onCancel(message.data); break;
+            case 'random_wait': this.client.userList.onWaiting(message.data); break;
+            case 'random_cancel': this.client.userList.onWaiting(message.data); break;
         }
     };
 

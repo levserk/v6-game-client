@@ -8,11 +8,13 @@ define(['EE'], function(EE) {
         this.client = client;
         this.users = [];
         this.rooms = [];
+        this.waiting = {};
 
         client.on('disconnected', function(){
-            self.rooms = [];
-            self.users = [];
-        });
+            this.rooms = [];
+            this.users = [];
+            this.waiting = {};
+        }.bind(this));
         client.gameManager.on('round_end', function(data){
             if (data.ratings && data.mode){
                 for (var userId in data.ratings){
@@ -56,6 +58,7 @@ define(['EE'], function(EE) {
             if (this.users[i].userId == userId){
                 var user = this.users[i];
                 this.users.splice(i, 1);
+                this.removeWaiting(user);
                 this.emit('leave_user', user);
                 return;
             }
@@ -68,6 +71,7 @@ define(['EE'], function(EE) {
         for (var i = 0; i < players.length; i++){
             players[i] = this.getUser(players[i]);
             players[i].isInRoom = true;
+            this.removeWaiting(players[i]);
         }
         var room = {
             room:roomId, players: players
@@ -135,8 +139,9 @@ define(['EE'], function(EE) {
             if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
+            user.waiting = (this.waiting && this.waiting[this.client.currentMode] == user);
             if (user.isInRoom) continue;
-            if (!user.isPlayer && (user.disableInvite || !user.isActive)) continue;
+            if (!user.isPlayer && (!this.client.opts.showHidden && (user.disableInvite || !user.isActive))) continue;
             if (filter && user.userName.toLowerCase().indexOf(filter) == -1) continue;
             else userList.push(user);
         }
@@ -224,6 +229,37 @@ define(['EE'], function(EE) {
         }
 
         return spectators;
+    };
+
+
+    UserList.prototype.onWaiting = function(waiting){
+        if (!waiting) return;
+        var user;
+        for (var mode in waiting){
+            user = waiting[mode];
+            if (user) {
+                user = this.getUser(user);
+                if (user){
+                    this.waiting[mode] = user;
+                } else {
+                    console.error('waiting user no in list', waiting[mode], mode);
+                }
+            } else {
+                this.waiting[mode] = null;
+            }
+        }
+        this.emit('waiting', this.waiting);
+    };
+
+
+    UserList.prototype.removeWaiting = function(user) {
+        if (this.waiting) {
+            for (var mode in this.waiting) {
+                if (this.waiting[mode] == user){
+                    this.waiting[mode] = null;
+                }
+            }
+        }
     };
 
 

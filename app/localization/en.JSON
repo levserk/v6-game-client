@@ -13,6 +13,7 @@
     },
     "search": "Search in list",
     "disableInvite": "Invites disable",
+    "playerDisableInvite": "Invites disable",
     "buttons":{
       "playRandom": "Play with a anyone",
       "cancelPlayRandom": "Waiting a opponent...",

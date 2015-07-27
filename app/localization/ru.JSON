@@ -13,6 +13,7 @@
     },
     "search": "Поиск по списку",
     "disableInvite": "Вы запретили приглашать себя в игру",
+    "playerDisableInvite": "Игрок запретил приглашать себя в игру",
     "buttons":{
       "playRandom": "Играть с любым",
       "cancelPlayRandom": "Идет подбор игрока...",

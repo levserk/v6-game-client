@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.15";
+        this.version = "0.9.17";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -22,6 +22,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.vk = opts.vk || {};
         opts.showSpectators =  opts.showSpectators || false;
         opts.localization = opts.localization || {};
+        opts.showHidden = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -177,7 +178,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         var data = message.data;
         switch (message.type){
             case 'login':
-                this.onLogin(data.you, data.userlist, data.rooms, data.opts, data.ban, data.settings);
+                this.onLogin(data);
                 break;
             case 'user_relogin':
                 var user = this.userList.getUser(data.userId);
@@ -206,8 +207,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         }
     };
 
-    Client.prototype.onLogin = function(user, userlist, rooms, opts, ban, settings){
-        console.log('client;', 'login', user, userlist, rooms, opts, ban, settings);
+    Client.prototype.onLogin = function(data){
+        var user = data.you, userlist = data.userlist, rooms = data.rooms, ban = data.ban,
+            settings = data.settings, opts = data.opts, waiting = data.waiting;
+        console.log('client;', 'login', user, userlist, rooms, opts, ban, settings, waiting);
         settings = settings || {};
         this.game = this.opts.game = opts.game;
         this.modes = this.opts.modes = opts.modes;
@@ -222,6 +225,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.userList.onUserLogin(user, true);
         for (var i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
+        this.userList.onWaiting(waiting);
         for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
         this.isLogin = true;
 

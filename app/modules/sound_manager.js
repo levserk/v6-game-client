@@ -10,8 +10,8 @@ define(['EE', 'underscore'], function(EE, _) {
         this.sound = null;
         this.msAlerTimeBound = 15000;
 
-        this.client.gameManager.on('game_start', function(){
-            this._playSound('start');
+        this.client.gameManager.on('game_start', function(room){
+            if (room.isPlayer) this._playSound('start');
         }.bind(this));
 
         this.client.gameManager.on('turn', function(){

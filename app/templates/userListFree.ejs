@@ -1,5 +1,5 @@
 <% _.each(users, function(user) { %>
-<tr class="userListFree <%= user.isActive?'':'userListInactive' %> <%= user.waiting?'userListWaiting':'' %>">
+<tr class="userListFree <%= user.isActive?'':'userListInactive' %> <%= user.waiting?'userListWaiting':'' %> <%= user.isPlayer?'userListPlayer':'' %>">
     <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>">
         <%= user.userName %>
     </td>

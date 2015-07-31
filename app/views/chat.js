@@ -270,6 +270,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.listenTo(this.manager, 'load', this._preaddMsgs.bind(this));
                 this.listenTo(this.manager, 'open_dialog', this._openDialog.bind(this));
                 this.listenTo(this.manager, 'close_dialog', this._closeDialog.bind(this));
+                this.listenTo(this.client, 'disconnected', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
                 this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
             },

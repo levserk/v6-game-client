@@ -2341,7 +2341,7 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree <%= user.isActive?\'\':\'userListInactive\' %> <%= user.waiting?\'userListWaiting\':\'\' %>">\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>">\r\n        <%= user.userName %>\r\n    </td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td class="userListPlayerInvite">\r\n        <% if (user.disableInvite ) { %>\r\n        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >\r\n        <% } %>\r\n    </td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>\r\n    <% } else {\r\n        if (user.disableInvite) { %>\r\n        <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>\r\n        <% } else { %>\r\n            <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>\r\n        <% }\r\n    } %>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree <%= user.isActive?\'\':\'userListInactive\' %> <%= user.waiting?\'userListWaiting\':\'\' %> <%= user.isPlayer?\'userListPlayer\':\'\' %>">\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>">\r\n        <%= user.userName %>\r\n    </td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td class="userListPlayerInvite">\r\n        <% if (user.disableInvite ) { %>\r\n        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >\r\n        <% } %>\r\n    </td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>\r\n    <% } else {\r\n        if (user.disableInvite) { %>\r\n        <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>\r\n        <% } else { %>\r\n            <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>\r\n        <% }\r\n    } %>\r\n</tr>\r\n<% }) %>';});
 
 
 define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr class="userListGame <%= room.current ? \'currentGame\' : \'\' %>" data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td>:</td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
@@ -2772,22 +2772,30 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                 vkText = '';
             console.log('round_end;', data, oldElo, newElo, oldRank, newRank);
             hideDialogs();
-            var result = "";
-            switch (data.result){
-                case 'win': result = locale['win']; break;
-                case 'lose': result = locale['lose']; break;
-                case 'draw': result = locale['draw']; break;
-                default : result = locale['gameOver'];
+            var result = "", rankResult = '';
+            if (data.save) {
+                switch (data.result) {
+                    case 'win':
+                        result = locale['win'];
+                        break;
+                    case 'lose':
+                        result = locale['lose'];
+                        break;
+                    case 'draw':
+                        result = locale['draw'];
+                        break;
+                    default :
+                        result = locale['gameOver'];
+                }
+                result += '<b> (' + (eloDif >= 0 ? '+' : '') + eloDif + ' ' + locale['scores'] + ') </b>';
             }
-            result += '<b> (' + (eloDif >= 0 ? '+':'') + eloDif + ' '+locale['scores']+') </b>';
             switch (data.action){
                 case 'timeout': result +=  (data.result == 'win' ? locale['opponentTimeout'] : locale['playerTimeout']);
                     break;
                 case 'throw': result +=  (data.result == 'win' ? locale['opponentThrow'] : locale['playerThrow']);
                     break;
             }
-            var rankResult = '';
-            if (newRank > 0) {
+            if (newRank > 0 && data.save) {
                 if (data.result == 'win' && oldRank > 0 && newRank < oldRank) {
                     rankResult = locale['ratingUp'] + oldRank + locale['on'] + newRank + locale['place'] + '.';
                 } else rankResult = locale['ratingPlace'] + newRank + locale['place'] + '.';
@@ -3315,6 +3323,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.listenTo(this.manager, 'load', this._preaddMsgs.bind(this));
                 this.listenTo(this.manager, 'open_dialog', this._openDialog.bind(this));
                 this.listenTo(this.manager, 'close_dialog', this._closeDialog.bind(this));
+                this.listenTo(this.client, 'disconnected', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
                 this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
             },
@@ -5224,8 +5233,8 @@ define('modules/sound_manager',['EE', 'underscore'], function(EE, _) {
         this.sound = null;
         this.msAlerTimeBound = 15000;
 
-        this.client.gameManager.on('game_start', function(){
-            this._playSound('start');
+        this.client.gameManager.on('game_start', function(room){
+            if (room.isPlayer) this._playSound('start');
         }.bind(this));
 
         this.client.gameManager.on('turn', function(){

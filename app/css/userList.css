@@ -102,7 +102,7 @@
     color:#069;
     cursor: pointer;
     font-size: 8pt;
-    width: 70px;
+    width: 71px;
 }
 
 #userList .userName {
@@ -133,6 +133,10 @@
 
 #userList .userListFree.userListWaiting .userName {
     color: rgb(61, 155, 40);
+    font-weight: bold;
+}
+
+#userList .userListFree.userListPlayer .userName {
     font-weight: bold;
 }
 

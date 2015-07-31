@@ -175,22 +175,30 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                 vkText = '';
             console.log('round_end;', data, oldElo, newElo, oldRank, newRank);
             hideDialogs();
-            var result = "";
-            switch (data.result){
-                case 'win': result = locale['win']; break;
-                case 'lose': result = locale['lose']; break;
-                case 'draw': result = locale['draw']; break;
-                default : result = locale['gameOver'];
+            var result = "", rankResult = '';
+            if (data.save) {
+                switch (data.result) {
+                    case 'win':
+                        result = locale['win'];
+                        break;
+                    case 'lose':
+                        result = locale['lose'];
+                        break;
+                    case 'draw':
+                        result = locale['draw'];
+                        break;
+                    default :
+                        result = locale['gameOver'];
+                }
+                result += '<b> (' + (eloDif >= 0 ? '+' : '') + eloDif + ' ' + locale['scores'] + ') </b>';
             }
-            result += '<b> (' + (eloDif >= 0 ? '+':'') + eloDif + ' '+locale['scores']+') </b>';
             switch (data.action){
                 case 'timeout': result +=  (data.result == 'win' ? locale['opponentTimeout'] : locale['playerTimeout']);
                     break;
                 case 'throw': result +=  (data.result == 'win' ? locale['opponentThrow'] : locale['playerThrow']);
                     break;
             }
-            var rankResult = '';
-            if (newRank > 0) {
+            if (newRank > 0 && data.save) {
                 if (data.result == 'win' && oldRank > 0 && newRank < oldRank) {
                     rankResult = locale['ratingUp'] + oldRank + locale['on'] + newRank + locale['place'] + '.';
                 } else rankResult = locale['ratingPlace'] + newRank + locale['place'] + '.';

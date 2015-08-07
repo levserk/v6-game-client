@@ -888,6 +888,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
 
     GameManager.prototype.onUserFocusChanged = function(windowHasFocus){
+        this.client.isFocused = windowHasFocus;
         if (this.isPlaying()) {
             this.client.send('game_manager', 'event', 'server', {
                 type: 'focus',
@@ -1299,7 +1300,8 @@ define('modules/invite_manager',['EE'], function(EE) {
             }
             self.removeInvite(user.userId);
         });
-        client.gameManager.on('game_start', function(){
+        client.gameManager.on('game_start', function(room){
+            if (!room.isPlayer) return;
             self.cancel();
             self.rejectAll();
             self.invite = null;
@@ -1558,6 +1560,13 @@ define('modules/user_list',['EE'], function(EE) {
                 return false;
             }
         }
+        if (this.client.opts.showCheaters) {
+            for (var i = 0; i < this.client.modes.length; i++)
+                if (user[this.client.modes[i]].timeLastCheatGame){
+                    user.userName = 'cheater!' + user.userName;
+                    break;
+                }
+        }
         this.users.push(user);
         this.emit('new_user', user);
     };
@@ -1612,6 +1621,13 @@ define('modules/user_list',['EE'], function(EE) {
             if (this.users[i].userId == userData.userId){
                 this.users[i].update(userData);
                 if (!this.users[i].isPlayer) console.log('user_changed!', userData.isActive, userData);
+                if (this.client.opts.showCheaters) {
+                    for (var j = 0; j < this.client.modes.length; j++)
+                        if (this.users[i][this.client.modes[j]].timeLastCheatGame){
+                            this.users[i].userName = 'cheater!' + this.users[i].userName;
+                            break;
+                        }
+                }
                 this.emit('user_changed', this.users[i]);
                 return;
             }
@@ -1660,14 +1676,14 @@ define('modules/user_list',['EE'], function(EE) {
             if (isNaN(+ar)) {
                 ar = 99999999;
                 if (a.isPlayer) {
-                    ar = 10000000;
+                    ar = 99999998;
                 }
             }
             var br = b.getRank();
             if (isNaN(+br)) {
                 br = 99999999;
                 if (b.isPlayer) {
-                    br = 100000000;
+                    br = 99999998;
                 }
             }
             return ar - br;
@@ -2365,7 +2381,9 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
             'click #randomPlay': 'playClicked',
-            'keyup #filterUserList': 'filter'
+            'keyup #filterUserList': 'filter',
+            'mouseenter ': 'mouseEnter',
+            'mouseleave ': 'mouseLeave'
         },
         _reconnect: function() {
             this.client.reconnect();
@@ -2434,11 +2452,19 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
         filter: function () {
             this.render();
         },
+        mouseEnter: function(){
+            this.mouseOver = true
+        },
+        mouseLeave: function(){
+            this.mouseOver = false;
+        },
+
         initialize: function(_client) {
             var bindedRender = this.render.bind(this);
             this.images = _client.opts.images;
             this.client = _client;
             this.locale = _client.locale.userList;
+            this.mouseOver = false;
 
             this.$disconnectedTab = $('<tr class="disconnected"><td><div>' +
                 '<span class="disconnectText">' + this.locale.disconnected.text + '</span>' +
@@ -2466,6 +2492,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             this.NOT_IN_GAME_CLASS = 'NotInGame';
 
             this.$list = this.$el.find('.tableWrap table');
+            this.$container = this.$el.find('.tableWrap');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
             this.$counterSpectators = this.$el.find('.tabs div[data-type="spectators"]').find('span');
@@ -2547,6 +2574,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
                         locale: this.locale,
                         imgBlock: this.images.block
                     }));
+                    if (!this.mouseOver) this.scrollToUser();
                     break;
                 case 'inGame':
                     this.$list.html(this.tplInGame({
@@ -2571,6 +2599,15 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
             setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;
+        },
+        scrollToUser: function(){
+            if (this.currentActiveTabName != 'free') return;
+            var scrollTo = this.$el.find('.userListPlayer');
+            if (scrollTo.length) {
+                scrollTo = scrollTo.offset().top - this.$container.offset().top
+                         + this.$container.scrollTop() - this.$container.height() / 2;
+                this.$container.scrollTop(scrollTo);
+            }
         },
         getFilter: function() {
             var filter = this.$filter.val().toLowerCase().trim();
@@ -4041,7 +4078,7 @@ define('modules/chat_manager',['EE', 'antimat'], function(EE) {
         return message;
     };
 
-    ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
+    ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
 
     ChatManager.prototype.onLogin = function() {
         this.first = {};
@@ -5420,7 +5457,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.17";
+        this.version = "0.9.18";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -5437,7 +5474,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.vk = opts.vk || {};
         opts.showSpectators =  opts.showSpectators || false;
         opts.localization = opts.localization || {};
+        opts.autoScrollPlayerList = false;
         opts.showHidden = false;
+        opts.showCheaters = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -5473,6 +5512,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.reconnectTimeout = null;
         this.timeoutUserChanged = null;
         this.lastTimeUserChanged = 0;
+        this.isFocused = true;
 
         this.TIME_BETWEEN_RECONNECTION = 3000;
 
@@ -5820,6 +5860,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             VK.api('wall.post', {message: text, attachments:attachments}, function(r) {console.log(r)})
         } catch (e) {
             console.log('client;', 'vkWallPostResult', e);
+        }
+    };
+
+    Client.prototype.showCheaters = function(){
+        this.opts.showCheaters = true;
+        for (var i = 0; i < this.userList.users.length; i++) {
+            for (var j = 0; j < this.modes.length; j++)
+                if (this.userList.users[i][this.modes[j]].timeLastCheatGame) {
+                    this.userList.users[i].userName = 'cheater!' + this.userList.users[i].userName;
+                    break;
+                }
         }
     };
 

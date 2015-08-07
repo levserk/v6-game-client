@@ -14,7 +14,9 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
             'click #randomPlay': 'playClicked',
-            'keyup #filterUserList': 'filter'
+            'keyup #filterUserList': 'filter',
+            'mouseenter ': 'mouseEnter',
+            'mouseleave ': 'mouseLeave'
         },
         _reconnect: function() {
             this.client.reconnect();
@@ -83,11 +85,19 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         filter: function () {
             this.render();
         },
+        mouseEnter: function(){
+            this.mouseOver = true
+        },
+        mouseLeave: function(){
+            this.mouseOver = false;
+        },
+
         initialize: function(_client) {
             var bindedRender = this.render.bind(this);
             this.images = _client.opts.images;
             this.client = _client;
             this.locale = _client.locale.userList;
+            this.mouseOver = false;
 
             this.$disconnectedTab = $('<tr class="disconnected"><td><div>' +
                 '<span class="disconnectText">' + this.locale.disconnected.text + '</span>' +
@@ -115,6 +125,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.NOT_IN_GAME_CLASS = 'NotInGame';
 
             this.$list = this.$el.find('.tableWrap table');
+            this.$container = this.$el.find('.tableWrap');
             this.$counterFree = this.$el.find('.tabs div[data-type="free"]').find('span');
             this.$counterinGame = this.$el.find('.tabs div[data-type="inGame"]').find('span');
             this.$counterSpectators = this.$el.find('.tabs div[data-type="spectators"]').find('span');
@@ -196,6 +207,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                         locale: this.locale,
                         imgBlock: this.images.block
                     }));
+                    if (!this.mouseOver) this.scrollToUser();
                     break;
                 case 'inGame':
                     this.$list.html(this.tplInGame({
@@ -220,6 +232,15 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             setTimeout(this._showPlayerListByTabName.bind(this),1);
             this._setCounters();
             return this;
+        },
+        scrollToUser: function(){
+            if (this.currentActiveTabName != 'free') return;
+            var scrollTo = this.$el.find('.userListPlayer');
+            if (scrollTo.length) {
+                scrollTo = scrollTo.offset().top - this.$container.offset().top
+                         + this.$container.scrollTop() - this.$container.height() / 2;
+                this.$container.scrollTop(scrollTo);
+            }
         },
         getFilter: function() {
             var filter = this.$filter.val().toLowerCase().trim();

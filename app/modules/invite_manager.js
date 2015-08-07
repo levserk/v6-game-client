@@ -24,7 +24,8 @@ define(['EE'], function(EE) {
             }
             self.removeInvite(user.userId);
         });
-        client.gameManager.on('game_start', function(){
+        client.gameManager.on('game_start', function(room){
+            if (!room.isPlayer) return;
             self.cancel();
             self.rejectAll();
             self.invite = null;

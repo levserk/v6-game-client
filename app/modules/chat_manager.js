@@ -67,7 +67,7 @@ define(['EE', 'antimat'], function(EE) {
         return message;
     };
 
-    ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
+    ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
 
     ChatManager.prototype.onLogin = function() {
         this.first = {};

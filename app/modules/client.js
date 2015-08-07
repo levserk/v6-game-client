@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.17";
+        this.version = "0.9.18";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -22,7 +22,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.vk = opts.vk || {};
         opts.showSpectators =  opts.showSpectators || false;
         opts.localization = opts.localization || {};
+        opts.autoScrollPlayerList = false;
         opts.showHidden = false;
+        opts.showCheaters = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -58,6 +60,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.reconnectTimeout = null;
         this.timeoutUserChanged = null;
         this.lastTimeUserChanged = 0;
+        this.isFocused = true;
 
         this.TIME_BETWEEN_RECONNECTION = 3000;
 
@@ -405,6 +408,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             VK.api('wall.post', {message: text, attachments:attachments}, function(r) {console.log(r)})
         } catch (e) {
             console.log('client;', 'vkWallPostResult', e);
+        }
+    };
+
+    Client.prototype.showCheaters = function(){
+        this.opts.showCheaters = true;
+        for (var i = 0; i < this.userList.users.length; i++) {
+            for (var j = 0; j < this.modes.length; j++)
+                if (this.userList.users[i][this.modes[j]].timeLastCheatGame) {
+                    this.userList.users[i].userName = 'cheater!' + this.userList.users[i].userName;
+                    break;
+                }
         }
     };
 

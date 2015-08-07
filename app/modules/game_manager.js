@@ -363,6 +363,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.onUserFocusChanged = function(windowHasFocus){
+        this.client.isFocused = windowHasFocus;
         if (this.isPlaying()) {
             this.client.send('game_manager', 'event', 'server', {
                 type: 'focus',

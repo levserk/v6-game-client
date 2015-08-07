@@ -48,6 +48,13 @@ define(['EE'], function(EE) {
                 return false;
             }
         }
+        if (this.client.opts.showCheaters) {
+            for (var i = 0; i < this.client.modes.length; i++)
+                if (user[this.client.modes[i]].timeLastCheatGame){
+                    user.userName = 'cheater!' + user.userName;
+                    break;
+                }
+        }
         this.users.push(user);
         this.emit('new_user', user);
     };
@@ -102,6 +109,13 @@ define(['EE'], function(EE) {
             if (this.users[i].userId == userData.userId){
                 this.users[i].update(userData);
                 if (!this.users[i].isPlayer) console.log('user_changed!', userData.isActive, userData);
+                if (this.client.opts.showCheaters) {
+                    for (var j = 0; j < this.client.modes.length; j++)
+                        if (this.users[i][this.client.modes[j]].timeLastCheatGame){
+                            this.users[i].userName = 'cheater!' + this.users[i].userName;
+                            break;
+                        }
+                }
                 this.emit('user_changed', this.users[i]);
                 return;
             }
@@ -150,14 +164,14 @@ define(['EE'], function(EE) {
             if (isNaN(+ar)) {
                 ar = 99999999;
                 if (a.isPlayer) {
-                    ar = 10000000;
+                    ar = 99999998;
                 }
             }
             var br = b.getRank();
             if (isNaN(+br)) {
                 br = 99999999;
                 if (b.isPlayer) {
-                    br = 100000000;
+                    br = 99999998;
                 }
             }
             return ar - br;

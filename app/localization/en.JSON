@@ -77,7 +77,8 @@
     "opponentLeave": "left the game",
     "banMessage": "You can not write messages in chat since added to the black list ",
     "banReason": "for the use of foul language and / or spam  ",
-    "loginError": "Authorisation Error. Refresh the page"
+    "loginError": "Authorisation Error. Refresh the page",
+    "loseOnLeave": "You will lose"
   },
   "history": {
     "columns": {

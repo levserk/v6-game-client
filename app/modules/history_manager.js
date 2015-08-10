@@ -209,7 +209,6 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
         };
         //TODO: dynamic columns
         row.elo.dynamic = prev ? row.elo.value - prev.elo.value : '';
-
         if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){ // add new session game
             row.elo.diff = row.elo.dynamic||0;
             rows = [];

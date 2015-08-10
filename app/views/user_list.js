@@ -9,7 +9,7 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
         tplMain: _.template(tplMain),
         events: {
             'click .inviteBtn': '_inviteBtnClicked',
-            'click .userName': 'userClick',
+            'click .userListFree .userName': 'userClick',
             'click .userListGame': 'roomClick',
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
@@ -45,6 +45,8 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             var target = $(e.currentTarget),
                 roomId = target.attr('data-Id');
             if (roomId) {
+                this.$el.find('.userListGame').removeClass('currentGame');
+                $(target).addClass('currentGame');
                 this.client.gameManager.spectate(roomId);
             } else {
                 console.warn('wrong room id', roomId);

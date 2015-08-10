@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.18";
+        this.version = "0.9.20";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -105,11 +105,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
         this.getUser = this.userList.getUser.bind(this.userList);
 
-        self.unload = false;
-        window.onbeforeunload = function(){
-            self.unload = true;
-        };
-
+        this.unload = false;
+        this.confirmUnload = false;
+        window.onbeforeunload = this.onBeforeUnload.bind(this);
+        window.onunload = this.onUnload.bind(this);
         // idle timer // fire when user become idle or active
         if (opts.idleTimeout > 0)
             $( document ).idleTimer(opts.idleTimeout);
@@ -121,6 +120,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             self.isActive = true;
             self.sendChanged();
         });
+
+        this.lastKey = this.lastKeyTime = null;
+        $(document).on("keydown", function(e) {
+            this.lastKey = e.which;
+            this.lastKeyTime = Date.now();
+        }.bind(this));
     };
 
     Client.prototype  = new EE();
@@ -339,6 +344,24 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.getModeAlias = function(mode){
         if (this.modesAlias[mode]) return this.modesAlias[mode];
         else return mode;
+    };
+
+    Client.prototype.onBeforeUnload = function(){
+        this.unload = true;
+        console.log(this.lastKey, Date.now() - this.lastKeyTime);
+        if (!this.forceReload && Date.now() - this.lastKeyTime < 100 && (this.lastKey == 82 || this.lastKey == 116)){
+            this.confirmUnload = false;
+        } else {
+            this.confirmUnload = true;
+            if (this.gameManager.isPlaying()) return this.locale['dialogs']['loseOnLeave'];
+        }
+    };
+
+
+    Client.prototype.onUnload = function(){
+        if (this.confirmUnload && this.gameManager.isPlaying()){
+            this.gameManager.leaveGame();
+        }
     };
 
 

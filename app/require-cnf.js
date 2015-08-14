@@ -12,7 +12,8 @@ define(function() {
             EE: 'lib/EventEmitter.min',
             idleTimer: 'lib/idle-timer.min',
             'jquery-ui': 'lib/jquery-ui',
-            'antimat': 'lib/antimat'
+            'antimat': 'lib/antimat',
+            'screenfull': 'lib/screenfull.min'
         },
         shim: {
             backbone: {

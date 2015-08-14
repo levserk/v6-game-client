@@ -57,6 +57,7 @@ define(['EE', 'underscore'], function(EE, _) {
         if (this.sound)
             this.sound.stop();
         this.sound = this.sounds[id].play(volume);
+        this.emit('play', id);
     };
 
 

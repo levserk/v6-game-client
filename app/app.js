@@ -184,6 +184,14 @@ require(['require-cnf'], function () {
                 console.log('main;','settings_changed settings:', data);
             });
 
+            _client.on('full_screen', function(data){
+                console.log('main;','fullscreen', data);
+            });
+
+            _client.soundManager.on('play', function(sound){
+                console.log(sound);
+            });
+
 
             // send events buttons example
             _generateEndGameBtn();

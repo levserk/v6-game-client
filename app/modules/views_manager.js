@@ -1,4 +1,5 @@
-define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], function(userListView, dialogsView, v6ChatView, v6SettingsView) {
+define(['views/user_list', 'views/dialogs', 'views/chat', 'views/settings', 'views/buttons_panel'],
+    function(userListView, dialogsView, v6ChatView, v6SettingsView, v6ButtonsView) {
     var ViewsManager = function(client){
         this.client = client;
         this.userListView = null;
@@ -16,6 +17,7 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
         this.v6ChatView = new v6ChatView(this.client);
         this.settingsView = new v6SettingsView(this.client);
         if (this.client.vkEnable) this.userListView.addInviteFriendButton();
+        if (this.client.conf.showButtonsPanel) this.showButtonPanel();
     };
 
     ViewsManager.prototype.closeAll = function(){
@@ -27,6 +29,12 @@ define(['views/user_list', 'views/dialogs', 'views/chat', '../views/settings'], 
     ViewsManager.prototype.showSettings = function () {
         if (!this.client.isLogin) return;
         this.settingsView.show();
+    };
+
+    ViewsManager.prototype.showButtonPanel = function() {
+        this.client.opts.showButtonsPanel = true;
+        this.buttonsView = new v6ButtonsView(this.client);
+        this.userListView.$el.append(this.buttonsView.$el);
     };
 
 

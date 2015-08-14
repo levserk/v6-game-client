@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.20";
+        this.version = "0.9.21";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -25,6 +25,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.autoScrollPlayerList = false;
         opts.showHidden = false;
         opts.showCheaters = false;
+        opts.showButtonsPanel = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();

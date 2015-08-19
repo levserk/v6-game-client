@@ -111,6 +111,7 @@
     padding: 4px;
     border-bottom: 1px solid #dcdcdc;
     border-right: 1px solid #dcdcdc;
+    position: relative;
 }
 
 .historyTable tr.historyLose td:not(.sessionHeader) {
@@ -129,11 +130,17 @@
 .historyTable .userRank {
     color: gray;
     margin-left: 2px;
+    font-size: 9px;
+}
+
+.historyTable div.userRank {
+    padding-top: 5px;
 }
 
 .historyTable .userScore {
     float: right;
     font-weight: bold;
+    padding-top: 1px;
 }
 
 .historyTable .userName {
@@ -148,6 +155,8 @@
 
 .historyTable .eloDiff {
     font-size: 80%;
+    position: absolute;
+    right: 10px;
 }
 
 .historyTable .diffPositive {

@@ -21,6 +21,8 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             ]
         };
 
+        if (client.isAdmin) this.conf.columns.push({  id:'timeLastGame',     source:'timeLastGame',  title: locale.columns.dateLastGame, canOrder:true });
+
         if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf, this.client);
         this.conf.images = client.opts.images;
 
@@ -99,6 +101,7 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             row.dateCreate = this.ratingView.NOVICE;
         else
             row.dateCreate = formatDate(info.dateCreate);
+        row.timeLastGame = formatDate(row.timeLastGame);
         return row;
     };
 

@@ -154,6 +154,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
                         userName: row.opponent.userName,
                         rank: row.opponent[mode]['rank'],
                         eloDiff: count>1?row.elo.diff:'',
+                        rankDiff: count>1?row.rank.before+' → '+row.rank.after:'',
                         score: row.gameScore
                     });
                 }

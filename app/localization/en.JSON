@@ -104,7 +104,8 @@
       "ratingElo": "Rating <br> Elo",
       "win": "Win",
       "lose": "Lose",
-      "dateCreate": "Registration <br> date"
+      "dateCreate": "Registration <br> date",
+      "dateLastGame": "Last game"
     },
     "close": "Close rating window",
     "placeholder": "Search by name",

@@ -11,9 +11,9 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
             columns:[
                 {  id:'date',       source:'date',      title: locale.columns.date },
                 {  id:'opponent',   source:'opponent',  title: locale.columns.opponent },
+                {  id:'elo',        source:'elo',       title: locale.columns.elo, dynamic:true, startValue:1600 },
                 {  id:'time',       source:'time',      title: locale.columns.time    },
-                {  id:'number',     source:'number',    title: locale.columns.number },
-                {  id:'elo',        source:'elo',       title: locale.columns.elo, dynamic:true, startValue:1600 }
+                {  id:'number',     source:'number',    title: locale.columns.number }
             ]
         };
 
@@ -207,15 +207,20 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
         row.elo = {
             value:userData[userId][mode]['ratingElo']
         };
+        row.rank = {};
         //TODO: dynamic columns
         row.elo.dynamic = prev ? row.elo.value - prev.elo.value : '';
         if (!prev || prev.date != row.date || prev.opponent.userId != row.opponent.userId){ // add new session game
             row.elo.diff = row.elo.dynamic||0;
+            row.rank.before =  userData[userId][mode]['rank'];
+            row.rank.after = row.rank.before;
             rows = [];
             rows.unshift(row);
             history.unshift([]);
             history[0] = rows
         } else {
+            row.rank.before = prev.rank.before;
+            row.rank.after = userData[userId][mode]['rank'];
             row.elo.diff = prev.elo.diff + row.elo.dynamic;
             rows.unshift(row);
         }

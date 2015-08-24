@@ -158,8 +158,11 @@ require(['require-cnf'], function () {
             });
 
             _client.gameManager.on('time', function(data){
-               //console.log('main;','time user:', data);
-                $('#time').html( (data.user ? ((data.user.isPlayer ? 'Ваш ход' : 'Ход соперника')) : 'Time: ') + ' ' + data.userTimeFormat)
+                var html = (data.user ? ((data.user.isPlayer ? 'Ваш ход' : 'Ход соперника')) : 'Time: ') + ' ' + data.userTimeFormat;
+                html += '<br>';
+                html += 'Общее время: ' + data.userTotalTime.timeFormat;
+                html += 'Время раунда: ' + data.roundTime.timeFormat;
+                $('#time').html(html)
             });
 
 

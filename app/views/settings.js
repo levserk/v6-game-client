@@ -23,6 +23,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                 $('body').append(this.$el);
                 this.$el.hide();
                 this.$el.draggable();
+                this.isClosed = true;
             },
 
             changed: function (e){
@@ -123,6 +124,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                     left: ($(window).width() / 2) - (this.$el.outerWidth() / 2)
                 }).show();
                 this.load();
+                this.isClosed = false;
             },
 
             getCurrentSettings: function() {

@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.22";
+        this.version = "0.9.23";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -21,11 +21,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.newGameFormat = !!opts.newGameFormat || false;
         opts.vk = opts.vk || {};
         opts.showSpectators =  opts.showSpectators || false;
+        opts.showButtonsPanel = opts.showButtonsPanel || false;
         opts.localization = opts.localization || {};
-        opts.autoScrollPlayerList = false;
         opts.showHidden = false;
         opts.showCheaters = false;
-        opts.showButtonsPanel = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
@@ -63,7 +62,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.lastTimeUserChanged = 0;
         this.isFocused = true;
 
-        this.TIME_BETWEEN_RECONNECTION = 3000;
+        this.TIME_BETWEEN_RECONNECTION = 2000;
 
         this.socket = new Socket(opts);
         this.socket.on("connection", function () {
@@ -86,7 +85,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             self.isLogin = false;
             self.emit('disconnected');
             if (!self.closedByServer && self.opts.autoReconnect){
-                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.socket.connectionCount  == 0 ? 100 : self.TIME_BETWEEN_RECONNECTION);
+                self.reconnectTimeout = setTimeout(self.reconnect.bind(self), self.socket.connectionCount  < 2 ? 100 : self.TIME_BETWEEN_RECONNECTION);
             }
         });
 
@@ -162,7 +161,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             return;
         }
         if (this.socket.connectionCount > 10 || this.opts.reload) {
-            location.reload(false);
+            this.forceReload = true;
+            location.reload();
             return;
         }
         this.reconnection = true;
@@ -350,7 +350,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     Client.prototype.onBeforeUnload = function(){
         this.unload = true;
         console.log(this.lastKey, Date.now() - this.lastKeyTime);
-        if (!this.forceReload && Date.now() - this.lastKeyTime < 100 && (this.lastKey == 82 || this.lastKey == 116)){
+        if (this.forceReload || (Date.now() - this.lastKeyTime < 100 && (this.lastKey == 82 || this.lastKey == 116))){
             this.confirmUnload = false;
         } else {
             this.confirmUnload = true;

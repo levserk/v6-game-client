@@ -135,36 +135,6 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
     };
 
 
-    GameManager.prototype.onRoundStart = function (data, loading){
-        console.log('game_manager;', 'emit round_start', data);
-        this.currentRoom.current = this.getPlayer(data.first);
-        this.currentRoom.userTime = this.currentRoom.turnTime;
-        this.currentRoom.userTurnTime = 0;
-        this.currentRoom.turnStartTime = null;
-        this.currentRoom.userTakeBacks = 0;
-        this.currentRoom.cancelsAscTakeBack = 0;
-        this.currentRoom.cancelsAscDraw = 0;
-        this.currentRoom.history = [];
-        this.currentRoom.initData = data;
-        var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
-
-        this.emit('round_start', {
-            players: players,
-            first: this.getPlayer(data.first),
-            id: data.id,
-            inviteData: data.inviteData,
-            initData: data,
-            score: this.currentRoom.score,
-            isPlayer: this.currentRoom.isPlayer,
-            loading: !!loading
-        });
-        if (this.currentRoom.timeStartMode == 'after_round_start'){
-            this.switchPlayer(this.currentRoom.current, 0, this.getTurnTime());
-        }
-        this.emitTime();
-    };
-
-
     GameManager.prototype.onGameRestart = function (data) {
         clearTimeout(this.leaveGameTimeout);
         console.log('game_manager;', 'game restart', data);
@@ -176,6 +146,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         var timeStart = Date.now();
         this.emit('game_start', room);
         this.onRoundStart(data['initData'], true);
+        room.load(data);
         this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
@@ -204,6 +175,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             return;
         }
         this.onRoundStart(data['initData'], true);
+        room.load(data);
         this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         // switch player
@@ -211,6 +183,40 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             var turn = this.getLastTurn();
             this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart), turn ? turn.userTurnTime : 0);
         }
+    };
+
+
+    GameManager.prototype.onRoundStart = function (data, loading){
+        console.log('game_manager;', 'emit round_start', data);
+        this.currentRoom.current = this.getPlayer(data.first);
+        this.currentRoom.userTime = this.currentRoom.turnTime;
+        this.currentRoom.userTurnTime = 0;
+        this.currentRoom.turnStartTime = null;
+        this.currentRoom.userTakeBacks = 0;
+        this.currentRoom.cancelsAscTakeBack = 0;
+        this.currentRoom.cancelsAscDraw = 0;
+        this.currentRoom.history = [];
+        this.currentRoom.initData = data;
+        this.currentRoom.timeRoundStart = Date.now();
+        var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
+        for (var i = 0; i < this.currentRoom.players.length; i++){
+            this.currentRoom.userData[this.currentRoom.players[i].userId].userTotalTime = 0;
+        }
+
+        this.emit('round_start', {
+            players: players,
+            first: this.getPlayer(data.first),
+            id: data.id,
+            inviteData: data.inviteData,
+            initData: data,
+            score: this.currentRoom.score,
+            isPlayer: this.currentRoom.isPlayer,
+            loading: !!loading
+        });
+        if (this.currentRoom.timeStartMode == 'after_round_start'){
+            this.switchPlayer(this.currentRoom.current, 0, this.getTurnTime());
+        }
+        this.emitTime();
     };
 
 
@@ -258,8 +264,9 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
     GameManager.prototype.onTurn = function(data){
         console.log('game_manager;', 'emit turn', data);
+        var room = this.currentRoom;
         if (!this.client.opts.newGameFormat){
-            this.currentRoom.history.push(data.turn);
+            room.history.push(data.turn);
         }
         var userTurnTime = data.turn.userTurnTime || 0;
         if (data.turn.userTurnTime) {
@@ -270,20 +277,21 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             delete data.turn.nextPlayer;
         } else {
             // reset user turn time if enabled
-            if (this.currentRoom.timeMode == 'reset_every_turn'){
-                console.log('game_manager;', 'reset user turn time', this.currentRoom.current, this.currentRoom.userTime, this.currentRoom.userTurnTime);
-                this.currentRoom.userTime = userTurnTime || this.currentRoom.turnTime;
+            if (room.timeMode == 'reset_every_turn'){
+                console.log('game_manager;', 'reset user turn time', room.current, room.userTime, room.userTurnTime);
+                room.userData[room.current.userId].userTotalTime += room.turnTime - room.userTime;
+                room.userTime = userTurnTime || room.turnTime;
             }
         }
         if (this.client.opts.newGameFormat){
             data = new Turn(data.turn, this.getPlayer(data.user), data.nextPlayer);
-            this.currentRoom.history.push(data);
+            room.history.push(data);
         }
         this.emit('turn', data);
         var nextPlayer = data.nextPlayer;
         // reset time on first turn if need
-        if (!data.nextPlayer && !this.timeInterval && (this.currentRoom.timeMode == 'reset_every_turn' || this.currentRoom.timeStartMode == 'after_turn')){
-            nextPlayer = this.currentRoom.current;
+        if (!data.nextPlayer && !this.timeInterval && (room.timeMode == 'reset_every_turn' || room.timeStartMode == 'after_turn')){
+            nextPlayer = room.current;
         }
         this.switchPlayer(nextPlayer, 0, userTurnTime);
     };
@@ -375,30 +383,33 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
     GameManager.prototype.switchPlayer = function(nextPlayer, userTime, turnTime){
         console.log('switch player;', nextPlayer, userTime, turnTime);
-        if (!this.currentRoom){
+        var room = this.currentRoom;
+        userTime = userTime || 0;
+        if (!room){
             console.error('game_manager;', 'switchPlayer', 'game not started!');
             return;
         }
         if (!nextPlayer)  return;
+        room.userData[room.current.userId].userTotalTime +=  room.turnStartTime ? Date.now() - room.turnStartTime : 0;
         if (!turnTime){
-            this.currentRoom.userTurnTime = null;
+            room.userTurnTime = null;
         } else {
-            this.currentRoom.userTurnTime = turnTime;
+            room.userTurnTime = turnTime;
         }
 
-        this.currentRoom.current = nextPlayer;
+        room.current = nextPlayer;
         userTime = userTime || 0;
 
-        if (this.currentRoom.timeMode == 'common'){
-            this.currentRoom.turnStartTime = this.currentRoom.turnStartTime == null ? Date.now() - userTime : this.currentRoom.turnStartTime;
-            this.currentRoom.userTime = userTime;
+        if (room.timeMode == 'common'){
+            room.turnStartTime = room.turnStartTime == null ? Date.now() - userTime : room.turnStartTime;
+            room.userTime = userTime;
         } else {
-            this.currentRoom.turnStartTime = Date.now();
-            this.currentRoom.userTime = (turnTime || this.currentRoom.turnTime) - userTime;
-            if (this.currentRoom.userTime < 0) this.currentRoom.userTime = 0;
+            room.turnStartTime = Date.now() - userTime;
+            room.userTime = (turnTime || room.turnTime) - userTime;
+            if (room.userTime < 0) room.userTime = 0;
         }
 
-        this.emit('switch_player', this.currentRoom.current);
+        this.emit('switch_player', room.current);
         this.emitTime();
         if (!this.timeInterval) {
             this.prevTime = null;
@@ -672,32 +683,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
 
 
     GameManager.prototype.emitTime = function(){
-        var time = this.currentRoom.userTime;
-        if (this.currentRoom.timeMode == 'common') {
-            time = Date.now() - this.currentRoom.turnStartTime;
-        }
-        var minutes = Math.floor(time / 60000),
-            seconds = Math.floor((time - minutes * 60000) / 1000);
-        if (minutes < 10) minutes = '0' + minutes;
-        if (seconds < 10) seconds = '0' + seconds;
-
-        if (this.currentRoom.timeMode == 'common') {
-            time = {
-                userTimeMS: this.currentRoom.userTime,
-                userTimeS: Math.floor(this.currentRoom.userTime / 1000),
-                userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
-                userTimeFormat: minutes + ':' + seconds
-            };
-        } else {
-            time = {
-                user: this.currentRoom.current,
-                userTimeMS: this.currentRoom.userTime,
-                userTimeS: Math.floor(this.currentRoom.userTime / 1000),
-                userTimePer: this.currentRoom.userTime / this.currentRoom.turnTime,
-                userTimeFormat: minutes + ':' + seconds
-            };
-        }
-
+        var time = this.currentRoom.getTime();
         this.emit('time', time);
     };
 

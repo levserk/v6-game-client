@@ -23,7 +23,7 @@ define(['views/user_list', 'views/dialogs', 'views/chat', 'views/settings', 'vie
     ViewsManager.prototype.closeAll = function(){
         this.client.ratingManager.close();
         this.client.historyManager.close();
-        this.settingsView.save();
+        if (!this.settingsView.isClosed) this.settingsView.save();
     };
 
     ViewsManager.prototype.showSettings = function () {

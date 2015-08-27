@@ -272,7 +272,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             // add timer to auto close
             roundResultStartTime = Date.now();
             roundResultInterval = setInterval(function(){
-                var time = (inviteTimeout * 1000 - (Date.now() - roundResultStartTime)) / 1000 ^0;
+                var time = (inviteTimeout * 2000 - (Date.now() - roundResultStartTime)) / 1000 ^0;
                 this.find('.roundResultTime span').html(time);
                 if (time < 1) {
                     console.log('interval', time);

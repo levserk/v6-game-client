@@ -107,18 +107,37 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
 
     HistoryManager.prototype.onGameLoad = function (mode, game){
         console.log('history_manager;', 'game load', game, 'time:', Date.now() - this.startTime);
+        var players = [], i, player;
         if (game) {
             game.history = '[' + game.history + ']';
             game.history = game.history.replace(new RegExp('@', 'g'), ',');
             game.history = JSON.parse(game.history);
             game.initData = JSON.parse(game.initData);
             game.userData = JSON.parse(game.userData);
-            var players = [], i;
+            game.isPlayer = false;
             for (i = 0; i < game.players.length; i++) {
-                players.push(this.client.userList.createUser(game.userData[game.players[i]]));
+                player = this.client.userList.createUser(game.userData[game.players[i]]);
+                players.push(player);
+                if (player.userId == this.userId) {
+                    game.player = player;
+                    if (player.userId == this.client.getPlayer().userId) {
+                        game.isPlayer = true;
+                    }
+                }
             }
             if (players.length != players.length) throw new Error('UserData and players are different!');
             game.players = players;
+            if (!game.winner){
+                game.result = 'draw';
+            } else {
+                if (game.winner == game.player.userId){
+                    game.result = 'win';
+                } else {
+                    game.result = 'lose';
+                }
+            }
+            game.message = this.getResultMessages(game);
+
             if (this.client.opts.newGameFormat){
                 game.initData.first = getPlayer(game.initData.first);
                 game.winner = getPlayer(game.winner);
@@ -164,6 +183,56 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
 
             return turn;
         }
+    };
+
+
+    HistoryManager.prototype.getResultMessages = function(game){
+        var locale = this.client.locale['game']['resultMessages'], loser, winner, winnerId,
+            message = {
+                resultMessage: locale[game.result],
+                resultComment: ""
+            };
+        if (game.result != 'draw'){
+            if (game.isPlayer){
+                if (game.result == 'lose'){
+                    switch  (game.action){
+                        case 'timeout': message.resultComment =  locale['playerTimeout']; break;
+                        case 'user_leave': message.resultComment = locale['playerLeave']; break;
+                        case 'throw': message.resultComment = locale['playerThrow']; break;
+                    }
+                } else { // win
+                    switch (game.action) {
+                        case 'timeout':
+                            message.resultComment = locale['opponentTimeoutPre'] + locale['opponentTimeout'];
+                            break;
+                        case 'user_leave':
+                            message.resultComment = locale['opponent'] + locale['opponentLeave'];
+                            break;
+                        case 'throw':
+                            message.resultComment = locale['opponent'] + locale['opponentThrow'];
+                            break;
+                    }
+                }
+            } else{ // spectator
+                winnerId = game.winner.userId || game.winner;
+                winner = (winnerId == game.players[0].userId ? game.players[0] : game.players[1]);
+                loser = (winnerId == game.players[0].userId ? game.players[1] : game.players[0]);
+                message.resultMessage = locale['wins'] + winner.userName;
+
+                switch (game.action) {
+                    case 'timeout':
+                        message.resultComment = locale['timeoutPre'] + loser.userName + locale['opponentTimeout'];
+                        break;
+                    case 'user_leave':
+                        message.resultComment = loser.userName + locale['opponentLeave'];
+                        break;
+                    case 'throw':
+                        message.resultComment = loser.userName + locale['opponentThrow'];
+                        break;
+                }
+            }
+        }
+        return message;
     };
 
 
@@ -286,6 +355,9 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
 
 
     HistoryManager.prototype.getGame = function (id, userId, mode) {
+        if (this.client.gameManager.inGame()){
+            return;
+        }
         userId = userId || this.userId || this.client.getPlayer().userId;
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;

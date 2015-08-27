@@ -147,6 +147,12 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         this.emit('game_start', room);
         this.onRoundStart(data['initData'], true);
         room.load(data);
+        for (var key in this.currentRoom.players){
+            if (this.currentRoom.players.hasOwnProperty(key)){
+                console.log('game_manager; emit time', key);
+                this.emitTime(this.currentRoom.players[key], true);
+            }
+        }
         this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
@@ -176,6 +182,11 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         }
         this.onRoundStart(data['initData'], true);
         room.load(data);
+        for (var key in this.currentRoom.players){
+            if (this.currentRoom.players.hasOwnProperty(key)){
+                this.emitTime(this.currentRoom.players[key], true)
+            }
+        }
         this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         // switch player
@@ -248,6 +259,8 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         if (!this.currentRoom.isPlayer){
             data.result = null;
         }
+
+        data.message = this.getResultMessages(data);
 
         this.emit('round_end', data);
     };
@@ -641,6 +654,53 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
     };
 
 
+    GameManager.prototype.getResultMessages = function(data){
+        var locale = this.client.locale['game']['resultMessages'], loser,
+            message = {
+            resultMessage: locale[data.result],
+            resultComment: ""
+        };
+        if (data.result != 'draw'){
+            if (data.isPlayer){
+                if (data.result == 'lose'){
+                    switch  (data.action){
+                        case 'timeout': message.resultComment =  locale['playerTimeout']; break;
+                        case 'user_leave': message.resultComment = locale['playerLeave']; break;
+                        case 'throw': message.resultComment = locale['playerThrow']; break;
+                    }
+                } else { // win
+                    switch (data.action) {
+                        case 'timeout':
+                            message.resultComment = locale['opponentTimeoutPre'] + locale['opponentTimeout'];
+                            break;
+                        case 'user_leave':
+                            message.resultComment = locale['opponent'] + locale['opponentLeave'];
+                            break;
+                        case 'throw':
+                            message.resultComment = locale['opponent'] + locale['opponentThrow'];
+                            break;
+                    }
+                }
+            } else{ // spectator
+                message.resultMessage = locale['wins'] + this.getPlayer(data.winner).userName;
+                loser = (data.winner == this.currentRoom.players[0].userId ? this.currentRoom.players[1] : this.currentRoom.players[0]);
+                switch (data.action) {
+                    case 'timeout':
+                        message.resultComment = locale['timeoutPre'] + loser.userName + locale['opponentTimeout'];
+                        break;
+                    case 'user_leave':
+                        message.resultComment = loser.userName + locale['opponentLeave'];
+                        break;
+                    case 'throw':
+                        message.resultComment = loser.userName + locale['opponentThrow'];
+                        break;
+                }
+            }
+        }
+        return message;
+    };
+
+
     GameManager.prototype.inGame = function (){
         return this.currentRoom != null && !this.currentRoom.isClosed && this.getPlayer(this.client.getPlayer().userId);
     };
@@ -682,9 +742,13 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
     };
 
 
-    GameManager.prototype.emitTime = function(){
-        var time = this.currentRoom.getTime();
-        this.emit('time', time);
+    GameManager.prototype.emitTime = function(user, fGetFromUserData){
+        try {
+            var time = this.currentRoom.getTime(user, fGetFromUserData);
+            this.emit('time', time);
+        } catch (e) {
+            console.error('game_manager; emitTime', e);
+        }
     };
 
 

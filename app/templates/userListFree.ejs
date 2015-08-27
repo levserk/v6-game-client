@@ -13,7 +13,7 @@
     <% } else if (user.isInvited) { %>
     <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>
     <% } else {
-        if (user.disableInvite) { %>
+        if (!user.waiting && user.disableInvite) { %>
         <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>
         <% } else { %>
             <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>

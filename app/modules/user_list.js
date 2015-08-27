@@ -155,7 +155,7 @@ define(['EE'], function(EE) {
             } else delete user.isInvited;
             user.waiting = (this.waiting && this.waiting[this.client.currentMode] == user);
             if (user.isInRoom) continue;
-            if (!user.isPlayer && (!this.client.opts.showHidden && (user.disableInvite || !user.isActive))) continue;
+            if (!user.isPlayer && !user.waiting && (!this.client.opts.showHidden && (user.disableInvite || !user.isActive))) continue;
             if (filter && user.userName.toLowerCase().indexOf(filter) == -1) continue;
             else userList.push(user);
         }

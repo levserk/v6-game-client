@@ -115,5 +115,23 @@
     "you": "Вы",
     "search": "Поиск",
     "novice": "новичок"
+  },
+  "game": {
+    "resultMessages":{
+      "win": "Победа",
+      "wins": "Победил ",
+      "lose": "Поражение",
+      "draw": "Ничья",
+      "opponent": "Соперник",
+      "player": "Игрок",
+      "opponentThrow": " сдался",
+      "playerThrow": "Вы сдались",
+      "opponentTimeoutPre": "У соперника",
+      "timeoutPre": "У ",
+      "opponentTimeout": " закончилось время",
+      "playerTimeout": "У Вас закончилось время",
+      "opponentLeave": " покинул игру",
+      "playerLeave": "Вы покинули игру"
+    }
   }
 }

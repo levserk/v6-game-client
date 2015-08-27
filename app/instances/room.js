@@ -52,17 +52,20 @@ define(['instances/time'], function(Time) {
             for (var i = 0; i < this.players.length; i++){
                 id = this.players[i].userId;
                 this.userData[id].userTotalTime = data.userData[id].userTotalTime || this.userData[id].userTotalTime;
+                this.userData[id].userTurnTime = data.userData[id].userTurnTime || this.userData[id].userTurnTime || this.turnTime;
             }
         }
         if (data['gameTime']) this.timeGameStart -= data['gameTime'];
         if (data['roundTime']) this.timeRoundStart -= data['roundTime'];
     };
 
-    Room.prototype.getTime = function(){
+    Room.prototype.getTime = function(user, fGetFromUserData){
+        user = user || this.current;
         var time = this.userTime, turnTime;
         if (this.timeMode == 'common') {
             time = Date.now() - this.turnStartTime;
         }
+        if (fGetFromUserData) time = this.userData[user.userId].userTurnTime;
         var userTime = new Time(time, this.turnTime);
 
 
@@ -84,9 +87,9 @@ define(['instances/time'], function(Time) {
         if (this.timeMode == 'common'){
             time.userTotalTime = userTime;
         } else {
-            time.user = this.current;
-            turnTime = this.turnStartTime ? Date.now() - this.turnStartTime : 0;
-            time.userTotalTime = new Time(turnTime + this.userData[this.current.userId].userTotalTime)
+            time.user = user;
+            turnTime = (user == this.current && this.turnStartTime) ? Date.now() - this.turnStartTime : 0;
+            time.userTotalTime = new Time(turnTime + this.userData[user.userId].userTotalTime)
         }
 
         return time;

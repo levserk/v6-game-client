@@ -507,17 +507,20 @@ define('instances/room',['instances/time'], function(Time) {
             for (var i = 0; i < this.players.length; i++){
                 id = this.players[i].userId;
                 this.userData[id].userTotalTime = data.userData[id].userTotalTime || this.userData[id].userTotalTime;
+                this.userData[id].userTurnTime = data.userData[id].userTurnTime || this.userData[id].userTurnTime || this.turnTime;
             }
         }
         if (data['gameTime']) this.timeGameStart -= data['gameTime'];
         if (data['roundTime']) this.timeRoundStart -= data['roundTime'];
     };
 
-    Room.prototype.getTime = function(){
+    Room.prototype.getTime = function(user, fGetFromUserData){
+        user = user || this.current;
         var time = this.userTime, turnTime;
         if (this.timeMode == 'common') {
             time = Date.now() - this.turnStartTime;
         }
+        if (fGetFromUserData) time = this.userData[user.userId].userTurnTime;
         var userTime = new Time(time, this.turnTime);
 
 
@@ -539,9 +542,9 @@ define('instances/room',['instances/time'], function(Time) {
         if (this.timeMode == 'common'){
             time.userTotalTime = userTime;
         } else {
-            time.user = this.current;
-            turnTime = this.turnStartTime ? Date.now() - this.turnStartTime : 0;
-            time.userTotalTime = new Time(turnTime + this.userData[this.current.userId].userTotalTime)
+            time.user = user;
+            turnTime = (user == this.current && this.turnStartTime) ? Date.now() - this.turnStartTime : 0;
+            time.userTotalTime = new Time(turnTime + this.userData[user.userId].userTotalTime)
         }
 
         return time;
@@ -739,6 +742,12 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         this.emit('game_start', room);
         this.onRoundStart(data['initData'], true);
         room.load(data);
+        for (var key in this.currentRoom.players){
+            if (this.currentRoom.players.hasOwnProperty(key)){
+                console.log('game_manager; emit time', key);
+                this.emitTime(this.currentRoom.players[key], true);
+            }
+        }
         this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
@@ -768,6 +777,11 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         }
         this.onRoundStart(data['initData'], true);
         room.load(data);
+        for (var key in this.currentRoom.players){
+            if (this.currentRoom.players.hasOwnProperty(key)){
+                this.emitTime(this.currentRoom.players[key], true)
+            }
+        }
         this.currentRoom.history = this.parseHistory(data.history, data['playerTurns']);
         this.emit('game_load', this.currentRoom.history);
         // switch player
@@ -840,6 +854,8 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         if (!this.currentRoom.isPlayer){
             data.result = null;
         }
+
+        data.message = this.getResultMessages(data);
 
         this.emit('round_end', data);
     };
@@ -1233,6 +1249,53 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
     };
 
 
+    GameManager.prototype.getResultMessages = function(data){
+        var locale = this.client.locale['game']['resultMessages'], loser,
+            message = {
+            resultMessage: locale[data.result],
+            resultComment: ""
+        };
+        if (data.result != 'draw'){
+            if (data.isPlayer){
+                if (data.result == 'lose'){
+                    switch  (data.action){
+                        case 'timeout': message.resultComment =  locale['playerTimeout']; break;
+                        case 'user_leave': message.resultComment = locale['playerLeave']; break;
+                        case 'throw': message.resultComment = locale['playerThrow']; break;
+                    }
+                } else { // win
+                    switch (data.action) {
+                        case 'timeout':
+                            message.resultComment = locale['opponentTimeoutPre'] + locale['opponentTimeout'];
+                            break;
+                        case 'user_leave':
+                            message.resultComment = locale['opponent'] + locale['opponentLeave'];
+                            break;
+                        case 'throw':
+                            message.resultComment = locale['opponent'] + locale['opponentThrow'];
+                            break;
+                    }
+                }
+            } else{ // spectator
+                message.resultMessage = locale['wins'] + this.getPlayer(data.winner).userName;
+                loser = (data.winner == this.currentRoom.players[0].userId ? this.currentRoom.players[1] : this.currentRoom.players[0]);
+                switch (data.action) {
+                    case 'timeout':
+                        message.resultComment = locale['timeoutPre'] + loser.userName + locale['opponentTimeout'];
+                        break;
+                    case 'user_leave':
+                        message.resultComment = loser.userName + locale['opponentLeave'];
+                        break;
+                    case 'throw':
+                        message.resultComment = loser.userName + locale['opponentThrow'];
+                        break;
+                }
+            }
+        }
+        return message;
+    };
+
+
     GameManager.prototype.inGame = function (){
         return this.currentRoom != null && !this.currentRoom.isClosed && this.getPlayer(this.client.getPlayer().userId);
     };
@@ -1274,9 +1337,13 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
     };
 
 
-    GameManager.prototype.emitTime = function(){
-        var time = this.currentRoom.getTime();
-        this.emit('time', time);
+    GameManager.prototype.emitTime = function(user, fGetFromUserData){
+        try {
+            var time = this.currentRoom.getTime(user, fGetFromUserData);
+            this.emit('time', time);
+        } catch (e) {
+            console.error('game_manager; emitTime', e);
+        }
     };
 
 
@@ -1398,16 +1465,17 @@ define('modules/invite_manager',['EE'], function(EE) {
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
 
-        if (this.client.settings.disableInvite){
-            this.reject(invite.from);
-            return;
-        }
-
         if (this.isPlayRandom && this.client.currentMode == invite.mode) {
             console.log('invite_manager;', 'auto accept invite', invite);
             this.accept(invite.from);
             return;
         }
+
+        if (this.client.settings.disableInvite){
+            this.reject(invite.from);
+            return;
+        }
+
 
         this.emit('new_invite', {
             from: this.client.getUser(invite.from),
@@ -1720,7 +1788,7 @@ define('modules/user_list',['EE'], function(EE) {
             } else delete user.isInvited;
             user.waiting = (this.waiting && this.waiting[this.client.currentMode] == user);
             if (user.isInRoom) continue;
-            if (!user.isPlayer && (!this.client.opts.showHidden && (user.disableInvite || !user.isActive))) continue;
+            if (!user.isPlayer && !user.waiting && (!this.client.opts.showHidden && (user.disableInvite || !user.isActive))) continue;
             if (filter && user.userName.toLowerCase().indexOf(filter) == -1) continue;
             else userList.push(user);
         }
@@ -2410,7 +2478,7 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree <%= user.isActive?\'\':\'userListInactive\' %> <%= user.waiting?\'userListWaiting\':\'\' %> <%= user.isPlayer?\'userListPlayer\':\'\' %>">\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>">\r\n        <%= user.userName %>\r\n    </td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td class="userListPlayerInvite">\r\n        <% if (user.disableInvite ) { %>\r\n        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >\r\n        <% } %>\r\n    </td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>\r\n    <% } else {\r\n        if (user.disableInvite) { %>\r\n        <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>\r\n        <% } else { %>\r\n            <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>\r\n        <% }\r\n    } %>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree <%= user.isActive?\'\':\'userListInactive\' %> <%= user.waiting?\'userListWaiting\':\'\' %> <%= user.isPlayer?\'userListPlayer\':\'\' %>">\r\n    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>">\r\n        <%= user.userName %>\r\n    </td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td class="userListPlayerInvite">\r\n        <% if (user.disableInvite ) { %>\r\n        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >\r\n        <% } %>\r\n    </td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>\r\n    <% } else {\r\n        if (!user.waiting && user.disableInvite) { %>\r\n        <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>\r\n        <% } else { %>\r\n            <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>\r\n        <% }\r\n    } %>\r\n</tr>\r\n<% }) %>';});
 
 
 define('text!tpls/userListInGame.ejs',[],function () { return '<% _.each(rooms, function(room) { %>\r\n<tr class="userListGame <%= room.current ? \'currentGame\' : \'\' %>" data-id="<%= room.room %>">\r\n    <td class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>" ><%= room.players[0].userName %></td>\r\n    <td>:</td>\r\n    <td class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>" ><%= room.players[1].userName %></td>\r\n</tr>\r\n<% }) %>';});
@@ -2961,7 +3029,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             // add timer to auto close
             roundResultStartTime = Date.now();
             roundResultInterval = setInterval(function(){
-                var time = (inviteTimeout * 1000 - (Date.now() - roundResultStartTime)) / 1000 ^0;
+                var time = (inviteTimeout * 2000 - (Date.now() - roundResultStartTime)) / 1000 ^0;
                 this.find('.roundResultTime span').html(time);
                 if (time < 1) {
                     console.log('interval', time);
@@ -4771,18 +4839,37 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
 
     HistoryManager.prototype.onGameLoad = function (mode, game){
         console.log('history_manager;', 'game load', game, 'time:', Date.now() - this.startTime);
+        var players = [], i, player;
         if (game) {
             game.history = '[' + game.history + ']';
             game.history = game.history.replace(new RegExp('@', 'g'), ',');
             game.history = JSON.parse(game.history);
             game.initData = JSON.parse(game.initData);
             game.userData = JSON.parse(game.userData);
-            var players = [], i;
+            game.isPlayer = false;
             for (i = 0; i < game.players.length; i++) {
-                players.push(this.client.userList.createUser(game.userData[game.players[i]]));
+                player = this.client.userList.createUser(game.userData[game.players[i]]);
+                players.push(player);
+                if (player.userId == this.userId) {
+                    game.player = player;
+                    if (player.userId == this.client.getPlayer().userId) {
+                        game.isPlayer = true;
+                    }
+                }
             }
             if (players.length != players.length) throw new Error('UserData and players are different!');
             game.players = players;
+            if (!game.winner){
+                game.result = 'draw';
+            } else {
+                if (game.winner == game.player.userId){
+                    game.result = 'win';
+                } else {
+                    game.result = 'lose';
+                }
+            }
+            game.message = this.getResultMessages(game);
+
             if (this.client.opts.newGameFormat){
                 game.initData.first = getPlayer(game.initData.first);
                 game.winner = getPlayer(game.winner);
@@ -4828,6 +4915,56 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
 
             return turn;
         }
+    };
+
+
+    HistoryManager.prototype.getResultMessages = function(game){
+        var locale = this.client.locale['game']['resultMessages'], loser, winner, winnerId,
+            message = {
+                resultMessage: locale[game.result],
+                resultComment: ""
+            };
+        if (game.result != 'draw'){
+            if (game.isPlayer){
+                if (game.result == 'lose'){
+                    switch  (game.action){
+                        case 'timeout': message.resultComment =  locale['playerTimeout']; break;
+                        case 'user_leave': message.resultComment = locale['playerLeave']; break;
+                        case 'throw': message.resultComment = locale['playerThrow']; break;
+                    }
+                } else { // win
+                    switch (game.action) {
+                        case 'timeout':
+                            message.resultComment = locale['opponentTimeoutPre'] + locale['opponentTimeout'];
+                            break;
+                        case 'user_leave':
+                            message.resultComment = locale['opponent'] + locale['opponentLeave'];
+                            break;
+                        case 'throw':
+                            message.resultComment = locale['opponent'] + locale['opponentThrow'];
+                            break;
+                    }
+                }
+            } else{ // spectator
+                winnerId = game.winner.userId || game.winner;
+                winner = (winnerId == game.players[0].userId ? game.players[0] : game.players[1]);
+                loser = (winnerId == game.players[0].userId ? game.players[1] : game.players[0]);
+                message.resultMessage = locale['wins'] + winner.userName;
+
+                switch (game.action) {
+                    case 'timeout':
+                        message.resultComment = locale['timeoutPre'] + loser.userName + locale['opponentTimeout'];
+                        break;
+                    case 'user_leave':
+                        message.resultComment = loser.userName + locale['opponentLeave'];
+                        break;
+                    case 'throw':
+                        message.resultComment = loser.userName + locale['opponentThrow'];
+                        break;
+                }
+            }
+        }
+        return message;
     };
 
 
@@ -4950,6 +5087,9 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
 
 
     HistoryManager.prototype.getGame = function (id, userId, mode) {
+        if (this.client.gameManager.inGame()){
+            return;
+        }
         userId = userId || this.userId || this.client.getPlayer().userId;
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;
@@ -5588,7 +5728,7 @@ define('modules/admin_manager',['EE'], function(EE) {
 });
 
 
-define('text!localization/ru.JSON',[],function () { return '{\r\n  "name": "ru",\r\n  "userList":{\r\n    "tabs":{\r\n      "free":"Свободны",\r\n      "inGame":"Играют",\r\n      "spectators": "Смотрят"\r\n    },\r\n    "disconnected": {\r\n      "text": "Соединение с сервером отсутствует",\r\n      "button": "Переподключиться",\r\n      "status": "Загрузка.."\r\n    },\r\n    "search": "Поиск по списку",\r\n    "disableInvite": "Вы запретили приглашать себя в игру",\r\n    "playerDisableInvite": "Игрок запретил приглашать себя в игру",\r\n    "buttons":{\r\n      "playRandom": "Играть с любым",\r\n      "cancelPlayRandom": "Идет подбор игрока...",\r\n      "invite": "Пригласить",\r\n      "cancel": "Отмена"\r\n    }\r\n  },\r\n  "chat":{\r\n    "tabs":{\r\n      "main": "Общий",\r\n      "room": "Стол"\r\n    },\r\n    "inputPlaceholder": "Введите ваше сообщение",\r\n    "templateMessages": {\r\n      "header": "Готовые сообщения"\r\n    },\r\n    "buttons":{\r\n      "send": "Отправить",\r\n      "chatRules": "Правила чата"\r\n    },\r\n    "menu":{\r\n      "answer": "Ответить",\r\n      "showProfile": "Показать профиль",\r\n      "invite": "Пригласить в игру",\r\n      "ban": "Забанить в чате"\r\n    }\r\n  },\r\n  "dialogs":{\r\n    "invite": "Вас пригласил в игру пользователь ",\r\n    "inviteTime": "Осталось: ",\r\n    "user": "Пользователь",\r\n    "rejectInvite": " отклонил ваше приглашение",\r\n    "timeoutInvite": " превысил лимит ожидания в ",\r\n    "seconds": " секунд",\r\n    "askDraw": " предлагает ничью",\r\n    "cancelDraw": "отклонил ваше предложение о ничье",\r\n    "askTakeBack": "просит отменить ход. Разрешить ему?",\r\n    "cancelTakeBack": " отклонил ваше просьбу отменить ход",\r\n    "accept": "Принять",\r\n    "decline": "Отклонить",\r\n    "yes": "Да",\r\n    "no": "Нет",\r\n    "win": "Победа",\r\n    "lose": "Поражение",\r\n    "draw": "Ничья",\r\n    "gameOver": "Игра окончена",\r\n    "scores": "очков",\r\n    "opponentTimeout": "У соперника закончилось время",\r\n    "playerTimeout": "У Вас закончилось время",\r\n    "opponentThrow": "Соперник сдался",\r\n    "playerThrow": "Вы сдались",\r\n    "ratingUp": "Вы поднялись в общем рейтинге с ",\r\n    "ratingPlace": "Вы занимаете ",\r\n    "on": " на ",\r\n    "place": " место в общем рейтинге",\r\n    "dialogPlayAgain": "Сыграть с соперником еще раз?",\r\n    "playAgain": "Да, начать новую игру",\r\n    "leave": "Нет, выйти",\r\n    "waitingOpponent": "Ожидание соперника..",\r\n    "waitingTimeout": "Время ожидания истекло",\r\n    "opponentLeave": "покинул игру",\r\n    "banMessage": "Вы не можете писать сообщения в чате, т.к. добавлены в черный список ",\r\n    "banReason": "за употребление нецензурных выражений и/или спам  ",\r\n    "loginError": "Ошибка авторизации. Обновите страницу",\r\n    "loseOnLeave": "Вам будет засчитано поражение"\r\n  },\r\n  "history": {\r\n    "columns": {\r\n      "date": "Дата",\r\n      "opponent": "Противник",\r\n      "time": "Время",\r\n      "number": "#",\r\n      "elo": "Рейтинг"\r\n    },\r\n    "close": "Закрыть окно истории",\r\n    "showMore": "Показать еще",\r\n    "noHistory": "Сохранения отсутствуют",\r\n    "placeholder": "Поиск по имени",\r\n    "months": ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]\r\n  },\r\n  "rating": {\r\n    "tabs": {\r\n      "allPlayers": "все игроки"\r\n    },\r\n    "columns": {\r\n      "rank": "Место",\r\n      "userName": "Имя",\r\n      "ratingElo": "Рейтинг <br> Эло",\r\n      "win": "Выиграл",\r\n      "lose": "Проиграл",\r\n      "dateCreate": "Дата <br> регистрации",\r\n      "dateLastGame": "Дата <br> последней игры"\r\n    },\r\n    "close": "Закрыть окно рейтинга",\r\n    "placeholder": "Поиск по имени",\r\n    "showMore": "Ещё 500 игроков",\r\n    "jumpTop": "в начало рейтинга",\r\n    "place": " место",\r\n    "you": "Вы",\r\n    "search": "Поиск",\r\n    "novice": "новичок"\r\n  }\r\n}';});
+define('text!localization/ru.JSON',[],function () { return '{\r\n  "name": "ru",\r\n  "userList":{\r\n    "tabs":{\r\n      "free":"Свободны",\r\n      "inGame":"Играют",\r\n      "spectators": "Смотрят"\r\n    },\r\n    "disconnected": {\r\n      "text": "Соединение с сервером отсутствует",\r\n      "button": "Переподключиться",\r\n      "status": "Загрузка.."\r\n    },\r\n    "search": "Поиск по списку",\r\n    "disableInvite": "Вы запретили приглашать себя в игру",\r\n    "playerDisableInvite": "Игрок запретил приглашать себя в игру",\r\n    "buttons":{\r\n      "playRandom": "Играть с любым",\r\n      "cancelPlayRandom": "Идет подбор игрока...",\r\n      "invite": "Пригласить",\r\n      "cancel": "Отмена"\r\n    }\r\n  },\r\n  "chat":{\r\n    "tabs":{\r\n      "main": "Общий",\r\n      "room": "Стол"\r\n    },\r\n    "inputPlaceholder": "Введите ваше сообщение",\r\n    "templateMessages": {\r\n      "header": "Готовые сообщения"\r\n    },\r\n    "buttons":{\r\n      "send": "Отправить",\r\n      "chatRules": "Правила чата"\r\n    },\r\n    "menu":{\r\n      "answer": "Ответить",\r\n      "showProfile": "Показать профиль",\r\n      "invite": "Пригласить в игру",\r\n      "ban": "Забанить в чате"\r\n    }\r\n  },\r\n  "dialogs":{\r\n    "invite": "Вас пригласил в игру пользователь ",\r\n    "inviteTime": "Осталось: ",\r\n    "user": "Пользователь",\r\n    "rejectInvite": " отклонил ваше приглашение",\r\n    "timeoutInvite": " превысил лимит ожидания в ",\r\n    "seconds": " секунд",\r\n    "askDraw": " предлагает ничью",\r\n    "cancelDraw": "отклонил ваше предложение о ничье",\r\n    "askTakeBack": "просит отменить ход. Разрешить ему?",\r\n    "cancelTakeBack": " отклонил ваше просьбу отменить ход",\r\n    "accept": "Принять",\r\n    "decline": "Отклонить",\r\n    "yes": "Да",\r\n    "no": "Нет",\r\n    "win": "Победа",\r\n    "lose": "Поражение",\r\n    "draw": "Ничья",\r\n    "gameOver": "Игра окончена",\r\n    "scores": "очков",\r\n    "opponentTimeout": "У соперника закончилось время",\r\n    "playerTimeout": "У Вас закончилось время",\r\n    "opponentThrow": "Соперник сдался",\r\n    "playerThrow": "Вы сдались",\r\n    "ratingUp": "Вы поднялись в общем рейтинге с ",\r\n    "ratingPlace": "Вы занимаете ",\r\n    "on": " на ",\r\n    "place": " место в общем рейтинге",\r\n    "dialogPlayAgain": "Сыграть с соперником еще раз?",\r\n    "playAgain": "Да, начать новую игру",\r\n    "leave": "Нет, выйти",\r\n    "waitingOpponent": "Ожидание соперника..",\r\n    "waitingTimeout": "Время ожидания истекло",\r\n    "opponentLeave": "покинул игру",\r\n    "banMessage": "Вы не можете писать сообщения в чате, т.к. добавлены в черный список ",\r\n    "banReason": "за употребление нецензурных выражений и/или спам  ",\r\n    "loginError": "Ошибка авторизации. Обновите страницу",\r\n    "loseOnLeave": "Вам будет засчитано поражение"\r\n  },\r\n  "history": {\r\n    "columns": {\r\n      "date": "Дата",\r\n      "opponent": "Противник",\r\n      "time": "Время",\r\n      "number": "#",\r\n      "elo": "Рейтинг"\r\n    },\r\n    "close": "Закрыть окно истории",\r\n    "showMore": "Показать еще",\r\n    "noHistory": "Сохранения отсутствуют",\r\n    "placeholder": "Поиск по имени",\r\n    "months": ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]\r\n  },\r\n  "rating": {\r\n    "tabs": {\r\n      "allPlayers": "все игроки"\r\n    },\r\n    "columns": {\r\n      "rank": "Место",\r\n      "userName": "Имя",\r\n      "ratingElo": "Рейтинг <br> Эло",\r\n      "win": "Выиграл",\r\n      "lose": "Проиграл",\r\n      "dateCreate": "Дата <br> регистрации",\r\n      "dateLastGame": "Дата <br> последней игры"\r\n    },\r\n    "close": "Закрыть окно рейтинга",\r\n    "placeholder": "Поиск по имени",\r\n    "showMore": "Ещё 500 игроков",\r\n    "jumpTop": "в начало рейтинга",\r\n    "place": " место",\r\n    "you": "Вы",\r\n    "search": "Поиск",\r\n    "novice": "новичок"\r\n  },\r\n  "game": {\r\n    "resultMessages":{\r\n      "win": "Победа",\r\n      "wins": "Победил ",\r\n      "lose": "Поражение",\r\n      "draw": "Ничья",\r\n      "opponent": "Соперник",\r\n      "player": "Игрок",\r\n      "opponentThrow": " сдался",\r\n      "playerThrow": "Вы сдались",\r\n      "opponentTimeoutPre": "У соперника",\r\n      "timeoutPre": "У ",\r\n      "opponentTimeout": " закончилось время",\r\n      "playerTimeout": "У Вас закончилось время",\r\n      "opponentLeave": " покинул игру",\r\n      "playerLeave": "Вы покинули игру"\r\n    }\r\n  }\r\n}';});
 
 
 define('text!localization/en.JSON',[],function () { return '{\r\n  "name": "en",\r\n  "userList":{\r\n    "tabs":{\r\n      "free":"Free",\r\n      "inGame":"In Game",\r\n      "spectators": "Spectators"\r\n    },\r\n    "disconnected": {\r\n      "text": "No connection",\r\n      "button": "Reconnect",\r\n      "status": "Loading.."\r\n    },\r\n    "search": "Search in list",\r\n    "disableInvite": "Invites disable",\r\n    "playerDisableInvite": "Invites disable",\r\n    "buttons":{\r\n      "playRandom": "Play with a anyone",\r\n      "cancelPlayRandom": "Waiting a opponent...",\r\n      "invite": "Invite",\r\n      "cancel": "Cancel"\r\n    }\r\n  },\r\n  "chat":{\r\n    "tabs":{\r\n      "main": "Main",\r\n      "room": "Room"\r\n    },\r\n    "inputPlaceholder": "Type your message",\r\n    "templateMessages": {\r\n      "header": "Template messages"\r\n    },\r\n    "buttons":{\r\n      "send": "Send",\r\n      "chatRules": "Chat rules"\r\n    },\r\n    "menu":{\r\n      "answer": "Answer",\r\n      "showProfile": "Show profile",\r\n      "invite": "Send invite",\r\n      "ban": "ban"\r\n    }\r\n  },\r\n  "dialogs":{\r\n    "invite": "You are invited to play by ",\r\n    "inviteTime": "Remaining: ",\r\n    "user": "User",\r\n    "rejectInvite": " has declined your invitation",\r\n    "timeoutInvite": " limit exceeded expectations ",\r\n    "seconds": " seconds",\r\n    "askDraw": " offers a draw",\r\n    "cancelDraw": "declined your proposal for a draw",\r\n    "askTakeBack": "asks to cancel turn. Allow him?",\r\n    "cancelTakeBack": " declined your request to cancel turn",\r\n    "accept": "Accept",\r\n    "decline": "Decline",\r\n    "yes": "Yes",\r\n    "no": "No",\r\n    "win": "Win",\r\n    "lose": "Lose",\r\n    "draw": "Draw",\r\n    "gameOver": "Game over",\r\n    "scores": "scores",\r\n    "opponentTimeout": "Opponent time is over",\r\n    "playerTimeout": "Your time is over",\r\n    "opponentThrow": "Opponent surrendered",\r\n    "playerThrow": "You surrendered",\r\n    "ratingUp": "You have risen in the overall ranking from ",\r\n    "ratingPlace": "You take ",\r\n    "on": " to ",\r\n    "place": " place in ranking",\r\n    "dialogPlayAgain": "Play with your opponent again?",\r\n    "playAgain": "Yes, play again",\r\n    "leave": "No, leave",\r\n    "waitingOpponent": "Waiting for opponent..",\r\n    "waitingTimeout": "Timeout",\r\n    "opponentLeave": "left the game",\r\n    "banMessage": "You can not write messages in chat since added to the black list ",\r\n    "banReason": "for the use of foul language and / or spam  ",\r\n    "loginError": "Authorisation Error. Refresh the page",\r\n    "loseOnLeave": "You will lose"\r\n  },\r\n  "history": {\r\n    "columns": {\r\n      "date": "Date",\r\n      "opponent": "Opponent",\r\n      "time": "Time",\r\n      "number": "#",\r\n      "elo": "Rating"\r\n    },\r\n    "close": "Close history window",\r\n    "showMore": "Show more",\r\n    "noHistory": "no history",\r\n    "placeholder": "Search by name",\r\n    "months": ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]\r\n  },\r\n  "rating": {\r\n    "tabs": {\r\n      "allPlayers": "All players"\r\n    },\r\n    "columns": {\r\n      "rank": "Place",\r\n      "userName": "Name",\r\n      "ratingElo": "Rating <br> Elo",\r\n      "win": "Win",\r\n      "lose": "Lose",\r\n      "dateCreate": "Registration <br> date",\r\n      "dateLastGame": "Last game"\r\n    },\r\n    "close": "Close rating window",\r\n    "placeholder": "Search by name",\r\n    "showMore": "More 500 players",\r\n    "jumpTop": "to rating top",\r\n    "place": " place",\r\n    "you": "You",\r\n    "search": "Search",\r\n    "novice": "novice"\r\n  }\r\n}';});
@@ -5657,7 +5797,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.23";
+        this.version = "0.9.25";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;

@@ -115,5 +115,23 @@
     "you": "You",
     "search": "Search",
     "novice": "novice"
+  },
+  "game": {
+    "resultMessages":{
+      "win": "Win",
+      "wins": "Win ",
+      "lose": "Lose",
+      "draw": "Draw",
+      "opponent": "Opponent",
+      "player": "Player",
+      "opponentThrow": " surrendered",
+      "playerThrow": "You surrendered",
+      "opponentTimeoutPre": "Opponent",
+      "timeoutPre": "",
+      "opponentTimeout": " time is over",
+      "playerTimeout": "Your time is over",
+      "opponentLeave": " leave game",
+      "playerLeave": "You leave game"
+    }
   }
 }

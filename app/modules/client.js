@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.25";
+        this.version = "0.9.26";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -464,7 +464,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     var defaultSounds = {
         start: {
-            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-start.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-start.ogg',
+            volume: 0.5
         },
         turn: {
             src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-turn.ogg',
@@ -472,10 +473,12 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
             enable: false
         },
         win: {
-            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-win.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-win.ogg',
+            volume: 0.5
         },
         lose: {
-            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-lose.ogg'
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-lose.ogg',
+            volume: 0.5
         },
         invite: {
             src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-invite.ogg'

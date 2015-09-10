@@ -700,18 +700,27 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         return message;
     };
 
-
+    /**
+     * returns true if user in room and he is player
+     * @returns {boolean|*}
+     */
     GameManager.prototype.inGame = function (){
         return this.currentRoom != null && !this.currentRoom.isClosed && this.getPlayer(this.client.getPlayer().userId);
     };
 
-
+    /**
+     * returns true if user in room, he is player and room state is playing
+     * @returns {boolean|*}
+     */
     GameManager.prototype.isPlaying = function(){
         return this.currentRoom != null && !this.currentRoom.isClosed
             && this.getPlayer(this.client.getPlayer().userId) && this.currentRoom.current != null;
     };
 
-
+    /**
+     * return true if user is spectator
+     * @returns {boolean}
+     */
     GameManager.prototype.isSpectating = function(){
         if (this.currentRoom != null && !this.currentRoom.isClosed && this.currentRoom.spectators){
             for (var i = 0; i < this.currentRoom.spectators.length; i++){

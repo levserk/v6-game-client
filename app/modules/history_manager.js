@@ -358,6 +358,9 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
         if (this.client.gameManager.inGame()){
             return;
         }
+        if (this.client.gameManager.isSpectating()){
+            this.client.gameManager.leaveGame();
+        }
         userId = userId || this.userId || this.client.getPlayer().userId;
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;

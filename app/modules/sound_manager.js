@@ -8,7 +8,8 @@ define(['EE', 'underscore'], function(EE, _) {
         this.initSounds();
         this.volume = 1;
         this.sound = null;
-        this.msAlerTimeBound = 15000;
+        this.msAlerTimeBound = 16000;
+        this.timePlayTimeout = null;
 
         this.client.gameManager.on('game_start', function(room){
             if (room.isPlayer) this._playSound('start');
@@ -22,11 +23,15 @@ define(['EE', 'underscore'], function(EE, _) {
             this._playSound('invite');
         }.bind(this));
 
-        this.client.gameManager.on('time', _.throttle(function(data){       // alert sound time bound in one second
-            if (data.user == client.getPlayer() && data.userTimeMS <= this.msAlerTimeBound && data.userTimeMS > 1000) {
-                this._playSound('timeout', 0.5 + (this.msAlerTimeBound - data.userTimeMS) / this.msAlerTimeBound / 2);
+        this.client.gameManager.on('time', function (data) {
+            var interval = 1000;
+            if (data.user == this.client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000) {
+                if (Date.now() - this.timePlayTimeout >= interval){
+                    this._playSound('timeout', 0.3 + (this.msAlerTimeBound - data.userTimeMS) / this.msAlerTimeBound / 4);
+                    this.timePlayTimeout = Date.now();
+                }
             }
-        }.bind(this), 1000));
+        }.bind(this))
     };
 
     SoundManager.prototype = new EE();
@@ -40,10 +45,10 @@ define(['EE', 'underscore'], function(EE, _) {
     };
 
 
-    SoundManager.prototype._playSound = function(id){
+    SoundManager.prototype._playSound = function(id, volume){
         // check auto play sound enable
         if (this.sounds[id] && this.sounds[id].enable)
-            this.playSound(id);
+            this.playSound(id, volume);
     };
 
 

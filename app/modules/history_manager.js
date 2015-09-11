@@ -1,4 +1,5 @@
-define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], function(EE, HistoryView, Turn, GameEvent) {
+define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instances/time'],
+    function(EE, HistoryView, Turn, GameEvent, Time) {
     'use strict';
 
     var locale;
@@ -142,9 +143,15 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event'], functi
                 game.initData.first = getPlayer(game.initData.first);
                 game.winner = getPlayer(game.winner);
                 var current = game.initData.first,
+                    times = {},
                     history = [];
                 for (i = 0; i < game.history.length; i++){
-                    history = history.concat(parseTurn(game.history[i]))
+                    history = history.concat(parseTurn(game.history[i]));
+                    if (history[i].userTime){
+                        times[history[i].user.userId] = times[history[i].user.userId] ? times[history[i].user.userId] + history[i].userTime : history[i].userTime
+                        history[i].userTotalTime = new Time(times[history[i].user.userId]);
+                        history[i].userTime = new Time(history[i].userTime);
+                    }
                 }
                 game.history = history;
             }

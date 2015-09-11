@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.26";
+        this.version = "0.9.27";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -204,7 +204,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 this.userList.onUserChanged(data);
                 break;
             case 'new_game':
-                this.userList.onGameStart(data.room, data.players);
+                this.userList.onGameStart(data.room, data.players, data.mode);
                 this.gameManager.onMessage(message);
                 break;
             case 'end_game':
@@ -235,7 +235,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.userList.onUserLogin(user, true);
         for (var i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         this.userList.onWaiting(waiting);
-        for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
+        for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players, rooms[i].mode);
         this.isLogin = true;
 
         this.emit(this.relogin ? 'relogin':'login', user);

@@ -7,6 +7,10 @@ define([], function() {
             this.userTurnTime = turn.userTurnTime;
             delete turn.userTurnTime;
         }
+        if (turn.userTime){
+            this.userTime = turn.userTime;
+            delete turn.userTime;
+        }
         delete this.turn.nextPlayer;
     };
     return Turn;

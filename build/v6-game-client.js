@@ -561,6 +561,10 @@ define('instances/turn',[], function() {
             this.userTurnTime = turn.userTurnTime;
             delete turn.userTurnTime;
         }
+        if (turn.userTime){
+            this.userTime = turn.userTime;
+            delete turn.userTime;
+        }
         delete this.turn.nextPlayer;
     };
     return Turn;
@@ -1716,14 +1720,14 @@ define('modules/user_list',['EE'], function(EE) {
     };
 
 
-    UserList.prototype.onGameStart = function(roomId, players){
+    UserList.prototype.onGameStart = function(roomId, players, mode){
         for (var i = 0; i < players.length; i++){
             players[i] = this.getUser(players[i]);
             players[i].isInRoom = true;
             this.removeWaiting(players[i]);
         }
         var room = {
-            room:roomId, players: players
+            room:roomId, players: players, mode: mode
         };
         this.rooms.push(room);
         this.emit('new_room',room);
@@ -1842,7 +1846,7 @@ define('modules/user_list',['EE'], function(EE) {
 
 
     UserList.prototype.getRoomList = function(filter) {
-        var rooms = [], room;
+        var rooms = [], room, client = this.client;
         for (var i = 0; i < this.rooms.length; i++) {
             room = this.rooms[i];
             // check room is current
@@ -1859,8 +1863,14 @@ define('modules/user_list',['EE'], function(EE) {
             }
         }
         rooms.sort(function(a, b){
-            var ar = UserList.getRoomRank(a);
-            var br = UserList.getRoomRank(b);
+            var ar, br;
+            if (a.mode != b.mode){
+                ar = client.modes.indexOf(a.mode);
+                br = client.modes.indexOf(b.mode);
+            } else {
+                ar = UserList.getRoomRank(a);
+                br = UserList.getRoomRank(b);
+            }
             return ar - br;
         });
         return rooms;
@@ -1921,7 +1931,7 @@ define('modules/user_list',['EE'], function(EE) {
 
     UserList.getRoomRank = function(room) {
         if (room.players.length) {
-            return Math.min(room.players[0].getNumberRank(), room.players[1].getNumberRank())
+            return Math.min(room.players[0].getNumberRank(room.mode), room.players[1].getNumberRank(room.mode))
         }
         return 0;
     };
@@ -4739,7 +4749,8 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
         });
         return HistoryView;
     });
-define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'instances/game_event'], function(EE, HistoryView, Turn, GameEvent) {
+define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instances/time'],
+    function(EE, HistoryView, Turn, GameEvent, Time) {
     
 
     var locale;
@@ -4883,9 +4894,15 @@ define('modules/history_manager',['EE', 'views/history', 'instances/turn', 'inst
                 game.initData.first = getPlayer(game.initData.first);
                 game.winner = getPlayer(game.winner);
                 var current = game.initData.first,
+                    times = {},
                     history = [];
                 for (i = 0; i < game.history.length; i++){
-                    history = history.concat(parseTurn(game.history[i]))
+                    history = history.concat(parseTurn(game.history[i]));
+                    if (history[i].userTime){
+                        times[history[i].user.userId] = times[history[i].user.userId] ? times[history[i].user.userId] + history[i].userTime : history[i].userTime
+                        history[i].userTotalTime = new Time(times[history[i].user.userId]);
+                        history[i].userTime = new Time(history[i].userTime);
+                    }
                 }
                 game.history = history;
             }
@@ -5814,7 +5831,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.26";
+        this.version = "0.9.27";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -6013,7 +6030,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 this.userList.onUserChanged(data);
                 break;
             case 'new_game':
-                this.userList.onGameStart(data.room, data.players);
+                this.userList.onGameStart(data.room, data.players, data.mode);
                 this.gameManager.onMessage(message);
                 break;
             case 'end_game':
@@ -6044,7 +6061,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.userList.onUserLogin(user, true);
         for (var i = 0; i < userlist.length; i++) this.userList.onUserLogin(userlist[i]);
         this.userList.onWaiting(waiting);
-        for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players);
+        for (i = 0; i< rooms.length; i++) this.userList.onGameStart(rooms[i].room, rooms[i].players, rooms[i].mode);
         this.isLogin = true;
 
         this.emit(this.relogin ? 'relogin':'login', user);

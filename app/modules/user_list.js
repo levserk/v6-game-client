@@ -74,14 +74,14 @@ define(['EE'], function(EE) {
     };
 
 
-    UserList.prototype.onGameStart = function(roomId, players){
+    UserList.prototype.onGameStart = function(roomId, players, mode){
         for (var i = 0; i < players.length; i++){
             players[i] = this.getUser(players[i]);
             players[i].isInRoom = true;
             this.removeWaiting(players[i]);
         }
         var room = {
-            room:roomId, players: players
+            room:roomId, players: players, mode: mode
         };
         this.rooms.push(room);
         this.emit('new_room',room);
@@ -200,7 +200,7 @@ define(['EE'], function(EE) {
 
 
     UserList.prototype.getRoomList = function(filter) {
-        var rooms = [], room;
+        var rooms = [], room, client = this.client;
         for (var i = 0; i < this.rooms.length; i++) {
             room = this.rooms[i];
             // check room is current
@@ -217,8 +217,14 @@ define(['EE'], function(EE) {
             }
         }
         rooms.sort(function(a, b){
-            var ar = UserList.getRoomRank(a);
-            var br = UserList.getRoomRank(b);
+            var ar, br;
+            if (a.mode != b.mode){
+                ar = client.modes.indexOf(a.mode);
+                br = client.modes.indexOf(b.mode);
+            } else {
+                ar = UserList.getRoomRank(a);
+                br = UserList.getRoomRank(b);
+            }
             return ar - br;
         });
         return rooms;
@@ -279,7 +285,7 @@ define(['EE'], function(EE) {
 
     UserList.getRoomRank = function(room) {
         if (room.players.length) {
-            return Math.min(room.players[0].getNumberRank(), room.players[1].getNumberRank())
+            return Math.min(room.players[0].getNumberRank(room.mode), room.players[1].getNumberRank(room.mode))
         }
         return 0;
     };

@@ -147,10 +147,13 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instan
                     history = [];
                 for (i = 0; i < game.history.length; i++){
                     history = history.concat(parseTurn(game.history[i]));
-                    if (history[i].userTime){
-                        times[history[i].user.userId] = times[history[i].user.userId] ? times[history[i].user.userId] + history[i].userTime : history[i].userTime
-                        history[i].userTotalTime = new Time(times[history[i].user.userId]);
-                        history[i].userTime = new Time(history[i].userTime);
+                    if (history[i] instanceof Turn){
+                        history[i].userTime = history[i].userTime || 0;
+                        if (history[i].userTime != null){
+                            times[history[i].user.userId] = times[history[i].user.userId] ? times[history[i].user.userId] + history[i].userTime : history[i].userTime
+                            history[i].userTotalTime = new Time(times[history[i].user.userId]);
+                            history[i].userTime = new Time(history[i].userTime);
+                        }
                     }
                 }
                 game.history = history;

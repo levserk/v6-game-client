@@ -1,5 +1,5 @@
-define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instances/time'],
-    function(EE, HistoryView, Turn, GameEvent, Time) {
+define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_event', 'instances/time'],
+    function(EE, translit, HistoryView, Turn, GameEvent, Time) {
     'use strict';
 
     var locale;
@@ -110,6 +110,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instan
         console.log('history_manager;', 'game load', game, 'time:', Date.now() - this.startTime);
         var players = [], i, player;
         if (game) {
+            this.client.setMode(mode);
             game.history = '[' + game.history + ']';
             game.history = game.history.replace(new RegExp('@', 'g'), ',');
             game.history = JSON.parse(game.history);
@@ -139,6 +140,9 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instan
             }
             game.message = this.getResultMessages(game);
 
+            game.initData.timeMode = game.initData.timeMode || 'reset_every_switch';
+            game.initData.timeStartMode = game.initData.timeStartMode || 'after_switch';
+
             if (this.client.opts.newGameFormat){
                 game.initData.first = getPlayer(game.initData.first);
                 game.winner = getPlayer(game.winner);
@@ -148,8 +152,15 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instan
                 for (i = 0; i < game.history.length; i++){
                     history = history.concat(parseTurn(game.history[i]));
                     if (history[i] instanceof Turn){
+                        // clear first turn time; first turn time = turn time - round start time
+                        if (game.initData.timeStartMode != 'after_round_start' && $.isEmptyObject(times)){
+                            history[i].userTime = 0;
+                        }
                         history[i].userTime = history[i].userTime || 0;
                         if (history[i].userTime != null){
+                            if (game.initData.timeMode == 'dont_reset' && history[i].userTurnTime >= history[i].userTime){
+                                history[i].userTime = history[i].userTurnTime - history[i].userTime;
+                            }
                             times[history[i].user.userId] = times[history[i].user.userId] ? times[history[i].user.userId] + history[i].userTime : history[i].userTime
                             history[i].userTotalTime = new Time(times[history[i].user.userId]);
                             history[i].userTime = new Time(history[i].userTime);
@@ -264,6 +275,9 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instan
             }
         }
         row.opponent = userData[opponentId];
+        if (this.client.lang != 'ru'){
+            row.opponent.userName = translit(row.opponent.userName);
+        }
         row.date = formatDate(hrow.timeEnd);
         row.time = formatTime(hrow.timeEnd);
         // compute game score
@@ -312,7 +326,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instan
             time: penalty.time,
             date: formatDate(penalty.time),
             type: penalty.type,
-            text: typeof this.client.opts.generatePenaltyText == "function" ? this.client.opts.generatePenaltyText(penalty) : 'штраф в ' + Math.abs(penalty.value) + ' очков',
+            text: typeof this.client.opts.generatePenaltyText == "function" ? this.client.opts.generatePenaltyText(penalty) : (penalty.value < 0 ? 'штраф в ' : 'бонус в ') + Math.abs(penalty.value) + ' очков',
             value: penalty.value,
             elo: {value: penalty.ratingElo}
         };
@@ -368,7 +382,7 @@ define(['EE', 'views/history', 'instances/turn', 'instances/game_event', 'instan
         if (this.client.gameManager.inGame()){
             return;
         }
-        if (this.client.gameManager.isSpectating()){
+        if (this.client.gameManager.currentRoom){
             this.client.gameManager.leaveGame();
         }
         userId = userId || this.userId || this.client.getPlayer().userId;

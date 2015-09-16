@@ -111,10 +111,11 @@
     "placeholder": "Search by name",
     "showMore": "More 500 players",
     "jumpTop": "to rating top",
-    "place": " place",
+    "place": " rank",
     "you": "You",
     "search": "Search",
-    "novice": "novice"
+    "novice": "novice",
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   },
   "game": {
     "resultMessages":{

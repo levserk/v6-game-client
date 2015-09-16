@@ -1,7 +1,9 @@
-define(['EE'], function(EE) {
+define(['EE', 'translit'], function(EE, translit) {
     'use strict';
 
     var UserList = function(client){
+
+        translit.test();
 
         var self = this;
 
@@ -313,6 +315,10 @@ define(['EE'], function(EE) {
         if (client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
             var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);
             this.userName = 'Гость ' + nameNumber;
+        }
+
+        if (client.lang != 'ru') {
+            this.userName = translit(this.userName)
         }
 
         this.getRank = function (mode) {

@@ -1,4 +1,4 @@
-define(['EE', 'antimat'], function(EE) {
+define(['EE', 'translit', 'antimat'], function(EE, translit) {
     'use strict';
     var ChatManager = function (client) {
         this.client = client;
@@ -43,7 +43,7 @@ define(['EE', 'antimat'], function(EE) {
 
     ChatManager.prototype = new EE();
 
-    ChatManager.initMessage = function (message, player, mode) {
+    ChatManager.prototype.initMessage = function (message, player, mode) {
         if (message.userData[mode]) message.rank = message.userData[mode].rank;
         if (!message.rank || message.rank < 1) message.rank = '—';
         if (message.target == player.userId) // is private message, set target sender
@@ -57,17 +57,20 @@ define(['EE', 'antimat'], function(EE) {
             message.userName = 'Админ'
         }
 
+        if (this.client.lang != 'ru'){
+            message.userName = translit(message.userName);
+            message.text = translit(message.text);
+        }
+
         message.date = new Date(message.time);
         var h = message.date.getHours();
         var m = message.date.getMinutes();
         if (h < 10) h = '0' + h;
         if (m < 10) m = '0' + m;
         message.t = h + ':' + m;
-        message.d = message.date.getDate() + ' ' + ChatManager.months[message.date.getMonth()] + ' ' + message.date.getFullYear();
+        message.d = message.date.getDate() + ' ' + this.client.locale['chat']['months'][message.date.getMonth()] + ' ' + message.date.getFullYear();
         return message;
     };
-
-    ChatManager.months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
 
     ChatManager.prototype.onLogin = function() {
         this.first = {};
@@ -84,7 +87,7 @@ define(['EE', 'antimat'], function(EE) {
         console.log('chat_manager;', 'message', message);
         switch (message.type) {
             case 'message':
-                message = ChatManager.initMessage(data, player, this.client.currentMode);
+                message = this.initMessage(data, player, this.client.currentMode);
                 if (!this.first[message.target]) this.first[message.target] = message;
 
                 if (!this.messages[message.target]) this.messages[message.target] = [];
@@ -103,11 +106,11 @@ define(['EE', 'antimat'], function(EE) {
                     this.emit('load', null);
                     return;
                 }
-                message = ChatManager.initMessage(data[0], player, this.client.currentMode);
+                message = this.initMessage(data[0], player, this.client.currentMode);
                 if (!this.messages[message.target]) this.messages[message.target] = [];
                 cache = this.messages[message.target];
                 for (i = 0; i < data.length; i++){
-                   this.onMessageLoad(ChatManager.initMessage(data[i], player, this.client.currentMode), cache);
+                   this.onMessageLoad(this.initMessage(data[i], player, this.client.currentMode), cache);
                 }
                 break;
             case 'ban':

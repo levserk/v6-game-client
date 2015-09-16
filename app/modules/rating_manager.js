@@ -1,4 +1,4 @@
-define(['EE', 'views/rating'], function(EE, RatingView) {
+define(['EE', 'translit', 'views/rating'], function(EE, translit, RatingView) {
     'use strict';
 
     var locale;
@@ -85,6 +85,9 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             userName: info.userName,
             photo: undefined
         };
+        if (this.client.lang != 'ru'){
+            row.userName = translit(row.userName);
+        }
         for (var i in info[mode]){
             row[i] = info[mode][i];
         }

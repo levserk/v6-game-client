@@ -13,7 +13,8 @@ define(function() {
             idleTimer: 'lib/idle-timer.min',
             'jquery-ui': 'lib/jquery-ui',
             'antimat': 'lib/antimat',
-            'screenfull': 'lib/screenfull.min'
+            'screenfull': 'lib/screenfull.min',
+            'translit': 'lib/translit'
         },
         shim: {
             backbone: {

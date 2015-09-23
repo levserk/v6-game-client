@@ -126,6 +126,12 @@ define(['EE', 'translit', 'antimat'], function(EE, translit) {
             this.emit('show_ban', this.ban);
             return;
         }
+        text = text.trim();
+
+        if (typeof text != "string" || !text.length){
+            return;
+        }
+
         if (window.containsMat(text)){
             console.warn('chat_manager; censored text', text);
             return;

@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.29";
+        this.version = "0.9.30";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -39,7 +39,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.game = opts.game || 'test';
         this.defaultSettings = $.extend(true, {}, defaultSettings, opts.settings || {});
         this.settings = $.extend(true, {}, this.defaultSettings);
-        this.lang = opts.lang;
+        this.lang = opts.lang || 'ru';
         this.locale = opts.localization;
         this.modesAlias = {};
         this.localizationManager = new LocalizationManager(this);

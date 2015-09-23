@@ -2,9 +2,6 @@ define(['EE', 'translit'], function(EE, translit) {
     'use strict';
 
     var UserList = function(client){
-
-        translit.test();
-
         var self = this;
 
         this.client = client;

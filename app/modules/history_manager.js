@@ -147,23 +147,36 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
                 game.initData.first = getPlayer(game.initData.first);
                 game.winner = getPlayer(game.winner);
                 var current = game.initData.first,
-                    times = {},
-                    history = [];
+                    times = {}, // contain users total time
+                    history = [],
+                    turnTime = game.initData.turnTime;
                 for (i = 0; i < game.history.length; i++){
                     history = history.concat(parseTurn(game.history[i]));
                     if (history[i] instanceof Turn){
+                        // init user time
+                        // userTurnTime - time remain for turn, userTime - time user turn
                         // clear first turn time; first turn time = turn time - round start time
                         if (game.initData.timeStartMode != 'after_round_start' && $.isEmptyObject(times)){
                             history[i].userTime = 0;
                         }
                         history[i].userTime = history[i].userTime || 0;
                         if (history[i].userTime != null){
-                            if (game.initData.timeMode == 'dont_reset' && history[i].userTurnTime >= history[i].userTime){
-                                history[i].userTime = history[i].userTurnTime - history[i].userTime;
+                            if (game.initData.timeMode == 'dont_reset'){ // blitz
+                                history[i].userTime = new Time((times[history[i].user.userId] || turnTime) - history[i].userTime || turnTime, turnTime);
+                                history[i].userTotalTime = new Time(times[history[i].user.userId] || turnTime, turnTime);
+
+                                // turn contain time for turn for next player
+                                if (history[i].nextPlayer){
+                                    times[history[i].nextPlayer.userId] = history[i].userTurnTime
+                                } else {
+                                    times[history[i].user.userId] = history[i].userTurnTime
+                                }
+                            } else {
+                                times[history[i].user.userId] = times[history[i].user.userId] ? times[history[i].user.userId] + history[i].userTime : history[i].userTime;
+                                history[i].userTotalTime = new Time(times[history[i].user.userId] || 0);
+                                history[i].userTime = new Time(history[i].userTime);
                             }
-                            times[history[i].user.userId] = times[history[i].user.userId] ? times[history[i].user.userId] + history[i].userTime : history[i].userTime
-                            history[i].userTotalTime = new Time(times[history[i].user.userId]);
-                            history[i].userTime = new Time(history[i].userTime);
+
                         }
                     }
                 }

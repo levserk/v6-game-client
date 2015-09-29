@@ -660,7 +660,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
             resultMessage: locale[data.result],
             resultComment: ""
         };
-        if (data.result != 'draw'){
+        if (data.winner){
             if (data.isPlayer){
                 if (data.result == 'lose'){
                     switch  (data.action){

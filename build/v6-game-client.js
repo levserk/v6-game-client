@@ -1259,7 +1259,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             resultMessage: locale[data.result],
             resultComment: ""
         };
-        if (data.result != 'draw'){
+        if (data.winner){
             if (data.isPlayer){
                 if (data.result == 'lose'){
                     switch  (data.action){
@@ -5911,7 +5911,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.29";
+        this.version = "0.9.33";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -5929,11 +5929,16 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.showSpectators =  opts.showSpectators || false;
         opts.showButtonsPanel = opts.showButtonsPanel || false;
         opts.localization = opts.localization || {};
+        opts.enableConsole = opts.enableConsole || false;
         opts.showHidden = false;
         opts.showCheaters = false;
 
         try{
             this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
+            // disable console on production
+            if (!opts.enableConsole && !this.isAdmin && window.location.hostname == "logic-games.spb.ru") {
+                this.disableConsole();
+            }
         }catch (e){
             this.isAdmin = false;
             console.error(e);
@@ -6350,6 +6355,26 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                     break;
                 }
         }
+    };
+
+
+    Client.prototype.disableConsole = function(){
+        if (!window.console || !window.console.log) return;
+        if (!this.console) {
+            this.console = {
+                    log: window.console.log,
+                    error: window.console.error,
+                    warn: window.console.warn
+                }
+        }
+        window.console.log = window.console.error =  window.console.warn = function(){}
+    };
+
+    Client.prototype.enableConsole = function(){
+        if (!window.console || !this.console) return;
+        window.console.log = this.console.log;
+        window.console.error = this.console.error;
+        window.console.warn = this.console.warn;
     };
 
 

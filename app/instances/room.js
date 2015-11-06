@@ -86,10 +86,16 @@ define(['instances/time'], function(Time) {
 
         if (this.timeMode == 'common'){
             time.userTotalTime = userTime;
+            time.totalTime = userTime;
         } else {
             time.user = user;
             turnTime = (user == this.current && this.turnStartTime) ? Date.now() - this.turnStartTime : 0;
-            time.userTotalTime = new Time(turnTime + this.userData[user.userId].userTotalTime)
+            time.userTotalTime = new Time(turnTime + this.userData[user.userId].userTotalTime);
+            var totalTimeMs = turnTime;
+            for (var i = 0; i < this.players.length; i++){
+                totalTimeMs += this.userData[this.players[i].userId].userTotalTime || 0;
+            }
+            time.totalTime = new Time(totalTimeMs);
         }
 
         return time;

@@ -1,6 +1,6 @@
 {
     "name": "v6-game-client",
-    "version": "0.9.33",
+    "version": "0.9.37",
     "dependencies": {
         "grunt": "*",
         "grunt-requirejs": "*",

@@ -149,10 +149,11 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
                 var current = game.initData.first,
                     times = {}, // contain users total time
                     history = [],
-                    turnTime = game.initData.turnTime;
+                    turnTime = game.initData.turnTime,
+                    totalTime = 0;
                 for (i = 0; i < game.history.length; i++){
                     history = history.concat(parseTurn(game.history[i]));
-                    if (history[i] instanceof Turn){
+                    if (history[i] instanceof Turn || (history[i] instanceof GameEvent && history[i].event.type == 'timeout')){
                         // init user time
                         // userTurnTime - time remain for turn, userTime - time user turn
                         // clear first turn time; first turn time = turn time - round start time
@@ -161,6 +162,7 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
                         }
                         history[i].userTime = history[i].userTime || 0;
                         if (history[i].userTime != null){
+                            totalTime += history[i].userTime;
                             if (game.initData.timeMode == 'dont_reset'){ // blitz
                                 history[i].userTime = new Time((times[history[i].user.userId] || turnTime) - history[i].userTime || turnTime, turnTime);
                                 history[i].userTotalTime = new Time(times[history[i].user.userId] || turnTime, turnTime);
@@ -180,6 +182,8 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
                         }
                     }
                 }
+                game.roundTime = new Time(game.timeEnd - game.timeStart);
+                game.totalTime = (totalTime ? new Time(totalTime) : game.roundTime);
                 game.history = history;
             }
             console.log('history_manager;', 'game parsed', game);

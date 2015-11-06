@@ -18,6 +18,12 @@ define([], function() {
                             this.event.type = data.action;
                         }
                         break;
+                    case 'userTime':
+                        this.userTime = data[key];
+                        break;
+                    case 'userTurnTime':
+                        this.userTurnTime = data[key];
+                        break;
                     default:
                         this.event[key] = data[key];
                 }

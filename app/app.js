@@ -92,7 +92,7 @@ require(['require-cnf'], function () {
                     sounds: false
                 },
                 settingsTemplate: settingsTemplate,
-                lang: 'ru',
+                lang: 'en',
                 localization: {
                     "ru": {
                         "history": {
@@ -161,7 +161,9 @@ require(['require-cnf'], function () {
             _client.gameManager.on('time', function(data){
                 var html = (data.user ? ((data.user.isPlayer ? 'Ваш ход' : 'Ход соперника')) : 'Time: ') + ' ' + data.userTimeFormat;
                 html += '<br>';
-                html += 'Общее время: ' + data.userTotalTime.timeFormat;
+                html += 'мое общее время: ' + data.userTotalTime.timeFormat;
+                html += '<br>';
+                html += 'Общее время: ' + data.totalTime.timeFormat;
                 html += 'Время раунда: ' + data.roundTime.timeFormat;
                 $('#time').html(html)
             });

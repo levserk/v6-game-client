@@ -5,9 +5,13 @@ define(['EE'], function(EE) {
         opts = opts || {};
         this.port = opts.port||'8080';
         this.domain = opts.domain || document.domain;
+        if (this.domain.substr(0,4) == 'www.'){
+            this.domain = this.domain.substr(4);
+        }
         this.game = opts.game||"test";
         this.url = opts.url || this.game;
         this.https = opts.https || false;
+        if (this.domain != 'logic-games.spb.ru' && this.domain != 'test.logic-games.spb.ru') this.https = false;
         this.protocol = (this.https?'wss':'ws');
         this.connectionCount = 0;
 

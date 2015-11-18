@@ -17,7 +17,8 @@ define(['EE'], function(EE) {
 
         this.isConnecting = true;
         this.isConnected = false;
-
+        this.reconnectTimeout = null;
+        this.timeOutInterval = 100000
     };
 
     Socket.prototype  = new EE();
@@ -27,7 +28,7 @@ define(['EE'], function(EE) {
         var self = this;
         this.isConnecting = true;
         this.isConnected = false;
-        this.timeConnection = Date.now();
+        this.timeConnection = this.timeLastMessage = Date.now();
         this.connectionCount++;
 
         try{
@@ -44,6 +45,15 @@ define(['EE'], function(EE) {
             };
 
             this.ws.onmessage = function (data, flags) {
+                clearTimeout(self.reconnectTimeout);
+                self.reconnectTimeout = setTimeout(function(){
+                    if (Date.now() - self.timeLastMessage >= self.timeOutInterval){
+                        console.log('socket;', 'ws timeout', Date.now() - self.timeLastMessage);
+                        self.ws.close();
+                        self.onDisconnect();
+                    }
+                }, self.timeOutInterval);
+                self.timeLastMessage = Date.now();
 
                 if (data.data == 'ping') {
                     self.ws.send('pong');
@@ -92,7 +102,7 @@ define(['EE'], function(EE) {
 
     Socket.prototype.onDisconnect = function(){
         this.isConnected = false;
-        this.emit("disconnection")
+        this.emit("disconnection");
     };
 
 

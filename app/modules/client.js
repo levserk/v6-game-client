@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.37";
+        this.version = "0.9.39";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -494,7 +494,6 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         },
         turn: {
             src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-turn.ogg',
-            volume: 0.5,
             enable: false
         },
         win: {

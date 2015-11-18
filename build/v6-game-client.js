@@ -609,7 +609,8 @@ define('instances/game_event',[], function() {
     };
     return GameEvent;
 });
-define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instances/game_event'], function(EE, Room, Turn, GameEvent) {
+define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'instances/time'],
+    function(EE, Room, Turn, GameEvent, Time) {
     
 
     var GameManager = function(client){
@@ -909,6 +910,11 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         }
         if (this.client.opts.newGameFormat){
             data = new Turn(data.turn, this.getPlayer(data.user), data.nextPlayer);
+            var time = this.currentRoom.getTime();
+            if (time) {
+                data.userTime = time.userTime;
+                data.userTotalTime = time.userTotalTime;
+            }
             room.history.push(data);
         }
         this.emit('turn', data);
@@ -1384,9 +1390,39 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         if (this.client.opts.newGameFormat){
             var current = this.currentRoom.current,
                 newHistory = [],
+                times = {}, // contain users total time
+                turnTime = this.currentRoom.turnTime,
+                totalTime = 0,
                 self = this;
             for (var i = 0; i < history.length; i++){
                 newHistory = newHistory.concat(parseTurn(history[i]));
+                if (newHistory[i] instanceof Turn || (newHistory[i] instanceof GameEvent && newHistory[i].event.type == 'timeout')){
+                    // init user time
+                    // userTurnTime - time remain for turn, userTime - time user turn
+                    // clear first turn time; first turn time = turn time - round start time
+                    if (this.currentRoom.timeStartMode != 'after_round_start' && $.isEmptyObject(times)){
+                        newHistory[i].userTime = 0;
+                    }
+                    newHistory[i].userTime = newHistory[i].userTime || 0;
+                    if (newHistory[i].userTime != null){
+                        totalTime += newHistory[i].userTime;
+                        if (this.currentRoom.timeMode == 'dont_reset'){ // blitz
+                            newHistory[i].userTime = new Time((times[newHistory[i].user.userId] || turnTime) - newHistory[i].userTime || turnTime, turnTime);
+                            newHistory[i].userTotalTime = new Time(times[newHistory[i].user.userId] || turnTime, turnTime);
+
+                            // turn contain time for turn for next player
+                            if (newHistory[i].nextPlayer){
+                                times[newHistory[i].nextPlayer.userId] = newHistory[i].userTurnTime
+                            } else {
+                                times[newHistory[i].user.userId] = newHistory[i].userTurnTime
+                            }
+                        } else {
+                            times[newHistory[i].user.userId] = times[newHistory[i].user.userId] ? times[newHistory[i].user.userId] + newHistory[i].userTime : newHistory[i].userTime;
+                            newHistory[i].userTotalTime = new Time(times[newHistory[i].user.userId] || 0);
+                            newHistory[i].userTime = new Time(newHistory[i].userTime);
+                        }
+                    }
+                }
             }
             history = newHistory;
         }
@@ -2056,7 +2092,8 @@ define('modules/socket',['EE'], function(EE) {
 
         this.isConnecting = true;
         this.isConnected = false;
-
+        this.reconnectTimeout = null;
+        this.timeOutInterval = 100000
     };
 
     Socket.prototype  = new EE();
@@ -2066,7 +2103,7 @@ define('modules/socket',['EE'], function(EE) {
         var self = this;
         this.isConnecting = true;
         this.isConnected = false;
-        this.timeConnection = Date.now();
+        this.timeConnection = this.timeLastMessage = Date.now();
         this.connectionCount++;
 
         try{
@@ -2083,6 +2120,15 @@ define('modules/socket',['EE'], function(EE) {
             };
 
             this.ws.onmessage = function (data, flags) {
+                clearTimeout(self.reconnectTimeout);
+                self.reconnectTimeout = setTimeout(function(){
+                    if (Date.now() - self.timeLastMessage >= self.timeOutInterval){
+                        console.log('socket;', 'ws timeout', Date.now() - self.timeLastMessage);
+                        self.ws.close();
+                        self.onDisconnect();
+                    }
+                }, self.timeOutInterval);
+                self.timeLastMessage = Date.now();
 
                 if (data.data == 'ping') {
                     self.ws.send('pong');
@@ -2131,7 +2177,7 @@ define('modules/socket',['EE'], function(EE) {
 
     Socket.prototype.onDisconnect = function(){
         this.isConnected = false;
-        this.emit("disconnection")
+        this.emit("disconnection");
     };
 
 
@@ -5931,7 +5977,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.37";
+        this.version = "0.9.39";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -6420,7 +6466,6 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         },
         turn: {
             src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-turn.ogg',
-            volume: 0.5,
             enable: false
         },
         win: {

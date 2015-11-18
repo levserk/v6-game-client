@@ -1,4 +1,5 @@
-define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], function(EE, Room, Turn, GameEvent) {
+define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'instances/time'],
+    function(EE, Room, Turn, GameEvent, Time) {
     'use strict';
 
     var GameManager = function(client){
@@ -298,6 +299,11 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         }
         if (this.client.opts.newGameFormat){
             data = new Turn(data.turn, this.getPlayer(data.user), data.nextPlayer);
+            var time = this.currentRoom.getTime();
+            if (time) {
+                data.userTime = time.userTime;
+                data.userTotalTime = time.userTotalTime;
+            }
             room.history.push(data);
         }
         this.emit('turn', data);
@@ -773,9 +779,39 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event'], funct
         if (this.client.opts.newGameFormat){
             var current = this.currentRoom.current,
                 newHistory = [],
+                times = {}, // contain users total time
+                turnTime = this.currentRoom.turnTime,
+                totalTime = 0,
                 self = this;
             for (var i = 0; i < history.length; i++){
                 newHistory = newHistory.concat(parseTurn(history[i]));
+                if (newHistory[i] instanceof Turn || (newHistory[i] instanceof GameEvent && newHistory[i].event.type == 'timeout')){
+                    // init user time
+                    // userTurnTime - time remain for turn, userTime - time user turn
+                    // clear first turn time; first turn time = turn time - round start time
+                    if (this.currentRoom.timeStartMode != 'after_round_start' && $.isEmptyObject(times)){
+                        newHistory[i].userTime = 0;
+                    }
+                    newHistory[i].userTime = newHistory[i].userTime || 0;
+                    if (newHistory[i].userTime != null){
+                        totalTime += newHistory[i].userTime;
+                        if (this.currentRoom.timeMode == 'dont_reset'){ // blitz
+                            newHistory[i].userTime = new Time((times[newHistory[i].user.userId] || turnTime) - newHistory[i].userTime || turnTime, turnTime);
+                            newHistory[i].userTotalTime = new Time(times[newHistory[i].user.userId] || turnTime, turnTime);
+
+                            // turn contain time for turn for next player
+                            if (newHistory[i].nextPlayer){
+                                times[newHistory[i].nextPlayer.userId] = newHistory[i].userTurnTime
+                            } else {
+                                times[newHistory[i].user.userId] = newHistory[i].userTurnTime
+                            }
+                        } else {
+                            times[newHistory[i].user.userId] = times[newHistory[i].user.userId] ? times[newHistory[i].user.userId] + newHistory[i].userTime : newHistory[i].userTime;
+                            newHistory[i].userTotalTime = new Time(times[newHistory[i].user.userId] || 0);
+                            newHistory[i].userTime = new Time(newHistory[i].userTime);
+                        }
+                    }
+                }
             }
             history = newHistory;
         }

@@ -200,6 +200,11 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
 
     GameManager.prototype.onRoundStart = function (data, loading){
         console.log('game_manager;', 'emit round_start', data);
+        // TODO: replace in room function
+        this.currentRoom.timeMode = data.timeMode || this.currentRoom.timeMode;
+        this.currentRoom.timeStartMode = data.timeStartMode || this.currentRoom.timeStartMode;
+        this.currentRoom.turnTime = data.turnTime || this.currentRoom.turnTime;
+
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
         this.currentRoom.userTurnTime = 0;

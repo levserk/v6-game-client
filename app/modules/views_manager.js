@@ -28,7 +28,7 @@ define(['views/user_list', 'views/dialogs', 'views/chat', 'views/settings', 'vie
 
     ViewsManager.prototype.showSettings = function () {
         if (!this.client.isLogin) return;
-        this.settingsView.show();
+        this.settingsView.isClosed ? this.settingsView.show() : this.settingsView.save();
     };
 
     ViewsManager.prototype.showButtonPanel = function() {

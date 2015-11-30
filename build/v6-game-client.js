@@ -811,6 +811,11 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
     GameManager.prototype.onRoundStart = function (data, loading){
         console.log('game_manager;', 'emit round_start', data);
+        // TODO: replace in room function
+        this.currentRoom.timeMode = data.timeMode || this.currentRoom.timeMode;
+        this.currentRoom.timeStartMode = data.timeStartMode || this.currentRoom.timeStartMode;
+        this.currentRoom.turnTime = data.turnTime || this.currentRoom.turnTime;
+
         this.currentRoom.current = this.getPlayer(data.first);
         this.currentRoom.userTime = this.currentRoom.turnTime;
         this.currentRoom.userTurnTime = 0;
@@ -2872,7 +2877,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/userListFree.ejs'
     return UserListView;
 });
 
-define('text!tpls/v6-dialogRoundResult.ejs',[],function () { return '<p><%= result %></p>\r\n<p><%= rankResult %></p>\r\n<%= vkPost ? \'<span class="vkWallPost">Рассказать друзьям</span>\' : \'<br>\'%>\r\n<span class="dialogGameAction"><%= locale.dialogPlayAgain %></span>\r\n<div class="roundResultTime"><%= locale.inviteTime %><span>30</span><%= locale.seconds %></div>\r\n';});
+define('text!tpls/v6-dialogRoundResult.ejs',[],function () { return '<p><%= result %></p>\r\n<%= (rankResult && rankResult.length) ? \'<p>\' + rankResult + \'</p>\' : \'\' %>\r\n<%= vkPost ? \'<span class="vkWallPost">Рассказать друзьям</span>\' : \'\'%>\r\n<span class="dialogGameAction"><%= locale.dialogPlayAgain %></span>\r\n<div class="roundResultTime"><%= locale.inviteTime %><span>30</span><%= locale.seconds %></div>\r\n';});
 
 define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoundResultStr) {
     
@@ -3051,7 +3056,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                 vkText = '';
             console.log('round_end;', data, oldElo, newElo, oldRank, newRank);
             hideDialogs();
-            var result = "", rankResult = '';
+            var result = locale['gameOver'], rankResult = '';
             if (data.save) {
                 switch (data.result) {
                     case 'win':
@@ -3063,8 +3068,6 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                     case 'draw':
                         result = locale['draw'];
                         break;
-                    default :
-                        result = locale['gameOver'];
                 }
                 result += '<b> (' + (eloDif >= 0 ? '+' : '') + eloDif + ' ' + locale['scores'] + ') </b>';
             }
@@ -3230,7 +3233,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                     $(this).remove();
                 }
             };
-            draggable = draggable || options.draggable;
+            options.draggable = options.draggable || draggable;
             notification = notification || options.notification;
             clickHide = clickHide || options.clickHide;
 
@@ -3242,10 +3245,6 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                 document.activeElement.blur();
             }
             $(prevFocus).focus();
-            if (draggable) {
-                div.parent().draggable();
-                div.addClass(DRAGGABLE_CLASS);
-            }
             if (notification) {
                 div.addClass(NOTIFICATION_CLASS);
             }
@@ -4031,6 +4030,7 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         this.userListView = null;
         this.dialogsView = dialogsView;
         this.chat = null;
+        this.currentPanelId = null;
 
         client.on('disconnected', function () {
             this.closeAll();
@@ -4054,7 +4054,7 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
 
     ViewsManager.prototype.showSettings = function () {
         if (!this.client.isLogin) return;
-        this.settingsView.show();
+        this.settingsView.isClosed ? this.settingsView.show() : this.settingsView.save();
     };
 
     ViewsManager.prototype.showButtonPanel = function() {
@@ -5977,7 +5977,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.39";
+        this.version = "0.9.41";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;

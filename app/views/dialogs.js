@@ -175,7 +175,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                 vkText = '';
             console.log('round_end;', data, oldElo, newElo, oldRank, newRank);
             hideDialogs();
-            var result = "", rankResult = '';
+            var result = locale['gameOver'], rankResult = '';
             if (data.save) {
                 switch (data.result) {
                     case 'win':
@@ -187,8 +187,6 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                     case 'draw':
                         result = locale['draw'];
                         break;
-                    default :
-                        result = locale['gameOver'];
                 }
                 result += '<b> (' + (eloDif >= 0 ? '+' : '') + eloDif + ' ' + locale['scores'] + ') </b>';
             }
@@ -354,7 +352,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                     $(this).remove();
                 }
             };
-            draggable = draggable || options.draggable;
+            options.draggable = options.draggable || draggable;
             notification = notification || options.notification;
             clickHide = clickHide || options.clickHide;
 
@@ -366,10 +364,6 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                 document.activeElement.blur();
             }
             $(prevFocus).focus();
-            if (draggable) {
-                div.parent().draggable();
-                div.addClass(DRAGGABLE_CLASS);
-            }
             if (notification) {
                 div.addClass(NOTIFICATION_CLASS);
             }

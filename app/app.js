@@ -92,7 +92,7 @@ require(['require-cnf'], function () {
                     sounds: false
                 },
                 settingsTemplate: settingsTemplate,
-                lang: 'en',
+                lang: 'ru',
                 localization: {
                     "ru": {
                         "history": {

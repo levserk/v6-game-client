@@ -20,7 +20,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 'change #chat-select': 'changeChatSelect',
                 'click .chatMsg div[data-userid]': 'showMenu',
                 'click li[data-action]': 'clickDialogAction',
-                'click .chatRules': 'showChatRules'
+                'click .chatRules': 'showChatRules',
+                'click .showChat': 'showChat',
+                'click .hideChat': 'hideChat'
             },
 
             banUser: function(userId, userName){
@@ -66,6 +68,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     textRange.collapse(false);
                     textRange.select();
                 }
+            },
+
+            showChat: function(){
+                $('#left-block').removeClass('chatHidden');
+            },
+
+            hideChat: function(){
+                $('#left-block').addClass('chatHidden');
             },
 
             showChatRules: function() {
@@ -229,7 +239,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.$menu = this.$el.find('.' + this.CLASS_MENU_ELEMENT); // диалоговое меню при ЛКМ на имени игрока
                 if (!this.client.isAdmin) {
                     this.$menu.find('li[data-action="ban"]').remove();
+                } else {
+                    this.$el.find('.' + this.CLASS_CHATADMIN).show();
+                    this.$el.find('.chatRules').hide();
                 }
+
                 window.document.body.addEventListener('click', this.hideMenuElement.bind(this));
 
                 this.$rules = $(this.tplRules({close: this.images.close}));
@@ -255,16 +269,10 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 };
 
                 this._setActiveTab(this.currentActiveTabName);
-                //append element
-                if (_client.opts.blocks.chatId)
-                    $('#'+_client.opts.blocks.chatId).append(this.el);
-                else
-                    $('body').append(this.el);
-
                 this.$inputMsg.empty().append(this.$placeHolderSpan);
                 this._setLoadingState();
 
-                if (this.client.isAdmin) this.$el.find('.' + this.CLASS_CHATADMIN).removeClass(this.CLASS_CHATADMIN);
+
 
                 this.listenTo(this.manager, 'message', this._addOneMsg.bind(this));
                 this.listenTo(this.manager, 'load', this._preaddMsgs.bind(this));

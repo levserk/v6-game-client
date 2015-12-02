@@ -32,7 +32,9 @@
     },
     "buttons":{
       "send": "Отправить",
-      "chatRules": "Правила чата"
+      "chatRules": "Правила чата",
+      "hideChat": "Скрыть чат",
+      "showChat": "Показать чат"
     },
     "menu":{
       "answer": "Ответить",

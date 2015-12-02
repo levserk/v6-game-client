@@ -18,6 +18,25 @@ define(['views/user_list', 'views/dialogs', 'views/chat', 'views/settings', 'vie
         this.settingsView = new v6SettingsView(this.client);
         if (this.client.vkEnable) this.userListView.addInviteFriendButton();
         if (this.client.conf.showButtonsPanel) this.showButtonPanel();
+
+        // append blocks
+        if ($('#left-block').length){
+            $('#left-block')
+                .empty()
+                .append(this.userListView.el)
+                .append(this.v6ChatView.el);
+        } else {
+
+            if (this.client.opts.blocks.userListId)
+                $('#'+this.client.opts.blocks.userListId).append(this.userListView.el);
+            else
+                $('body').append(this.userListView.el);
+
+            if (this.client.opts.blocks.chatId)
+                $('#'+this.client.opts.blocks.chatId).append(this.v6ChatView.el);
+            else
+                $('body').append(this.v6ChatView.el);
+        }
     };
 
     ViewsManager.prototype.closeAll = function(){

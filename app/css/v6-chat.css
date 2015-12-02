@@ -1,5 +1,4 @@
 #v6Chat {
-    /* потом убрать*/
     margin-top: 20px;
     position: relative;
     padding-bottom: 10px;
@@ -9,6 +8,58 @@
     background-color: #fff;
     font-family: Verdana, Geneva, sans-serif;
     font-size: 10pt;
+}
+
+#left-block #v6Chat{
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-box-orient: vertical;
+    -moz-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+
+    flex-basis: 55%;
+    -webkit-flex-basis: 55%;
+    flex-grow: 1;
+    -webkit-flex-grow: 1;
+    margin: 10px 0px 0px 0px;
+    box-shadow:none;
+}
+
+
+/* скрытый чат */
+#left-block.chatHidden #v6Chat{
+    flex-basis: 19px;
+    -webkit-flex-basis: 19px;
+    flex-grow: 0;
+    -webkit-flex-grow: 0;
+    height: 19px !important;
+    margin-top: 0px;
+    border-top: none;
+}
+
+.chatHidden #v6Chat .tabs,
+.chatHidden #v6Chat .messagesWrap,
+.chatHidden #v6Chat .inputMsg,
+.chatHidden #v6Chat .layer1,
+.chatHidden #v6Chat .chatRules,
+.chatHidden #v6Chat .chatAdmin,
+.chatHidden #v6Chat .hideChat{
+    display: none !important;
+}
+
+.chatHidden #v6Chat .layer2{
+    margin: 0;
+}
+
+.chatHidden #v6Chat .showChat{
+    display: inline-block;
 }
 
 #v6Chat .tabs .activeTab {
@@ -49,14 +100,19 @@
 }
 
 #v6Chat .messagesWrap {
-    height: 216px;
-    max-height: 216px;
+    height: 100px;
     overflow: auto;
     border: 1px solid #ddd;
     background: #fff;
     box-shadow: 0 2px 2px rgba(0,0,0,.03);
     color: #444;
     margin-top: 5px;
+}
+
+#left-block #v6Chat .messagesWrap {
+    min-height: 100px;
+    flex-grow: 1;
+    -webkit-flex-grow: 1;
 }
 
 #v6Chat .messagesWrap .userName {
@@ -127,14 +183,19 @@
 }
 
 #v6Chat .layer1, #v6Chat .layer2 {
-    margin-top: 10px;
+    margin-top: 8px;
+}
+
+#v6Chat .layer2 {
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #v6Chat .inputMsg {
     margin-top: 8px;
     overflow-y: auto;
     height: inherit;
-    max-height: 64px;
+    max-height: 32px;
     min-height: 32px;
 
     background-color: #fff;
@@ -205,7 +266,20 @@
 }
 
 #v6Chat .chatAdmin {
-    visibility: hidden;
+    display: none;
+    float: right;
+}
+
+#v6Chat .showChat {
+    display: none;
+    border-bottom: 1px solid #069;
+    cursor: pointer;
+}
+
+#v6Chat .hideChat {
+    display: inline-block;
+    border-bottom: 1px solid #069;
+    cursor: pointer;
 }
 
 #v6Chat .dl {

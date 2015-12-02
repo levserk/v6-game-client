@@ -32,7 +32,9 @@
     },
     "buttons":{
       "send": "Send",
-      "chatRules": "Chat rules"
+      "chatRules": "Chat rules",
+      "hideChat": "Hide Chat",
+      "showChat": "Show Chat"
     },
     "menu":{
       "answer": "Answer",

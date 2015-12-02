@@ -8,6 +8,33 @@
     font-family: Verdana, Geneva, sans-serif;
     font-size: 10pt;
     -webkit-user-select: none;
+    box-shadow:none;
+}
+
+#left-block #userList{
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-box-orient: vertical;
+    -moz-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    flex-basis: 45%;
+    -webkit-flex-basis: 45%;
+    flex-grow: 1;
+    -webkit-flex-grow: 1;
+    margin: 0;
+}
+
+#left-block.chatHidden #userList{
+    flex-basis: 100%;
+    -webkit-flex-basis: 100%;
+    border-bottom: none;
 }
 
 #userList .tabs {
@@ -63,8 +90,7 @@
 }
 
 #userList .tableWrap {
-    height: 216px;
-    max-height: 216px;
+    height: 100px;
     overflow: auto;
     overflow-x: hidden;
     border: 1px solid #ddd;
@@ -73,6 +99,12 @@
     color: #444;
     margin-top: 10px;
     padding: 0px 3px 0px 3px;
+}
+
+#left-block #userList .tableWrap{
+    min-height: 100px;
+    flex-grow: 1;
+    -webkit-flex-grow: 1;
 }
 
 #userList .playerList {
@@ -91,6 +123,8 @@
     line-height: 30px;
     font-weight: 700;
     color: #069;
+    flex-basis: 30px;
+    -webkit-flex-basis: 30px;
 }
 
 #userList .active {

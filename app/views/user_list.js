@@ -111,12 +111,6 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.$el.html(this.tplMain(this.locale));
             this.$el.addClass('v6-block-border');
 
-            // append user list
-            if (_client.opts.blocks.userListId)
-                $('#'+_client.opts.blocks.userListId).append(this.el);
-            else
-                $('body').append(this.el);
-
             this.ACTIVE_INVITE_CLASS = 'activeInviteBtn';
             this.ACTIVE_TAB_CLASS = 'activeTab';
 
@@ -252,12 +246,13 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
 
         addInviteFriendButton: function() {
             var div = $('<div>');
-            var chat = $('#v6Chat');
+            var block = $('#left-block');
+            if (!block.length) return;
             div.attr('id', 'vkInviteFriend');
             div.addClass('btn');
             div.html('Пригласить Друга');
-            div.width(chat.width() - 10);
-            div.css('top' , chat.position().top + chat.height() + 30 + 'px');
+            div.width((block.width() || 255) - 10);
+            div.css('top' , block.position().top + block.height() + 25 + 'px');
             div.on('click', this.client.vkInviteFriend.bind(this.client));
             this.$el.append(div);
         }

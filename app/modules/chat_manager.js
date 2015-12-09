@@ -8,7 +8,7 @@ define(['EE', 'translit', 'antimat'], function(EE, translit) {
         this.messages = {};
         this.current = client.game;
         this.currentType = 'public';
-        this.MSG_COUNT = 10;
+        this.MSG_COUNT = 20;
         this.MSG_INTERVBAL = 1500;
 
         client.on('login', this.onLogin.bind(this));
@@ -171,10 +171,12 @@ define(['EE', 'translit', 'antimat'], function(EE, translit) {
 
     ChatManager.prototype.onMessageLoad = function(message, cache){
         if (cache && cache.length<100) cache.unshift(message);
-        if (!this.first[message.target]) this.first[message.target] = message;
-        if (!this.last[message.target]) this.last[message.target] = message;
-        this.emit('load', message);
-        this.first[message.target] = message;
+        if (!this.client.settings.blacklist[message.userId]) {
+            if (!this.first[message.target]) this.first[message.target] = message;
+            if (!this.last[message.target]) this.last[message.target] = message;
+            this.emit('load', message);
+            this.first[message.target] = message;
+        }
     };
 
 
@@ -212,6 +214,32 @@ define(['EE', 'translit', 'antimat'], function(EE, translit) {
             && this.messages[target].length < this.MSG_COUNT) {
             this.loadMessages(this.MSG_COUNT, this.messages[target][0].time, target);
         }  else this.loadMessages(this.MSG_COUNT, null, target);
+    };
+
+
+    ChatManager.prototype.addUserToBlackList = function(user){
+        if (user.userId == this.client.getPlayer().userId) return;
+        var blacklist = this.client.settings.blacklist;
+        if (blacklist[user.userId]){
+            console.warn('chat_manager;', 'addUserToBlackList', 'user ', user, 'already in list');
+            return;
+        }
+        blacklist[user.userId] = {
+            userId: user.userId,
+            userName: user.userName,
+            time: Date.now()
+        };
+        this.client._onSettingsChanged({property: 'blacklist', value: blacklist});
+    };
+
+    ChatManager.prototype.removeUserFromBlackList = function(userId){
+        var blacklist = this.client.settings.blacklist;
+        if (blacklist[userId]){
+            delete blacklist[userId];
+            this.client._onSettingsChanged({property: 'blacklist', value: blacklist});
+            return;
+        }
+        console.warn('chat_manager;', 'removeUserFromBlackList', 'userId ', userId, 'not in list');
     };
 
 

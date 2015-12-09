@@ -262,7 +262,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             }
         }
 
-        if (!this.currentRoom.isPlayer){
+        if (!this.currentRoom.isPlayer && data.winner){
             data.result = null;
         }
 

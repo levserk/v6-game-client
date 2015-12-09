@@ -154,27 +154,32 @@ define(['EE', 'translit'], function(EE, translit) {
             } else delete user.isInvited;
             user.waiting = (this.waiting && this.waiting[this.client.currentMode] == user);
             if (user.isInRoom) continue;
+            if (this.client.settings.blacklist[user.userId] && !user.waiting) continue;
             if (!user.isPlayer && !user.waiting && (!this.client.opts.showHidden && (user.disableInvite || !user.isActive))) continue;
             if (filter && user.userName.toLowerCase().indexOf(filter) == -1) continue;
             else userList.push(user);
         }
+
         userList.sort(function(a, b){
+            // sort by rank or time login
+            // player always is first
             var ar = a.getRank();
             if (isNaN(+ar)) {
-                ar = 99999999;
+                ar = a.timeLogin;
                 if (a.isPlayer) {
                     ar = 99999998;
                 }
             }
             var br = b.getRank();
             if (isNaN(+br)) {
-                br = 99999999;
+                br = b.timeLogin;
                 if (b.isPlayer) {
                     br = 99999998;
                 }
             }
             return ar - br;
         });
+
         return userList;
     };
 
@@ -215,6 +220,7 @@ define(['EE', 'translit'], function(EE, translit) {
                 }
             }
         }
+
         rooms.sort(function(a, b){
             var ar, br;
             if (a.mode != b.mode){
@@ -226,6 +232,7 @@ define(['EE', 'translit'], function(EE, translit) {
             }
             return ar - br;
         });
+
         return rooms;
     };
 
@@ -308,6 +315,7 @@ define(['EE', 'translit'], function(EE, translit) {
         this.disableInvite = data.disableInvite || false;
         this.isActive  = (typeof data.isActive == 'boolean' ? data.isActive : true); // true default
         this.fullName = this.userName;
+        this.timeLogin = Date.now();
 
         if (client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
             var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);

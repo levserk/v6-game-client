@@ -96,16 +96,17 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     case 'showProfile': this.client.onShowProfile(actionObj.userId, actionObj.userName); break;
                     case 'invite': this.client.viewsManager.userListView.invitePlayer(actionObj.userId); break;
                     case 'ban': this.banUser(actionObj.userId, actionObj.userName); break;
+                    case 'addToBlackList': this.manager.addUserToBlackList({userId: actionObj.userId, userName: actionObj.userName}); break;
                     case 'answer': this.answerUser(actionObj.userId, actionObj.userName); break;
                 }
             },
 
-            showMenu: function(e) {
+            showMenu: function(e, userId) {
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
                     OFFSET = 20, // отступ, чтобы не закрывало имя
-                    userId = $(e.target).parent().attr('data-userid'),
                     userName = $(e.currentTarget).attr('title');
+                userId = userId || $(e.target).parent().attr('data-userid');
 
                 setTimeout(function() {
                     this.$menu.find('li[data-action=invite]').hide();
@@ -118,6 +119,20 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                                 }
                             }
                         }
+                    }
+
+                    //hide answer not in chat
+                    if ($(e.target).parent().hasClass('chatUserName') && userId != this.client.getPlayer().userId){
+                        this.$menu.find('li[data-action=answer]').show();
+                    } else {
+                        this.$menu.find('li[data-action=answer]').hide();
+                    }
+
+                    // hide/show add black list
+                    if (userId == this.client.getPlayer().userId || userId == '0'){
+                        this.$menu.find('li[data-action=addToBlackList]').hide();
+                    } else {
+                        this.$menu.find('li[data-action=addToBlackList]').show();
                     }
 
                     this.$menu.attr('data-userId', userId);
@@ -214,6 +229,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.currentActiveTabName = tabName;
                 this._setActiveTab(this.currentActiveTabName);
                 this.manager.loadCachedMessages(this.tabs[tabName].target, this.currentActiveTabName);
+            },
+
+            reload: function () {
+                this._setActiveTab(this.currentActiveTabName);
+                this.manager.loadCachedMessages(this.tabs[ this.currentActiveTabName].target, this.currentActiveTabName);
             },
 
             initialize: function(_client) {
@@ -354,7 +374,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
             _addOneMsg: function(msg) {
                 //console.log('chat message', msg);
-                if (msg.target != this.currentActiveTabTitle) return;
+                if (msg.target != this.currentActiveTabTitle || this.client.settings.blacklist[msg.userId]) return;
                 var $msg = this.tplMsg({msg:msg, imgDel:this.images.del});
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
 
@@ -378,7 +398,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
             _preaddMsgs: function(msg) {
                 //console.log('pre chat message', msg);
-                if (msg && msg.target != this.currentActiveTabTitle) return;
+                if (msg && (msg.target != this.currentActiveTabTitle  || this.client.settings.blacklist[msg.userId])) return;
                 this._removeLoadingState();
                 if (!msg) return;
                 var oldScrollTop =  this.$messagesWrap.scrollTop();

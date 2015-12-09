@@ -1,8 +1,13 @@
-
     <img class="closeIcon" src="<%= close %>">
     <div class="settingsContainer">
-    <%= settings %>
+        <h2> <%= locale.title %> </h2>
+        <div> <%= settings %> </div>
     </div>
-    <div >
-        <div class="confirmBtn">OK</div>
+    <div class="blacklistContainer">
+        <p> <%= locale.titleBlackList %> </p>
+        <div> <i> <%= locale.emptyBL %> </i> </div>
+    </div>
+    <div class="buttonsContainer">
+        <span class="showBlackListBtn"> <%= locale.buttons.showBL %> </span><br>
+        <div class="confirmBtn"> <%= locale.buttons.confirm %> </div>
     </div>

@@ -1,5 +1,6 @@
-define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6-settingsDefault.ejs'],
-    function(_, Backbone, tplMain, tplDefault) {
+define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6-settingsDefault.ejs',
+        'text!tpls/v6-settingsBlackListUser.ejs'],
+    function(_, Backbone, tplMain, tplDefault, tplUser) {
         'use strict';
 
         var SettingsView = Backbone.View.extend({
@@ -7,10 +8,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
             id: 'v6-settings',
             tplMain: _.template(tplMain),
             tplDefault: _.template(tplDefault),
+            tplUser: _.template(tplUser),
             events: {
                 'click .closeIcon': 'save',
                 'change input': 'changed',
-                'click .confirmBtn': 'save'
+                'click .confirmBtn': 'save',
+                'click .removeBtn': 'removeUser',
+                'click .showBlackListBtn': 'showBlackList'
             },
 
 
@@ -18,7 +22,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                 this.client = client;
                 this.images  = client.opts.images;
                 this.changedProperties = [];
-                this.$el.html(this.tplMain({close:this.images.close, settings: client.opts.settingsTemplate ? _.template(client.opts.settingsTemplate)() : this.tplDefault()}));
+                this.$el.html(this.tplMain({
+                    close:this.images.close,
+                    locale: client.locale.settings,
+                    settings: client.opts.settingsTemplate ? _.template(client.opts.settingsTemplate)() : this.tplDefault()
+                }));
                 this.listenTo(client, 'login', this.load.bind(this));
                 $('body').append(this.$el);
                 this.$el.hide();
@@ -54,8 +62,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                     console.log('settings; nothing changed');
                     return;
                 }
-                for (var property in defaultSettings){
-                    if (defaultSettings.hasOwnProperty(property)){
+                for (var property in defaultSettings) {
+                    if (property != 'blacklist' && defaultSettings.hasOwnProperty(property)) {
                         value = settings[property];
                         if (typeof value == "boolean") {
                             $input = this.$el.find('input[name=' + property + ']');
@@ -84,15 +92,19 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                 for (var property in defaultSettings){
                     if (defaultSettings.hasOwnProperty(property)){
                         value = settings[property];
-                        if (typeof value == "boolean")
-                            $input = this.$el.find('input[name=' + property + ']');
-                        else
-                            $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
-                        if ($input) {
-                            console.log('settings; load', property, value, $input.prop('type'));
-                            $input.prop('checked', !!value);
+                        if (property == "blacklist"){
+                            this.renderBlackList(value)
                         } else {
-                            console.error('settings;', 'input element not found! ', property, value);
+                            if (typeof value == "boolean")
+                                $input = this.$el.find('input[name=' + property + ']');
+                            else
+                                $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
+                            if ($input) {
+                                console.log('settings; load', property, value, $input.prop('type'));
+                                $input.prop('checked', !!value);
+                            } else {
+                                console.error('settings;', 'input element not found! ', property, value);
+                            }
                         }
                     }
                 }
@@ -119,12 +131,37 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
 
 
             show: function () {
-                this.$el.css({
+                this.$el.removeClass('showBlackList').css({
                     top: ($(window).height() / 2) - (this.$el.outerHeight() / 2),
                     left: ($(window).width() / 2) - (this.$el.outerWidth() / 2)
-                }).show();
+                })
+                    .show();
                 this.load();
                 this.isClosed = false;
+            },
+
+            showBlackList: function () {
+                this.$el.addClass('showBlackList');
+            },
+
+            removeUser: function(e){
+                var $target = $(e.target);
+                this.client.chatManager.removeUserFromBlackList($target.attr('data-userId'));
+            },
+
+            renderBlackList: function(blacklist) {
+                blacklist = blacklist || this.client.settings.blacklist;
+                var block = this.$el.find('.blacklistContainer div').empty();
+                if ($.isEmptyObject(blacklist)){
+                    block.append('<i>' + this.client.locale.settings.emptyBL + '</i>');
+                } else {
+                    for (var userId in blacklist){
+                        block.append(this.tplUser({
+                            user: blacklist[userId],
+                            locale: this.client.locale.settings
+                        }));
+                    }
+                }
             },
 
             getCurrentSettings: function() {
@@ -132,7 +169,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                     settings = $.extend({}, this.client.settings),
                     value, $input;
                 for (var property in defaultSettings){
-                    if (defaultSettings.hasOwnProperty(property)){
+                    if (property != 'blacklist' && defaultSettings.hasOwnProperty(property)){
                         value = settings[property];
                         if (typeof value == "boolean") {
                             $input = this.$el.find('input[name=' + property + ']');

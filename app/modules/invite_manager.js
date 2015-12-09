@@ -69,17 +69,16 @@ define(['EE'], function(EE) {
         //TODO: CHECK INVITE AVAILABLE
         this.invites[invite.from] = invite;
 
+        if (this.client.settings.disableInvite || this.client.settings.blacklist[invite.from]){
+            this.reject(invite.from);
+            return;
+        }
+
         if (this.isPlayRandom && this.client.currentMode == invite.mode) {
             console.log('invite_manager;', 'auto accept invite', invite);
             this.accept(invite.from);
             return;
         }
-
-        if (this.client.settings.disableInvite){
-            this.reject(invite.from);
-            return;
-        }
-
 
         this.emit('new_invite', {
             from: this.client.getUser(invite.from),

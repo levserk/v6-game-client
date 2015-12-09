@@ -40,7 +40,18 @@
       "answer": "Answer",
       "showProfile": "Show profile",
       "invite": "Send invite",
+      "blackList": "To black list",
       "ban": "ban"
+    }
+  },
+  "settings":{
+    "title": "Settings",
+    "titleBlackList": "Black list",
+    "emptyBL": "Black list is empty",
+    "buttons":{
+      "confirm": "OK",
+      "showBL": "Show black list",
+      "hideBL": "Hide black list"
     }
   },
   "dialogs":{
@@ -58,10 +69,10 @@
     "decline": "Decline",
     "yes": "Yes",
     "no": "No",
-    "win": "Win",
-    "lose": "Lose",
-    "draw": "Draw",
-    "gameOver": "Game over",
+    "win": "Win.",
+    "lose": "Lose.",
+    "draw": "Draw.",
+    "gameOver": "Game over.",
     "scores": "scores",
     "opponentTimeout": "Opponent time is over",
     "playerTimeout": "Your time is over",

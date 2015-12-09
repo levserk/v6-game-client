@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.43";
+        this.version = "0.9.45";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -403,9 +403,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype._onSettingsChanged = function(data){
         this.emit('settings_changed', data);
-        if (data.property == 'disableInvite'){
-            this.getPlayer().disableInvite = data.value;
-            this.userList.onUserChanged(this.getPlayer());
+        switch (data.property){
+            case 'disableInvite':
+                this.getPlayer().disableInvite = data.value;
+                this.userList.onUserChanged(this.getPlayer());
+                break;
+            case 'blacklist':
+                this.saveSettings();
+                this.viewsManager.userListView.render();
+                this.viewsManager.settingsView.renderBlackList();
+                this.viewsManager.v6ChatView.reload();
+                break;
         }
     };
 
@@ -473,6 +481,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
 
     var defaultSettings = {
+        blacklist: {},
         disableInvite: false,
         sounds: true
     };

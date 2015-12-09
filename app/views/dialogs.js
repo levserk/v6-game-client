@@ -191,9 +191,9 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                 result += '<b> (' + (eloDif >= 0 ? '+' : '') + eloDif + ' ' + locale['scores'] + ') </b>';
             }
             switch (data.action){
-                case 'timeout': result +=  (data.result == 'win' ? locale['opponentTimeout'] : locale['playerTimeout']);
+                case 'timeout': result += ' ' + (data.result == 'win' ? locale['opponentTimeout'] : locale['playerTimeout']);
                     break;
-                case 'throw': result +=  (data.result == 'win' ? locale['opponentThrow'] : locale['playerThrow']);
+                case 'throw': result += ' ' + (data.result == 'win' ? locale['opponentThrow'] : locale['playerThrow']);
                     break;
             }
             if (newRank > 0 && data.save) {

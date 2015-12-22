@@ -1,8 +1,10 @@
 <% _.each(users, function(user) { %>
 <tr class="userListFree <%= user.isActive?'':'userListInactive' %> <%= user.waiting?'userListWaiting':'' %> <%= user.isPlayer?'userListPlayer':'' %>">
-    <td class="userName" data-userId="<%= user.userId %>" title="<%= user.userName %>">
-        <%= user.userName %>
-    </td>
+    <td class="userName"
+        data-userId="<%= user.userId %>"
+        data-userName="<%= user.userName %>"
+        title="<%= user.userName + ', ' + locale.rankPlace + ': ' + user.getRank()%>"
+    > <%= user.userName %> </td>
     <td class="userRank"><%= user.getRank() %></td>
     <% if (user.isPlayer) { %>
     <td class="userListPlayerInvite">

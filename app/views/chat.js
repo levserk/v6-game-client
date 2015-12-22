@@ -105,7 +105,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
                     OFFSET = 20, // отступ, чтобы не закрывало имя
-                    userName = $(e.currentTarget).attr('title');
+                    userName =  $(e.currentTarget).attr('data-userName') || $(e.currentTarget).attr('title');
                 userId = userId || $(e.target).parent().attr('data-userid');
 
                 setTimeout(function() {
@@ -375,7 +375,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
             _addOneMsg: function(msg) {
                 //console.log('chat message', msg);
                 if (msg.target != this.currentActiveTabTitle || this.client.settings.blacklist[msg.userId]) return;
-                var $msg = this.tplMsg({msg:msg, imgDel:this.images.del});
+                var $msg = this.tplMsg({ msg: msg, imgDel: this.images.del, locale: this.locale });
                 var fScroll = this.$messagesWrap[0].scrollHeight - this.$messagesWrap.height() - this.$messagesWrap.scrollTop() < this.SCROLL_VAL;
 
                 if (!this.manager.last[msg.target] ||
@@ -409,7 +409,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 if (this.manager.first[msg.target].d != msg.d) {
                     this.$msgsList.prepend(this.tplDay(this.manager.first[msg.target]));
                 }
-                var $msg = this.tplMsg({msg: msg, imgDel:this.images.del});
+                var $msg = this.tplMsg({ msg: msg, imgDel: this.images.del, locale: this.locale });
                 this.$msgsList.prepend($msg);
                 // add day this, now firs message
                 this.$msgsList.prepend(this.tplDay(msg));

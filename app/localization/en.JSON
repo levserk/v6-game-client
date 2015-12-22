@@ -11,7 +11,7 @@
       "button": "Reconnect",
       "status": "Loading.."
     },
-    "search": "Search in list",
+    "search": "search",
     "disableInvite": "Invites disable",
     "playerDisableInvite": "Invites disable",
     "buttons":{
@@ -19,7 +19,8 @@
       "cancelPlayRandom": "Waiting a opponent...",
       "invite": "Invite",
       "cancel": "Cancel"
-    }
+    },
+    "rankPlace": "place in ranking"
   },
   "chat":{
     "tabs":{
@@ -31,6 +32,7 @@
       "header": "Template messages"
     },
     "buttons":{
+      "removeMessage": "Remove message",
       "send": "Send",
       "chatRules": "Chat rules",
       "hideChat": "Hide Chat",
@@ -42,7 +44,9 @@
       "invite": "Send invite",
       "blackList": "To black list",
       "ban": "ban"
-    }
+    },
+    "rankPlace": "place in ranking",
+    "months": ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"]
   },
   "settings":{
     "title": "Settings",

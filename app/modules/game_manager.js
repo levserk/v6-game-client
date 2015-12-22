@@ -132,6 +132,11 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         this.emit('game_start', room);
+        if (room.checkPlayWithBlackList(this.client.settings.blacklist)){
+            console.log('game_manager;', 'play with user in blacklist');
+            this.leaveGame();
+            return;
+        }
         this.sendReady();
     };
 
@@ -160,7 +165,8 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         // switch player
         var turn = this.getLastTurn(),
             userTurnTime = turn ? turn.userTurnTime : 0;
-        this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart), turn ? turn.userTurnTime : 0);
+            userTurnTime = userTurnTime < 0 ? 0 :userTurnTime;
+        this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart),userTurnTime);
     };
 
 
@@ -288,6 +294,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             room.history.push(data.turn);
         }
         var userTurnTime = data.turn.userTurnTime || 0;
+        userTurnTime = userTurnTime < 0 ? 0 :userTurnTime;
         if (data.turn.userTurnTime) {
             delete data.turn.userTurnTime;
         }
@@ -805,6 +812,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
                             newHistory[i].userTotalTime = new Time(times[newHistory[i].user.userId] || turnTime, turnTime);
 
                             // turn contain time for turn for next player
+                            newHistory[i].userTurnTime =  newHistory[i].userTurnTime < 0 ? 0 : newHistory[i].userTurnTime;
                             if (newHistory[i].nextPlayer){
                                 times[newHistory[i].nextPlayer.userId] = newHistory[i].userTurnTime
                             } else {

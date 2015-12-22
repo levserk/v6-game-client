@@ -168,6 +168,7 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
                                 history[i].userTotalTime = new Time(times[history[i].user.userId] || turnTime, turnTime);
 
                                 // turn contain time for turn for next player
+                                history[i].userTurnTime =  history[i].userTurnTime < 0 ? 0 : history[i].userTurnTime;
                                 if (history[i].nextPlayer){
                                     times[history[i].nextPlayer.userId] = history[i].userTurnTime
                                 } else {

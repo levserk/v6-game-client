@@ -101,5 +101,13 @@ define(['instances/time'], function(Time) {
         return time;
     };
 
+    Room.prototype.checkPlayWithBlackList = function(blacklist){
+        if (!this.isPlayer) return false;
+        for (var i = 0; i < this.players.length; i++){
+            if (blacklist[this.players[i].userId]) return true;
+        }
+        return false;
+    };
+
     return Room;
 });

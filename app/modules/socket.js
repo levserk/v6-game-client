@@ -11,7 +11,8 @@ define(['EE'], function(EE) {
         this.game = opts.game||"test";
         this.url = opts.url || this.game;
         this.https = opts.https || false;
-        if (this.domain != 'logic-games.spb.ru' && this.domain != 'test.logic-games.spb.ru') this.https = false;
+        if (this.domain == "test.logic-games.spb.ru") this.domain = "logic-games.spb.ru";
+        if (this.domain != 'logic-games.spb.ru') this.https = false;
         this.protocol = (this.https?'wss':'ws');
         this.connectionCount = 0;
 

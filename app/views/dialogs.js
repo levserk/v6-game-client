@@ -106,6 +106,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             if (!this.client.gameManager.inGame()) return;
             var html = locale['user'] + ' <b>' + user.userName + '</b>' + locale['askDraw'];
             var div = showDialog(html,{
+                position: true,
                 buttons: {
                     "Принять": { text: locale['accept'], click: function() {
                             client.gameManager.acceptDraw();
@@ -128,13 +129,14 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
 
         function cancelDraw(user) {
             var html = locale['user'] + ' <b>' + user.userName + '</b> ' + locale['cancelDraw'];
-            var div = showDialog(html, {}, true, true, true);
+            var div = showDialog(html, {position: true}, true, true, true);
         }
 
         function askTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
             var html = locale['user'] + ' <b>' + user.userName + '</b> ' + locale['askTakeBack'];
             var div = showDialog(html,{
+                position: true,
                 buttons: {
                     "Да": { text: locale['yes'], click: function() {
                             client.gameManager.acceptTakeBack();
@@ -159,7 +161,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
         function cancelTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
             var html = locale['user'] + ' <b>' + user.userName + '</b>' + locale['cancelTakeBack'];
-            var div = showDialog(html, {}, true, true, true);
+            var div = showDialog(html, {position: true}, true, true, true);
         }
 
         function roundEnd(data) {
@@ -215,6 +217,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                 result: result, rankResult: rankResult, vkPost: vkPost, locale: locale
             });
             var div = showDialog(html, {
+                position: true,
                 width: 350,
                 buttons: {
                     "Да, начать новую игру": {
@@ -303,6 +306,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                 div.find('.roundResultTime').hide();
             } else {
                 div = showDialog(html, {
+                    position: true,
                     buttons: {
                         "Ок": function() {
                             $(this).remove();
@@ -355,6 +359,10 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             options.draggable = options.draggable || draggable;
             notification = notification || options.notification;
             clickHide = clickHide || options.clickHide;
+            if (options.position === true) {
+                var field = document.getElementById('game-field') || document.getElementById('field') || document;
+                options.position = {my: 'top', at: 'top', of: field}
+            }
 
             var div = $('<div>');
             var prevFocus = document.activeElement || document;

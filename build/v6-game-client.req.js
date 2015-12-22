@@ -1,5 +1,6 @@
 define('instances/time',[], function() {
     var Time = function(time, totalTime){
+        time = time < 0 ? 0 : time;
         var minutes = Math.floor(time / 60000),
             seconds = Math.floor((time - minutes * 60000) / 1000);
         if (minutes < 10) minutes = '0' + minutes;
@@ -115,6 +116,14 @@ define('instances/room',['instances/time'], function(Time) {
         }
 
         return time;
+    };
+
+    Room.prototype.checkPlayWithBlackList = function(blacklist){
+        if (!this.isPlayer) return false;
+        for (var i = 0; i < this.players.length; i++){
+            if (blacklist[this.players[i].userId]) return true;
+        }
+        return false;
     };
 
     return Room;
@@ -304,6 +313,11 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         console.log('game_manager;', 'emit game_start', room);
         this.currentRoom = room;
         this.emit('game_start', room);
+        if (room.checkPlayWithBlackList(this.client.settings.blacklist)){
+            console.log('game_manager;', 'play with user in blacklist');
+            this.leaveGame();
+            return;
+        }
         this.sendReady();
     };
 
@@ -332,7 +346,8 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         // switch player
         var turn = this.getLastTurn(),
             userTurnTime = turn ? turn.userTurnTime : 0;
-        this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart), turn ? turn.userTurnTime : 0);
+            userTurnTime = userTurnTime < 0 ? 0 :userTurnTime;
+        this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart),userTurnTime);
     };
 
 
@@ -460,6 +475,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             room.history.push(data.turn);
         }
         var userTurnTime = data.turn.userTurnTime || 0;
+        userTurnTime = userTurnTime < 0 ? 0 :userTurnTime;
         if (data.turn.userTurnTime) {
             delete data.turn.userTurnTime;
         }
@@ -977,6 +993,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
                             newHistory[i].userTotalTime = new Time(times[newHistory[i].user.userId] || turnTime, turnTime);
 
                             // turn contain time for turn for next player
+                            newHistory[i].userTurnTime =  newHistory[i].userTurnTime < 0 ? 0 : newHistory[i].userTurnTime;
                             if (newHistory[i].nextPlayer){
                                 times[newHistory[i].nextPlayer.userId] = newHistory[i].userTurnTime
                             } else {
@@ -1659,7 +1676,8 @@ define('modules/socket',['EE'], function(EE) {
         this.game = opts.game||"test";
         this.url = opts.url || this.game;
         this.https = opts.https || false;
-        if (this.domain != 'logic-games.spb.ru' && this.domain != 'test.logic-games.spb.ru') this.https = false;
+        if (this.domain == "test.logic-games.spb.ru") this.domain = "logic-games.spb.ru";
+        if (this.domain != 'logic-games.spb.ru') this.https = false;
         this.protocol = (this.https?'wss':'ws');
         this.connectionCount = 0;
 
@@ -2161,6 +2179,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             if (!this.client.gameManager.inGame()) return;
             var html = locale['user'] + ' <b>' + user.userName + '</b>' + locale['askDraw'];
             var div = showDialog(html,{
+                position: true,
                 buttons: {
                     "Принять": { text: locale['accept'], click: function() {
                             client.gameManager.acceptDraw();
@@ -2183,13 +2202,14 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
 
         function cancelDraw(user) {
             var html = locale['user'] + ' <b>' + user.userName + '</b> ' + locale['cancelDraw'];
-            var div = showDialog(html, {}, true, true, true);
+            var div = showDialog(html, {position: true}, true, true, true);
         }
 
         function askTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
             var html = locale['user'] + ' <b>' + user.userName + '</b> ' + locale['askTakeBack'];
             var div = showDialog(html,{
+                position: true,
                 buttons: {
                     "Да": { text: locale['yes'], click: function() {
                             client.gameManager.acceptTakeBack();
@@ -2214,7 +2234,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
         function cancelTakeBack(user) {
             if (!this.client.gameManager.inGame()) return;
             var html = locale['user'] + ' <b>' + user.userName + '</b>' + locale['cancelTakeBack'];
-            var div = showDialog(html, {}, true, true, true);
+            var div = showDialog(html, {position: true}, true, true, true);
         }
 
         function roundEnd(data) {
@@ -2270,6 +2290,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                 result: result, rankResult: rankResult, vkPost: vkPost, locale: locale
             });
             var div = showDialog(html, {
+                position: true,
                 width: 350,
                 buttons: {
                     "Да, начать новую игру": {
@@ -2358,6 +2379,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                 div.find('.roundResultTime').hide();
             } else {
                 div = showDialog(html, {
+                    position: true,
                     buttons: {
                         "Ок": function() {
                             $(this).remove();
@@ -2410,6 +2432,10 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             options.draggable = options.draggable || draggable;
             notification = notification || options.notification;
             clickHide = clickHide || options.clickHide;
+            if (options.position === true) {
+                var field = document.getElementById('game-field') || document.getElementById('field') || document;
+                options.position = {my: 'top', at: 'top', of: field}
+            }
 
             var div = $('<div>');
             var prevFocus = document.activeElement || document;
@@ -3383,6 +3409,7 @@ define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat'
         } catch (e){
             console.error('views_manager;', 'show_panel', e);
         }
+        if (!window._isVk)
         $('html, body').animate({
             scrollTop: $panel.offset().top - 350
         }, 500);
@@ -4316,6 +4343,7 @@ define('modules/history_manager',['EE', 'translit', 'views/history', 'instances/
                                 history[i].userTotalTime = new Time(times[history[i].user.userId] || turnTime, turnTime);
 
                                 // turn contain time for turn for next player
+                                history[i].userTurnTime =  history[i].userTurnTime < 0 ? 0 : history[i].userTurnTime;
                                 if (history[i].nextPlayer){
                                     times[history[i].nextPlayer.userId] = history[i].userTurnTime
                                 } else {
@@ -5265,7 +5293,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.45";
+        this.version = "0.9.48";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;

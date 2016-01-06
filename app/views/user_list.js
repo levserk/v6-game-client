@@ -179,6 +179,13 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
             this.currentActiveTabName = tabName;
             this.$el.find('.tabs div').removeClass(this.ACTIVE_TAB_CLASS);
             this.$el.find('.tabs div[data-type="' + tabName + '"]').addClass(this.ACTIVE_TAB_CLASS);
+
+            // скрыть заголовки на вкладке со списком играющих
+            if (this.currentActiveTabName == 'inGame') {
+                this.$el.find('#userListSearch').hide();
+            } else {
+                this.$el.find('#userListSearch').show();
+            }
         },
         _setCounters: function() {
             if (!this.client.socket.isConnected) {

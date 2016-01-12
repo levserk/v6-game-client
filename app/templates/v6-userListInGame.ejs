@@ -1,4 +1,11 @@
-<% _.each(rooms, function(room) { %>
+<%
+    var mode;
+_.each(rooms, function(room) {
+    if (showModes && room.mode != mode && modes[room.mode] ) {
+        mode = modes[room.mode];
+%>
+        <tr class="userListGameMode"><td colspan="3"><%=mode%></td></tr>
+<%}%>
 <tr class="userListGame <%= room.current ? 'currentGame' : '' %>" data-id="<%= room.room %>">
     <td class="userName" title="<%= room.players[0].userName + ' (' +  room.players[0].getRank(room.mode) + ')' %>" ><%= room.players[0].userName %></td>
     <td>:</td>

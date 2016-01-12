@@ -78,7 +78,7 @@
     box-sizing: border-box;
     left: 0;
     bottom: 0;
-    width: 43%;
+    width: 48%;
     padding-top: 4px;
     cursor: text;
     font-family: Verdana,Geneva,sans-serif;
@@ -87,7 +87,7 @@
 }
 
 #userList #userListSearch span {
-    width: 54%;
+    width: 49%;
     position: absolute;
     right: 0px;
     bottom: 2px;
@@ -248,10 +248,14 @@
     width: 20px;
     text-align: center;
 }
+#userList .userListGameMode td{
+    text-align: center;
+    padding: 5px 0px 2px 0px;
+    border-bottom: 1px solid #DDDDDD;
+}
 
 #userList .inGame {
     /*display: none;*/
-
 }
 
 #userList tr.disconnected {

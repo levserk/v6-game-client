@@ -1,4 +1,4 @@
-define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userListInGame.ejs', 'text!tpls/userListMain.ejs'],
+define(['underscore', 'backbone', 'text!tpls/v6-userListFree.ejs', 'text!tpls/v6-userListInGame.ejs', 'text!tpls/v6-userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
     'use strict';
     var UserListView = Backbone.View.extend({
@@ -216,7 +216,9 @@ define(['underscore', 'backbone', 'text!tpls/userListFree.ejs', 'text!tpls/userL
                     break;
                 case 'inGame':
                     this.$list.html(this.tplInGame({
-                        rooms: this.client.userList.getRoomList(this.getFilter())
+                        rooms: this.client.userList.getRoomList(this.getFilter()),
+                        modes: this.client.locale.modes,
+                        showModes: this.client.modes.length > 0
                     }));
                     break;
                 case 'spectators':

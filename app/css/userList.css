@@ -78,7 +78,7 @@
     box-sizing: border-box;
     left: 0;
     bottom: 0;
-    width: 48%;
+    width: 49%;
     padding-top: 4px;
     cursor: text;
     font-family: Verdana,Geneva,sans-serif;
@@ -141,7 +141,7 @@
 
 #userList .playerList {
     width: 100%;
-    table-layout: fixed;
+    /*table-layout: fixed;*/
 }
 
 #userList .btn {
@@ -179,6 +179,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: block;
 }
 
 #userList .userListFree .userName:hover {
@@ -240,7 +241,8 @@
     cursor: pointer;
 }
 
-#userList .userListGame td:nth-child(1){
+#userList .userListGame td:nth-child(1) span{
+    float: right;
     text-align: right;
 }
 
@@ -250,8 +252,9 @@
 }
 #userList .userListGameMode td{
     text-align: center;
-    padding: 5px 0px 2px 0px;
+    padding: 8px 0px 2px 0px;
     border-bottom: 1px solid #DDDDDD;
+    color: #006699
 }
 
 #userList .inGame {

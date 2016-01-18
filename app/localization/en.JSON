@@ -11,7 +11,7 @@
       "button": "Reconnect",
       "status": "Loading.."
     },
-    "search": "search",
+    "search": "Search",
     "disableInvite": "Invites disable",
     "playerDisableInvite": "Invites disable",
     "buttons":{
@@ -20,7 +20,8 @@
       "invite": "Invite",
       "cancel": "Cancel"
     },
-    "rankPlace": "place in ranking"
+    "rankPlace": "place in ranking",
+    "rankPlaceShort": "Place"
   },
   "chat":{
     "tabs":{

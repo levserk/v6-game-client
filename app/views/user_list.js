@@ -182,9 +182,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-userListFree.ejs', 'text!tpls/v6
 
             // скрыть заголовки на вкладке со списком играющих
             if (this.currentActiveTabName == 'inGame') {
-                this.$el.find('#userListSearch').hide();
+                this.$el.find('#userListSearch span').hide();
             } else {
-                this.$el.find('#userListSearch').show();
+                this.$el.find('#userListSearch span').show();
             }
         },
         _setCounters: function() {
@@ -218,7 +218,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-userListFree.ejs', 'text!tpls/v6
                     this.$list.html(this.tplInGame({
                         rooms: this.client.userList.getRoomList(this.getFilter()),
                         modes: this.client.locale.modes,
-                        showModes: this.client.modes.length > 0
+                        showModes: this.client.modes.length > 1
                     }));
                     break;
                 case 'spectators':

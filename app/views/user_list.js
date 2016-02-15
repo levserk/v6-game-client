@@ -40,8 +40,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-userListFree.ejs', 'text!tpls/v6
             var target = $(e.currentTarget),
                 userId = target.attr('data-userId');
             this.client.viewsManager.v6ChatView.showMenu.bind(this.client.viewsManager.v6ChatView)(e, userId);
-            return;
-            this.client.onShowProfile(userId);
+            //this.client.onShowProfile(userId);
         },
         roomClick: function(e) {
             var target = $(e.currentTarget),

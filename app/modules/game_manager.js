@@ -396,7 +396,6 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
                 }
                 this.currentRoom.history.push(event);
                 this.emit('event', event);
-
         }
     };
 

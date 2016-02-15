@@ -248,7 +248,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                             console.log('result ok');
                             clearInterval(roundResultInterval);
                             $(this).remove();
-                            client.gameManager.leaveGame();
+                            //client.gameManager.leaveGame();
                         }
                     }
                 },
@@ -310,11 +310,11 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
                     buttons: {
                         "Ок": function() {
                             $(this).remove();
-                            client.gameManager.leaveRoom();
+                            //client.gameManager.leaveRoom();
                         }
                     },
                     close: function() {
-                        client.gameManager.leaveRoom();
+                        //client.gameManager.leaveRoom();
                         $(this).remove();
                     }
                 }, true, true, true);

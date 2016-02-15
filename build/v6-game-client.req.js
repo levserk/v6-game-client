@@ -91,7 +91,8 @@ define('instances/room',['instances/time'], function(Time) {
             userTimeS: userTime.timeS,
             userTimePer: userTime.timePer,
             userTimeFormat: userTime.timeFormat,
-            userTime: userTime
+            userTime: userTime,
+            turnTime: this.userTurnTime || this.userData[user.userId].userTurnTime || this.turnTime
         };
 
         if (this.timeGameStart){
@@ -577,7 +578,6 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
                 }
                 this.currentRoom.history.push(event);
                 this.emit('event', event);
-
         }
     };
 
@@ -1847,8 +1847,7 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/v6-userListFree.e
             var target = $(e.currentTarget),
                 userId = target.attr('data-userId');
             this.client.viewsManager.v6ChatView.showMenu.bind(this.client.viewsManager.v6ChatView)(e, userId);
-            return;
-            this.client.onShowProfile(userId);
+            //this.client.onShowProfile(userId);
         },
         roomClick: function(e) {
             var target = $(e.currentTarget),
@@ -2330,7 +2329,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                             console.log('result ok');
                             clearInterval(roundResultInterval);
                             $(this).remove();
-                            client.gameManager.leaveGame();
+                            //client.gameManager.leaveGame();
                         }
                     }
                 },
@@ -2392,11 +2391,11 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                     buttons: {
                         "Ок": function() {
                             $(this).remove();
-                            client.gameManager.leaveRoom();
+                            //client.gameManager.leaveRoom();
                         }
                     },
                     close: function() {
-                        client.gameManager.leaveRoom();
+                        //client.gameManager.leaveRoom();
                         $(this).remove();
                     }
                 }, true, true, true);
@@ -5122,7 +5121,7 @@ define('modules/sound_manager',['EE', 'underscore'], function(EE, _) {
 
         this.client.gameManager.on('time', function (data) {
             var interval = 1000;
-            if (data.user == this.client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000) {
+            if (data.user == this.client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000 && data.turnTime > 20000) {
                 if (Date.now() - this.timePlayTimeout >= interval){
                     this._playSound('timeout', 0.3 + (this.msAlerTimeBound - data.userTimeMS) / this.msAlerTimeBound / 4);
                     this.timePlayTimeout = Date.now();
@@ -5302,7 +5301,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.51";
+        this.version = "0.9.54";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -5434,15 +5433,18 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.init = function(user){
         user = user || {};
-        user.userId = user.userId || window._userId;
-        user.userName = user.userName || window._username;
-        user.sign = user.sign || window._sign || '';
-        if (!user.userName || !user.userId || !user.sign || user.userName == 'undefined' || user.userId == 'undefined' || user.sign == 'undefined'){
+        var userId = (user.userId || window._userId).toString(),
+            userName = (user.userName || window._username).toString(),
+            sign = (user.sign || window._sign).toString(),
+            game = this.game || '';
+        if (typeof userName != "string" || typeof userId != "string" || typeof sign !="string" || typeof  game != "string"){
             throw new Error('Client init error, wrong user parameters'
                             + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
         }
         document.cookie = '_userId=' + user.userId + "; path=/;";
-        this.loginData = user;
+        this.loginData = {
+            userId: userId, userName: userName, sign: sign, game: game
+        };
         this.socket.init();
         this.viewsManager.init();
         console.log('client;', 'init version:', this.version);

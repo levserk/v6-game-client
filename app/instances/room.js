@@ -74,7 +74,8 @@ define(['instances/time'], function(Time) {
             userTimeS: userTime.timeS,
             userTimePer: userTime.timePer,
             userTimeFormat: userTime.timeFormat,
-            userTime: userTime
+            userTime: userTime,
+            turnTime: this.userTurnTime || this.userData[user.userId].userTurnTime || this.turnTime
         };
 
         if (this.timeGameStart){

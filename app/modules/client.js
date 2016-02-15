@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.51";
+        this.version = "0.9.54";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -137,15 +137,18 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype.init = function(user){
         user = user || {};
-        user.userId = user.userId || window._userId;
-        user.userName = user.userName || window._username;
-        user.sign = user.sign || window._sign || '';
-        if (!user.userName || !user.userId || !user.sign || user.userName == 'undefined' || user.userId == 'undefined' || user.sign == 'undefined'){
+        var userId = (user.userId || window._userId).toString(),
+            userName = (user.userName || window._username).toString(),
+            sign = (user.sign || window._sign).toString(),
+            game = this.game || '';
+        if (typeof userName != "string" || typeof userId != "string" || typeof sign !="string" || typeof  game != "string"){
             throw new Error('Client init error, wrong user parameters'
                             + ' userId: ' + user.userId, ' userName: ' + user.userName + ' sign' + user.sign) ;
         }
         document.cookie = '_userId=' + user.userId + "; path=/;";
-        this.loginData = user;
+        this.loginData = {
+            userId: userId, userName: userName, sign: sign, game: game
+        };
         this.socket.init();
         this.viewsManager.init();
         console.log('client;', 'init version:', this.version);

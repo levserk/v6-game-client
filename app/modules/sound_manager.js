@@ -25,7 +25,7 @@ define(['EE', 'underscore'], function(EE, _) {
 
         this.client.gameManager.on('time', function (data) {
             var interval = 1000;
-            if (data.user == this.client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000) {
+            if (data.user == this.client.getPlayer() && data.userTimeMS < this.msAlerTimeBound && data.userTimeMS > 1000 && data.turnTime > 20000) {
                 if (Date.now() - this.timePlayTimeout >= interval){
                     this._playSound('timeout', 0.3 + (this.msAlerTimeBound - data.userTimeMS) / this.msAlerTimeBound / 4);
                     this.timePlayTimeout = Date.now();

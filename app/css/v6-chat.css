@@ -3,7 +3,7 @@
     position: relative;
     padding-bottom: 10px;
     padding-top: 10px;
-    width: 255px!important;
+    width: 255px;
     padding: 5px;
     background-color: #fff;
     font-family: Verdana, Geneva, sans-serif;
@@ -26,8 +26,10 @@
 
     flex-basis: 55%;
     -webkit-flex-basis: 55%;
-    flex-grow: 1;
-    -webkit-flex-grow: 1;
+    /* Непонятный баг хрома с версии 48*/
+    /* flex-grow: 1; */
+    /* -webkit-flex-grow: 1;*/
+    min-height: 390px;
     margin: 10px 0px 0px 0px;
     box-shadow:none;
 }
@@ -42,6 +44,7 @@
     height: 19px !important;
     margin-top: 0px;
     border-top: none;
+    min-height: 0;
 }
 
 .chatHidden #v6Chat .tabs,
@@ -100,7 +103,7 @@
 }
 
 #v6Chat .messagesWrap {
-    height: 100px;
+    height: 250px;
     overflow: auto;
     border: 1px solid #ddd;
     background: #fff;
@@ -111,8 +114,8 @@
 
 #left-block #v6Chat .messagesWrap {
     min-height: 100px;
-    flex-grow: 1;
-    -webkit-flex-grow: 1;
+    /*flex-grow: 1;*/
+    /*-webkit-flex-grow: 1;*/
 }
 
 #v6Chat .messagesWrap .userName {

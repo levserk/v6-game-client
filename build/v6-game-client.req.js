@@ -3783,7 +3783,7 @@ define('modules/chat_manager',['EE', 'translit', 'antimat'], function(EE, transl
                 if (this.client.getUser(message.target) && message.target != this.current) this.openDialog(message.userId, message.userName);
                 break;
             case 'load':
-                if (!data.length || data.length<1) {
+                if (!data || !data.length || data.length < 1) {
                     this.fullLoaded[this.current] = true;
                     this.emit('load', null);
                     return;
@@ -3847,7 +3847,23 @@ define('modules/chat_manager',['EE', 'translit', 'antimat'], function(EE, transl
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
         console.log('chat_manager;', 'loading messages', count, time, this.first, type);
-        this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target, type: type});
+        var rq = {
+            count: count,
+            time: time,
+            target: target,
+            sender: this.client.getPlayer().userId,
+            type: type
+        };
+        if (this.client.opts.apiEnable) {
+            this.client.get('chat', rq, function(data){
+                this.onMessage({
+                    type: 'load',
+                    data: data
+                })
+            }.bind(this))
+        } else {
+            this.client.send('chat_manager', 'load', 'server', rq);
+        }
     };
 
 
@@ -4569,13 +4585,20 @@ define('modules/history_manager',['EE', 'translit', 'views/history', 'instances/
         }
         mode = mode || this.client.currentMode;
         this.$container.append(this.historyView.render(mode, false, hideClose).$el);
-        this.client.send('history_manager', 'history', 'server', {
+        var rq = {
             mode:   mode,
             userId: this.userId,
             count:  this.maxCount,
             offset: this.history.length,
             filter: this.historyView.getFilter()
-        });
+        };
+        if (this.client.opts.apiEnable) {
+            this.client.get('history', rq, function(data){
+                this.onHistoryLoad(data['mode'], data['history'], data['penalties'], data.userId);
+            }.bind(this))
+        } else {
+            this.client.send('history_manager', 'history', 'server', rq);
+        }
     };
 
 
@@ -4589,7 +4612,13 @@ define('modules/history_manager',['EE', 'translit', 'views/history', 'instances/
         userId = userId || this.userId || this.client.getPlayer().userId;
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;
-        this.client.send('history_manager', 'game', 'server', {mode:mode, id:id, userId: userId});
+        if (this.client.opts.apiEnable) {
+            this.client.get('history', { mode: mode, gameId: id, userId: userId }, function(data){
+                this.onGameLoad(data.mode, data.game);
+            }.bind(this))
+        } else {
+            this.client.send('history_manager', 'game', 'server', { mode: mode, id: id, userId: userId });
+        }
         this.startTime = Date.now();
     };
 
@@ -5058,14 +5087,22 @@ define('modules/rating_manager',['EE', 'translit', 'views/rating'], function(EE,
         if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
         this.filter = filter;
-        this.client.send('rating_manager', 'ratings', 'server', {
+        var rq = {
             mode: mode||this.client.currentMode,
             column: column,
             order: order,
             filter: filter,
             count: this.maxCount,
             offset: this.count
-        });
+        };
+        if (this.client.opts.apiEnable){
+            this.client.get('ratings', rq, function(data){
+                data['ratings']['infoUser'] = this.client.getPlayer();
+                this.onRatingsLoad(data.mode, data.ratings, data.column, data.order == 1 ? 'asc' : 'desc');
+            }.bind(this))
+        } else{
+            this.client.send('rating_manager', 'ratings', 'server', rq);
+        }
         this.client.viewsManager.showPanel(this.ratingView.$el);
     };
 
@@ -5301,7 +5338,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.54";
+        this.version = "0.9.55";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -5322,9 +5359,11 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.enableConsole = opts.enableConsole || false;
         opts.showHidden = false;
         opts.showCheaters = false;
+        opts.apiEnable = !!opts.game && false;
+        opts.api = "//" + (opts.api ?  opts.api : document.domain + "/api/");
 
         try{
-            this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
+            this.isAdmin = opts.isAdmin || window.LogicGame.isSuperUser();
             // disable console on production
             if (!opts.enableConsole && !this.isAdmin && window.location.hostname == "logic-games.spb.ru") {
                 this.disableConsole();
@@ -5776,6 +5815,28 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.console.log = this.console.log;
         window.console.error = this.console.error;
         window.console.warn = this.console.warn;
+    };
+
+    Client.prototype.get = function(target, params, callback) {
+        //this.xhr = this.xhr || new XMLHttpRequest();
+        var xhr = new XMLHttpRequest(),
+            url = this.opts.api + target + '?game='+this.game;
+        //xhr.abort();
+        for (var p in params) url += '&' + p +'='+params[p];
+
+        console.log('client;', 'get', url);
+        xhr.open('GET', url, true);
+        xhr.send();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState != 4) return;
+            console.log('client;', 'get', url, 'done', xhr.responseText);
+            if (typeof callback != "function") return;
+            if (xhr.status != 200) {
+                callback(null);
+            } else {
+                callback(JSON.parse(xhr.responseText))
+            }
+        }
     };
 
 

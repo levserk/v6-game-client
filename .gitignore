@@ -47,3 +47,4 @@ Temporary Items
 js/lib/Promise.js
 node_modules/*
 build/*
+app/settings.html

@@ -5,8 +5,7 @@ require(['require-cnf'], function () {
 
             var settingsTemplate = '<div><p>Цвет</p> <div> <label><input type="radio" name="color" value="red" >красный</label> <label><input type="radio" name="color" value="black" >черный</label> </div> </div> <p>Настройки игры</p> <div> <div class="option"> <label><input type="checkbox" name="sounds"> Включить звук</label> </div> <div class="option"> <label><input type="checkbox" name="disableInvite"> Запретить приглашать меня в игру</label> </div></div>';
 
-            var userId = getCookie('userId') || 0;
-            //userId = Math.floor(Math.random()*10000);
+            var userId = getCookie('userId') || Math.floor(Math.random()*10000);
             var userName = 'Гость ' + userId;
             var sign = userId + userName;
             var user = {
@@ -19,13 +18,14 @@ require(['require-cnf'], function () {
 
             window._client = new Client({
                 game: 'test2',
-                port: 8078,
+                port: port,
                 resultDialogDelay: 1000,
                 autoShowProfile: true,
                 idleTimeout: 0,
                 shortGuestNames: false,
                 newGameFormat: true,
                 showSpectators: true,
+                api: '//localhost:8080/',
                 getUserParams: function(){
                     var inviteData = {
                         gameType:'Main Mode',
@@ -88,7 +88,7 @@ require(['require-cnf'], function () {
                 },
                 settings:{
                     color: 'red',
-                    sounds: false
+                    sounds: true
                 },
                 settingsTemplate: settingsTemplate,
                 lang: 'ru',

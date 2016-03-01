@@ -386,13 +386,20 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
         }
         mode = mode || this.client.currentMode;
         this.$container.append(this.historyView.render(mode, false, hideClose).$el);
-        this.client.send('history_manager', 'history', 'server', {
+        var rq = {
             mode:   mode,
             userId: this.userId,
             count:  this.maxCount,
             offset: this.history.length,
             filter: this.historyView.getFilter()
-        });
+        };
+        if (this.client.opts.apiEnable) {
+            this.client.get('history', rq, function(data){
+                this.onHistoryLoad(data['mode'], data['history'], data['penalties'], data.userId);
+            }.bind(this))
+        } else {
+            this.client.send('history_manager', 'history', 'server', rq);
+        }
     };
 
 
@@ -406,7 +413,13 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
         userId = userId || this.userId || this.client.getPlayer().userId;
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;
-        this.client.send('history_manager', 'game', 'server', {mode:mode, id:id, userId: userId});
+        if (this.client.opts.apiEnable) {
+            this.client.get('history', { mode: mode, gameId: id, userId: userId }, function(data){
+                this.onGameLoad(data.mode, data.game);
+            }.bind(this))
+        } else {
+            this.client.send('history_manager', 'game', 'server', { mode: mode, id: id, userId: userId });
+        }
         this.startTime = Date.now();
     };
 

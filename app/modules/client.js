@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.54";
+        this.version = "0.9.55";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -26,9 +26,11 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.enableConsole = opts.enableConsole || false;
         opts.showHidden = false;
         opts.showCheaters = false;
+        opts.apiEnable = !!opts.game && false;
+        opts.api = "//" + (opts.api ?  opts.api : document.domain + "/api/");
 
         try{
-            this.isAdmin = opts.isAdmin || LogicGame.isSuperUser();
+            this.isAdmin = opts.isAdmin || window.LogicGame.isSuperUser();
             // disable console on production
             if (!opts.enableConsole && !this.isAdmin && window.location.hostname == "logic-games.spb.ru") {
                 this.disableConsole();
@@ -480,6 +482,28 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.console.log = this.console.log;
         window.console.error = this.console.error;
         window.console.warn = this.console.warn;
+    };
+
+    Client.prototype.get = function(target, params, callback) {
+        //this.xhr = this.xhr || new XMLHttpRequest();
+        var xhr = new XMLHttpRequest(),
+            url = this.opts.api + target + '?game='+this.game;
+        //xhr.abort();
+        for (var p in params) url += '&' + p +'='+params[p];
+
+        console.log('client;', 'get', url);
+        xhr.open('GET', url, true);
+        xhr.send();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState != 4) return;
+            console.log('client;', 'get', url, 'done', xhr.responseText);
+            if (typeof callback != "function") return;
+            if (xhr.status != 200) {
+                callback(null);
+            } else {
+                callback(JSON.parse(xhr.responseText))
+            }
+        }
     };
 
 

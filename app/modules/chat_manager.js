@@ -101,7 +101,7 @@ define(['EE', 'translit', 'antimat'], function(EE, translit) {
                 if (this.client.getUser(message.target) && message.target != this.current) this.openDialog(message.userId, message.userName);
                 break;
             case 'load':
-                if (!data.length || data.length<1) {
+                if (!data || !data.length || data.length < 1) {
                     this.fullLoaded[this.current] = true;
                     this.emit('load', null);
                     return;
@@ -165,7 +165,23 @@ define(['EE', 'translit', 'antimat'], function(EE, translit) {
         if (!target) target = this.current;
         time = time || (this.first[target]?this.first[target].time:null);
         console.log('chat_manager;', 'loading messages', count, time, this.first, type);
-        this.client.send('chat_manager', 'load', 'server', {count:count, time:time, target:target, type: type});
+        var rq = {
+            count: count,
+            time: time,
+            target: target,
+            sender: this.client.getPlayer().userId,
+            type: type
+        };
+        if (this.client.opts.apiEnable) {
+            this.client.get('chat', rq, function(data){
+                this.onMessage({
+                    type: 'load',
+                    data: data
+                })
+            }.bind(this))
+        } else {
+            this.client.send('chat_manager', 'load', 'server', rq);
+        }
     };
 
 

@@ -14,6 +14,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-userListFree.ejs', 'text!tpls/v6
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
             'click #randomPlay': 'playClicked',
+            'click #userListSearch .rankSwitch': 'switchRankDisplay',
+            'click #userListSearch .ratingSwitch': 'switchRankDisplay',
             'keyup #filterUserList': 'filter',
             'mouseenter ': 'mouseEnter',
             'mouseleave ': 'mouseLeave'
@@ -52,6 +54,18 @@ define(['underscore', 'backbone', 'text!tpls/v6-userListFree.ejs', 'text!tpls/v6
             } else {
                 console.warn('wrong room id', roomId);
             }
+        },
+        switchRankDisplay: function(e){
+            var target = $(e.currentTarget);
+            if (target.hasClass('rankSwitch')){
+                this.client.opts.showRank = 'place';
+            }
+            if (target.hasClass('ratingSwitch')){
+                this.client.opts.showRank = 'rating';
+            }
+            this.$el.find('#userListSearch .isActive').removeClass('isActive');
+            target.addClass('isActive');
+            this.render();
         },
         _inviteBtnClicked: function(e) {
             var target = $(e.currentTarget),

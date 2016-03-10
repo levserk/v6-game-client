@@ -21,7 +21,8 @@
       "cancel": "Cancel"
     },
     "rankPlace": "place in ranking",
-    "rankPlaceShort": "Place"
+    "rankPlaceShort": "Place",
+    "ratingShort": "Rating"
   },
   "chat":{
     "tabs":{
@@ -61,8 +62,11 @@
   },
   "dialogs":{
     "invite": "You are invited to play by ",
+    "placeRating": " place in the rating",
+    "ratingElo": "with the rating ",
     "inviteTime": "Remaining: ",
     "user": "User",
+    "player": "The player",
     "rejectInvite": " has declined your invitation",
     "timeoutInvite": " limit exceeded expectations ",
     "seconds": " seconds",
@@ -86,6 +90,7 @@
     "ratingUp": "You have risen in the overall ranking from ",
     "ratingPlace": "You take ",
     "on": " to ",
+    "of": " of ",
     "place": " place in ranking",
     "dialogPlayAgain": "Play with your opponent again?",
     "playAgain": "Yes, play again",

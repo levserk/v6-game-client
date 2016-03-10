@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.55";
+        this.version = "0.9.57";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -28,6 +28,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.showCheaters = false;
         opts.apiEnable = !!opts.game && false;
         opts.api = "//" + (opts.api ?  opts.api : document.domain + "/api/");
+        opts.showRank = 'place';
 
         try{
             this.isAdmin = opts.isAdmin || window.LogicGame.isSuperUser();

@@ -2,7 +2,7 @@
     position: relative;
     padding-bottom: 10px;
     padding-top: 10px;
-    width: 255px!important;
+    width: 255px;
     padding: 5px;
     background-color: #fff;
     font-family: Verdana, Geneva, sans-serif;
@@ -89,12 +89,23 @@
 #userList #userListSearch span {
     width: 49%;
     position: absolute;
-    right: 0px;
     bottom: 2px;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-
+    cursor: pointer;
+}
+#userList #userListSearch .rankSwitch {
+    right: 0px;
+}
+#userList #userListSearch .ratingSwitch {
+    right: -49px;
+}
+#userList #userListSearch .rankSlash {
+    right: -42px;
+}#userList #userListSearch .isActive {
+    font-weight: bold;
+    color: black;
 }
 
 #userList input::-webkit-input-placeholder {color:#777; font-size: 12px; font-family: Verdana,Geneva,sans-serif; opacity: 1;}
@@ -189,6 +200,7 @@
 #userList .userListFree .userListPlayerInvite {
     text-align: right;
     padding-right: 20px;
+    height: 21px;
 }
 
 #userList .userListFree .userListPlayerInvite img{
@@ -254,7 +266,8 @@
     text-align: center;
     padding: 8px 0px 2px 0px;
     border-bottom: 1px solid #DDDDDD;
-    color: #006699
+    color: #006699;
+    font-weight: bold;
 }
 
 #userList .inGame {

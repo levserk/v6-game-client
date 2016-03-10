@@ -146,7 +146,8 @@ define(['EE', 'translit'], function(EE, translit) {
 
 
     UserList.prototype.getUserList = function(filter) {
-        var userList = [], invite = this.client.inviteManager.invite, user;
+        var userList = [], invite = this.client.inviteManager.invite, user,
+            sort = this.client.opts.showRank == 'place' ? 1 : -1;
         for (var i = 0; i < this.users.length; i++){
             user = this.users[i];
             if (invite && user.userId == invite.target) { // user is invited
@@ -167,17 +168,17 @@ define(['EE', 'translit'], function(EE, translit) {
             if (isNaN(+ar)) {
                 ar = a.timeLogin;
                 if (a.isPlayer) {
-                    ar = 99999998;
+                    sort == 1 ? ar = 99999998 : ar += 0.1;
                 }
             }
             var br = b.getRank();
             if (isNaN(+br)) {
                 br = b.timeLogin;
                 if (b.isPlayer) {
-                    br = 99999998;
+                    sort == 1 ? ar = 99999998 : ar += 0.1;
                 }
             }
-            return ar - br;
+            return sort == 1 ? ar - br : br - ar;
         });
 
         return userList;
@@ -327,7 +328,11 @@ define(['EE', 'translit'], function(EE, translit) {
         }
 
         this.getRank = function (mode) {
-            return this[mode||this._client.currentMode].rank || '—';
+            if (this._client.opts.showRank == 'place') {
+                return this[mode || this._client.currentMode].rank || '—';
+            } else {
+                return this[mode || this._client.currentMode].ratingElo || 1600;
+            }
         };
 
         this.getNumberRank = function(mode) {

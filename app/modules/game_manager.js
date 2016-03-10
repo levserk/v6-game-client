@@ -506,6 +506,11 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             console.warn('game_manager;', 'your time is out!');
             return false;
         }
+        // TODO: replace auto cancel draw to server
+        if ($('.dialogDraw').length) {
+            this.cancelDraw();
+            $('.dialogDraw').remove();
+        }
         this.client.send('game_manager', 'turn', 'server', turn);
         return true;
     };

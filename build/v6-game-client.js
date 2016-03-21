@@ -1127,6 +1127,11 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             console.warn('game_manager;', 'your time is out!');
             return false;
         }
+        // TODO: replace auto cancel draw to server
+        if ($('.dialogDraw').length) {
+            this.cancelDraw();
+            $('.dialogDraw').remove();
+        }
         this.client.send('game_manager', 'turn', 'server', turn);
         return true;
     };
@@ -1896,7 +1901,8 @@ define('modules/user_list',['EE', 'translit'], function(EE, translit) {
 
 
     UserList.prototype.getUserList = function(filter) {
-        var userList = [], invite = this.client.inviteManager.invite, user;
+        var userList = [], invite = this.client.inviteManager.invite, user,
+            sort = this.client.opts.showRank == 'place' ? 1 : -1;
         for (var i = 0; i < this.users.length; i++){
             user = this.users[i];
             if (invite && user.userId == invite.target) { // user is invited
@@ -1917,17 +1923,17 @@ define('modules/user_list',['EE', 'translit'], function(EE, translit) {
             if (isNaN(+ar)) {
                 ar = a.timeLogin;
                 if (a.isPlayer) {
-                    ar = 99999998;
+                    sort == 1 ? ar = 99999998 : ar += 0.1;
                 }
             }
             var br = b.getRank();
             if (isNaN(+br)) {
                 br = b.timeLogin;
                 if (b.isPlayer) {
-                    br = 99999998;
+                    sort == 1 ? ar = 99999998 : ar += 0.1;
                 }
             }
-            return ar - br;
+            return sort == 1 ? ar - br : br - ar;
         });
 
         return userList;
@@ -2077,7 +2083,11 @@ define('modules/user_list',['EE', 'translit'], function(EE, translit) {
         }
 
         this.getRank = function (mode) {
-            return this[mode||this._client.currentMode].rank || '—';
+            if (this._client.opts.showRank == 'place') {
+                return this[mode || this._client.currentMode].rank || '—';
+            } else {
+                return this[mode || this._client.currentMode].ratingElo || 1600;
+            }
         };
 
         this.getNumberRank = function(mode) {
@@ -2113,6 +2123,7 @@ define('modules/socket',['EE'], function(EE) {
             this.domain = this.domain.substr(4);
         }
         this.game = opts.game||"test";
+        this.prefix = 'ws/';
         this.url = opts.url || this.game;
         this.https = opts.https || false;
         if (this.domain == "test.logic-games.spb.ru") this.domain = "logic-games.spb.ru";
@@ -2137,8 +2148,12 @@ define('modules/socket',['EE'], function(EE) {
         this.connectionCount++;
 
         try{
-
-            this.ws = new WebSocket (this.protocol+'://'+this.domain+':'+this.port+'/'+this.url);
+            //// TODO: test config, remove this
+            //if (window.location.hostname == "test.logic-games.spb.ru" && this.url != "domino"){
+            //    this.ws = new WebSocket (this.protocol + '://' + this.domain + '/' + this.prefix + this.url);
+            //}
+            //else
+                this.ws = new WebSocket (this.protocol + '://' + this.domain + ':' + this.port+'/' + this.url);
 
             this.ws.onclose = function (code, message) {
                 console.log('socket;', 'ws closed', code, message);
@@ -2627,13 +2642,13 @@ define('text',['module'], function (module) {
 });
 
 
-define('text!tpls/v6-userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree <%= user.isActive?\'\':\'userListInactive\' %> <%= user.waiting?\'userListWaiting\':\'\' %> <%= user.isPlayer?\'userListPlayer\':\'\' %>">\r\n    <td class="userName"\r\n        data-userId="<%= user.userId %>"\r\n        data-userName="<%= user.userName %>"\r\n        title="<%= user.userName + \', \' + locale.rankPlace + \': \' + user.getRank()%>"\r\n    > <%= user.userName %> </td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td class="userListPlayerInvite">\r\n        <% if (user.disableInvite ) { %>\r\n        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >\r\n        <% } %>\r\n    </td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>\r\n    <% } else {\r\n        if (!user.waiting && user.disableInvite) { %>\r\n        <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>\r\n        <% } else { %>\r\n            <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>\r\n        <% }\r\n    } %>\r\n</tr>\r\n<% }) %>';});
+define('text!tpls/v6-userListFree.ejs',[],function () { return '<% _.each(users, function(user) { %>\r\n<tr class="userListFree <%= user.isActive?\'\':\'userListInactive\' %> <%= user.waiting?\'userListWaiting\':\'\' %> <%= user.isPlayer?\'userListPlayer\':\'\' %>">\r\n    <td class="userName"\r\n        data-userId="<%= user.userId %>"\r\n        data-userName="<%= user.userName %>"\r\n        title="<%= user.userName%>"\r\n    > <%= user.userName %> </td>\r\n    <td class="userRank"><%= user.getRank() %></td>\r\n    <% if (user.isPlayer) { %>\r\n    <td class="userListPlayerInvite">\r\n        <% if (user.disableInvite ) { %>\r\n        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >\r\n        <% } %>\r\n    </td>\r\n    <% } else if (user.isInvited) { %>\r\n    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>\r\n    <% } else {\r\n        if (!user.waiting && user.disableInvite) { %>\r\n        <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>\r\n        <% } else { %>\r\n            <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>\r\n        <% }\r\n    } %>\r\n</tr>\r\n<% }) %>';});
 
 
 define('text!tpls/v6-userListInGame.ejs',[],function () { return '<%\r\n    var mode;\r\n_.each(rooms, function(room) {\r\n    if (showModes && room.mode != mode && modes[room.mode] ) {\r\n    window.console.log(mode, room.mode, room.room, room.mode != mode)\r\n        mode = room.mode;\r\n%>\r\n        <tr class="userListGameMode"><td colspan="3"><%= modes[mode] %></td></tr>\r\n<%}%>\r\n<tr class="userListGame <%= room.current ? \'currentGame\' : \'\' %>" data-id="<%= room.room %>">\r\n    <td>\r\n        <span class="userName" title="<%= room.players[0].userName + \' (\' +  room.players[0].getRank(room.mode) + \')\' %>">\r\n            <%= room.players[0].userName %>\r\n        </span>\r\n    </td>\r\n    <td>:</td>\r\n    <td>\r\n        <span class="userName" title="<%= room.players[1].userName + \' (\' +  room.players[1].getRank(room.mode) + \')\' %>">\r\n            <%= room.players[1].userName %>\r\n        </span>\r\n    </td>\r\n</tr>\r\n<% }) %>';});
 
 
-define('text!tpls/v6-userListMain.ejs',[],function () { return '<div class="tabs notInGame">\r\n    <div data-type="free"> <%= tabs.free %> <span></span></div>\r\n    <div data-type="inGame"> <%= tabs.inGame %>  <span></span></div>\r\n    <div data-type="spectators" style="display: none"> <%= tabs.spectators %>  <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <input type="text" id="filterUserList" placeholder="<%= search %>"/>\r\n    <span><%= rankPlaceShort %></span>\r\n</div>\r\n<div class="tableWrap">\r\n    <table cellspacing="0" class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span><%= buttons.playRandom %></span>\r\n</div>';});
+define('text!tpls/v6-userListMain.ejs',[],function () { return '<div class="tabs notInGame">\r\n    <div data-type="free"> <%= tabs.free %> <span></span></div>\r\n    <div data-type="inGame"> <%= tabs.inGame %>  <span></span></div>\r\n    <div data-type="spectators" style="display: none"> <%= tabs.spectators %>  <span></span></div>\r\n</div>\r\n<div id="userListSearch">\r\n    <input type="text" id="filterUserList" placeholder="<%= search %>"/>\r\n    <span class="rankSwitch isActive"><%= rankPlaceShort %></span>\r\n    <span class="rankSlash">/</span>\r\n    <span class="ratingSwitch"><%= ratingShort %></span>\r\n</div>\r\n<div class="tableWrap">\r\n    <table cellspacing="0" class="playerList"></table>\r\n</div>\r\n\r\n<div class="btn" id="randomPlay">\r\n    <span><%= buttons.playRandom %></span>\r\n</div>';});
 
 define('views/user_list',['underscore', 'backbone', 'text!tpls/v6-userListFree.ejs', 'text!tpls/v6-userListInGame.ejs', 'text!tpls/v6-userListMain.ejs'],
     function(_, Backbone, tplFree, tplInGame, tplMain) {
@@ -2651,6 +2666,8 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/v6-userListFree.e
             'click .tabs div': 'clickTab',
             'click .disconnectButton': '_reconnect',
             'click #randomPlay': 'playClicked',
+            'click #userListSearch .rankSwitch': 'switchRankDisplay',
+            'click #userListSearch .ratingSwitch': 'switchRankDisplay',
             'keyup #filterUserList': 'filter',
             'mouseenter ': 'mouseEnter',
             'mouseleave ': 'mouseLeave'
@@ -2689,6 +2706,18 @@ define('views/user_list',['underscore', 'backbone', 'text!tpls/v6-userListFree.e
             } else {
                 console.warn('wrong room id', roomId);
             }
+        },
+        switchRankDisplay: function(e){
+            var target = $(e.currentTarget);
+            if (target.hasClass('rankSwitch')){
+                this.client.opts.showRank = 'place';
+            }
+            if (target.hasClass('ratingSwitch')){
+                this.client.opts.showRank = 'rating';
+            }
+            this.$el.find('#userListSearch .isActive').removeClass('isActive');
+            target.addClass('isActive');
+            this.render();
         },
         _inviteBtnClicked: function(e) {
             var target = $(e.currentTarget),
@@ -2916,6 +2945,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
         var HIDEONCLICK_CLASS = 'dialogClickHide';
         var INVITE_CLASS = 'dialogInvite';
         var GAME_CLASS = 'dialogGame';
+        var DRAW_CLASS = 'dialogDraw';
         var DRAGGABLE_CLASS = 'dialogDraggable';
         var ROUNDRESULT_CLASS = 'dialogRoundResult';
         var TAKEBACK_CLASS = 'dialogTakeBack';
@@ -2957,10 +2987,14 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
         }
 
         function newInvite(invite) {
-            var html = locale.invite + ' <b>' + invite.from.userName + '</b>';
-            if (typeof this.client.opts.generateInviteText == "function")
-                html = this.client.opts.generateInviteText(invite);
-                html += tplInvite;
+            var html = locale.player + ' <b>' + invite.from.userName + '</b> '
+                + '(' +(client.opts.showRank == 'place' ?
+                invite.from.getRank(invite.data.mode) + locale['placeRating'] :
+                locale['ratingElo'] + invite.from.getRank(invite.data.mode)) + ')'
+                + locale.invite
+                + (client.modes.length > 1 ? locale['of'] +  '<b>'+client.getModeAlias(invite.data.mode) + '</b>' : '');
+            if (typeof this.client.opts.generateInviteOptionsText == "function")
+                html += this.client.opts.generateInviteOptionsText(invite);
             var div = showDialog(html, {
                 buttons: {
                     "Принять": { text: locale['accept'], click: function() {
@@ -3036,6 +3070,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
                 }
             }, true, true, false);
             div.addClass(GAME_CLASS);
+            div.addClass(DRAW_CLASS);
         }
 
         function cancelDraw(user) {
@@ -3177,7 +3212,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
             div.parent().hide();
             dialogTimeout = setTimeout(function(){
                 div.parent().show();
-                this.client.soundManager._playSound(data.result);
+                //this.client.soundManager._playSound(data.result);
             }.bind(this), data.action == 'user_leave' ? 1000 : client.opts.resultDialogDelay);
             div.addClass(GAME_CLASS);
 
@@ -6099,10 +6134,10 @@ define('modules/admin_manager',['EE'], function(EE) {
 });
 
 
-define('text!localization/ru.JSON',[],function () { return '{\r\n  "name": "ru",\r\n  "userList":{\r\n    "tabs":{\r\n      "free":"Свободны",\r\n      "inGame":"Играют",\r\n      "spectators": "Смотрят"\r\n    },\r\n    "disconnected": {\r\n      "text": "Соединение с сервером отсутствует",\r\n      "button": "Переподключиться",\r\n      "status": "Загрузка.."\r\n    },\r\n    "search": "Имя игрока",\r\n    "disableInvite": "Вы запретили приглашать себя в игру",\r\n    "playerDisableInvite": "Игрок запретил приглашать себя в игру",\r\n    "buttons":{\r\n      "playRandom": "Играть с любым",\r\n      "cancelPlayRandom": "Идет подбор игрока...",\r\n      "invite": "Пригласить",\r\n      "cancel": "Отмена"\r\n    },\r\n    "rankPlace": "Место в рейтинге",\r\n    "rankPlaceShort": "Место"\r\n  },\r\n  "chat":{\r\n    "tabs":{\r\n      "main": "Общий",\r\n      "room": "Стол"\r\n    },\r\n    "inputPlaceholder": "Введите ваше сообщение",\r\n    "templateMessages": {\r\n      "header": "Готовые сообщения"\r\n    },\r\n    "buttons":{\r\n      "removeMessage": "Удалить сообщение",\r\n      "send": "Отправить",\r\n      "chatRules": "Правила чата",\r\n      "hideChat": "Скрыть чат",\r\n      "showChat": "Показать чат"\r\n    },\r\n    "menu":{\r\n      "answer": "Ответить",\r\n      "showProfile": "Показать профиль",\r\n      "invite": "Пригласить в игру",\r\n      "blackList": "В черный список",\r\n      "ban": "Забанить в чате"\r\n    },\r\n    "rankPlace": "место в рейтинге",\r\n    "months": ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"]\r\n  },\r\n  "settings":{\r\n    "title": "Настройки",\r\n    "titleBlackList": "Черный список",\r\n    "emptyBL": "Черный список пуст (чтобы добавить игрока в черный список кликнете по нему и выберите пункт в меню \'В черный список\')",\r\n    "buttons":{\r\n      "confirm": "OK",\r\n      "showBL": "Показать черный список",\r\n      "hideBL": "Скрыть черный список",\r\n      "remove": "Удалить"\r\n    }\r\n  },\r\n  "dialogs":{\r\n    "invite": "Вас пригласил в игру пользователь ",\r\n    "inviteTime": "Осталось: ",\r\n    "user": "Пользователь",\r\n    "rejectInvite": " отклонил ваше приглашение",\r\n    "timeoutInvite": " превысил лимит ожидания в ",\r\n    "seconds": " секунд",\r\n    "askDraw": " предлагает ничью",\r\n    "cancelDraw": "отклонил ваше предложение о ничье",\r\n    "askTakeBack": "просит отменить ход. Разрешить ему?",\r\n    "cancelTakeBack": " отклонил ваше просьбу отменить ход",\r\n    "accept": "Принять",\r\n    "decline": "Отклонить",\r\n    "yes": "Да",\r\n    "no": "Нет",\r\n    "win": "Победа.",\r\n    "lose": "Поражение.",\r\n    "draw": "Ничья.",\r\n    "gameOver": "Игра окончена.",\r\n    "scores": "очков",\r\n    "opponentTimeout": "У соперника закончилось время",\r\n    "playerTimeout": "У Вас закончилось время",\r\n    "opponentThrow": "Соперник сдался",\r\n    "playerThrow": "Вы сдались",\r\n    "ratingUp": "Вы поднялись с ",\r\n    "ratingPlace": "Вы занимаете ",\r\n    "on": " на ",\r\n    "place": " место в общем рейтинге",\r\n    "dialogPlayAgain": "Сыграть с соперником еще раз?",\r\n    "playAgain": "Да, начать новую игру",\r\n    "leave": "Нет, выйти",\r\n    "waitingOpponent": "Ожидание соперника..",\r\n    "waitingTimeout": "Время ожидания истекло",\r\n    "opponentLeave": "покинул игру",\r\n    "banMessage": "Вы не можете писать сообщения в чате, т.к. добавлены в черный список ",\r\n    "banReason": "за употребление нецензурных выражений и/или спам  ",\r\n    "loginError": "Ошибка авторизации. Обновите страницу",\r\n    "loseOnLeave": "Вам будет засчитано поражение"\r\n  },\r\n  "history": {\r\n    "columns": {\r\n      "date": "Дата",\r\n      "opponent": "Противник",\r\n      "time": "Время",\r\n      "number": "№",\r\n      "elo": "Рейтинг"\r\n    },\r\n    "close": "Закрыть окно истории",\r\n    "showMore": "Показать еще",\r\n    "noHistory": "Сохранения отсутствуют",\r\n    "placeholder": "Поиск по имени",\r\n    "months": ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]\r\n  },\r\n  "rating": {\r\n    "tabs": {\r\n      "allPlayers": "все игроки"\r\n    },\r\n    "columns": {\r\n      "rank": "Место",\r\n      "userName": "Имя",\r\n      "ratingElo": "Рейтинг <br> Эло",\r\n      "win": "Выиграл",\r\n      "lose": "Проиграл",\r\n      "dateCreate": "Дата <br> регистрации",\r\n      "dateLastGame": "Дата <br> последней игры"\r\n    },\r\n    "close": "Закрыть окно рейтинга",\r\n    "placeholder": "Поиск по имени",\r\n    "showMore": "Ещё 500 игроков",\r\n    "jumpTop": "в начало рейтинга",\r\n    "place": " место",\r\n    "you": "Вы",\r\n    "search": "Поиск",\r\n    "novice": "новичок"\r\n  },\r\n  "game": {\r\n    "resultMessages":{\r\n      "win": "Победа",\r\n      "wins": "Победил ",\r\n      "lose": "Поражение",\r\n      "draw": "Ничья",\r\n      "opponent": "Соперник",\r\n      "player": "Игрок",\r\n      "opponentThrow": " сдался",\r\n      "playerThrow": "Вы сдались",\r\n      "opponentTimeoutPre": "У соперника",\r\n      "timeoutPre": "У ",\r\n      "opponentTimeout": " закончилось время",\r\n      "playerTimeout": "У Вас закончилось время",\r\n      "opponentLeave": " покинул игру",\r\n      "playerLeave": "Вы покинули игру"\r\n    }\r\n  }\r\n}';});
+define('text!localization/ru.JSON',[],function () { return '{\r\n  "name": "ru",\r\n  "userList":{\r\n    "tabs":{\r\n      "free":"Свободны",\r\n      "inGame":"Играют",\r\n      "spectators": "Смотрят"\r\n    },\r\n    "disconnected": {\r\n      "text": "Соединение с сервером отсутствует",\r\n      "button": "Переподключиться",\r\n      "status": "Загрузка.."\r\n    },\r\n    "search": "Имя игрока",\r\n    "disableInvite": "Вы запретили приглашать себя в игру",\r\n    "playerDisableInvite": "Игрок запретил приглашать себя в игру",\r\n    "buttons":{\r\n      "playRandom": "Играть с любым",\r\n      "cancelPlayRandom": "Идет подбор игрока...",\r\n      "invite": "Пригласить",\r\n      "cancel": "Отмена"\r\n    },\r\n    "rankPlace": "Место в рейтинге",\r\n    "rankPlaceShort": "Место",\r\n    "ratingShort": "Рейтинг"\r\n  },\r\n  "chat":{\r\n    "tabs":{\r\n      "main": "Общий",\r\n      "room": "Стол"\r\n    },\r\n    "inputPlaceholder": "Введите ваше сообщение",\r\n    "templateMessages": {\r\n      "header": "Готовые сообщения"\r\n    },\r\n    "buttons":{\r\n      "removeMessage": "Удалить сообщение",\r\n      "send": "Отправить",\r\n      "chatRules": "Правила чата",\r\n      "hideChat": "Скрыть чат",\r\n      "showChat": "Показать чат"\r\n    },\r\n    "menu":{\r\n      "answer": "Ответить",\r\n      "showProfile": "Показать профиль",\r\n      "invite": "Пригласить в игру",\r\n      "blackList": "В черный список",\r\n      "ban": "Забанить в чате"\r\n    },\r\n    "rankPlace": "место в рейтинге",\r\n    "months": ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"]\r\n  },\r\n  "settings":{\r\n    "title": "Настройки",\r\n    "titleBlackList": "Черный список",\r\n    "emptyBL": "Черный список пуст (чтобы добавить игрока в черный список кликнете по нему и выберите пункт в меню \'В черный список\')",\r\n    "buttons":{\r\n      "confirm": "OK",\r\n      "showBL": "Показать черный список",\r\n      "hideBL": "Скрыть черный список",\r\n      "remove": "Удалить"\r\n    }\r\n  },\r\n  "dialogs":{\r\n    "invite": " предлагает сыграть партию ",\r\n    "placeRating": " место в рейтинге",\r\n    "ratingElo": "с рейтингом ",\r\n    "inviteTime": "Осталось: ",\r\n    "user": "Пользователь",\r\n    "player": "Игрок",\r\n    "rejectInvite": " отклонил ваше приглашение",\r\n    "timeoutInvite": " превысил лимит ожидания в ",\r\n    "seconds": " секунд",\r\n    "askDraw": " предлагает ничью",\r\n    "cancelDraw": "отклонил ваше предложение о ничье",\r\n    "askTakeBack": "просит отменить ход. Разрешить ему?",\r\n    "cancelTakeBack": " отклонил ваше просьбу отменить ход",\r\n    "accept": "Принять",\r\n    "decline": "Отклонить",\r\n    "yes": "Да",\r\n    "no": "Нет",\r\n    "win": "Победа.",\r\n    "lose": "Поражение.",\r\n    "draw": "Ничья.",\r\n    "gameOver": "Игра окончена.",\r\n    "scores": "очков",\r\n    "opponentTimeout": "У соперника закончилось время",\r\n    "playerTimeout": "У Вас закончилось время",\r\n    "opponentThrow": "Соперник сдался",\r\n    "playerThrow": "Вы сдались",\r\n    "ratingUp": "Вы поднялись с ",\r\n    "ratingPlace": "Вы занимаете ",\r\n    "on": " на ",\r\n    "of": " в ",\r\n    "place": " место в общем рейтинге",\r\n    "dialogPlayAgain": "Сыграть с соперником еще раз?",\r\n    "playAgain": "Да, начать новую игру",\r\n    "leave": "Нет, выйти",\r\n    "waitingOpponent": "Ожидание соперника..",\r\n    "waitingTimeout": "Время ожидания истекло",\r\n    "opponentLeave": "покинул игру",\r\n    "banMessage": "Вы не можете писать сообщения в чате, т.к. добавлены в черный список ",\r\n    "banReason": "за употребление нецензурных выражений и/или спам  ",\r\n    "loginError": "Ошибка авторизации. Обновите страницу",\r\n    "loseOnLeave": "Вам будет засчитано поражение"\r\n  },\r\n  "history": {\r\n    "columns": {\r\n      "date": "Дата",\r\n      "opponent": "Противник",\r\n      "time": "Время",\r\n      "number": "№",\r\n      "elo": "Рейтинг"\r\n    },\r\n    "close": "Закрыть окно истории",\r\n    "showMore": "Показать еще",\r\n    "noHistory": "Сохранения отсутствуют",\r\n    "placeholder": "Поиск по имени",\r\n    "months": ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]\r\n  },\r\n  "rating": {\r\n    "tabs": {\r\n      "allPlayers": "все игроки"\r\n    },\r\n    "columns": {\r\n      "rank": "Место",\r\n      "userName": "Имя",\r\n      "ratingElo": "Рейтинг <br> Эло",\r\n      "win": "Выиграл",\r\n      "lose": "Проиграл",\r\n      "dateCreate": "Дата <br> регистрации",\r\n      "dateLastGame": "Дата <br> последней игры"\r\n    },\r\n    "close": "Закрыть окно рейтинга",\r\n    "placeholder": "Поиск по имени",\r\n    "showMore": "Ещё 500 игроков",\r\n    "jumpTop": "в начало рейтинга",\r\n    "place": " место",\r\n    "you": "Вы",\r\n    "search": "Поиск",\r\n    "novice": "новичок"\r\n  },\r\n  "game": {\r\n    "resultMessages":{\r\n      "win": "Победа",\r\n      "wins": "Победил ",\r\n      "lose": "Поражение",\r\n      "draw": "Ничья",\r\n      "opponent": "Соперник",\r\n      "player": "Игрок",\r\n      "opponentThrow": " сдался",\r\n      "playerThrow": "Вы сдались",\r\n      "opponentTimeoutPre": "У соперника",\r\n      "timeoutPre": "У ",\r\n      "opponentTimeout": " закончилось время",\r\n      "playerTimeout": "У Вас закончилось время",\r\n      "opponentLeave": " покинул игру",\r\n      "playerLeave": "Вы покинули игру"\r\n    }\r\n  }\r\n}';});
 
 
-define('text!localization/en.JSON',[],function () { return '{\r\n  "name": "en",\r\n  "userList":{\r\n    "tabs":{\r\n      "free":"Free",\r\n      "inGame":"In Game",\r\n      "spectators": "Spectators"\r\n    },\r\n    "disconnected": {\r\n      "text": "No connection",\r\n      "button": "Reconnect",\r\n      "status": "Loading.."\r\n    },\r\n    "search": "Search",\r\n    "disableInvite": "Invites disable",\r\n    "playerDisableInvite": "Invites disable",\r\n    "buttons":{\r\n      "playRandom": "Play with a anyone",\r\n      "cancelPlayRandom": "Waiting a opponent...",\r\n      "invite": "Invite",\r\n      "cancel": "Cancel"\r\n    },\r\n    "rankPlace": "place in ranking",\r\n    "rankPlaceShort": "Place"\r\n  },\r\n  "chat":{\r\n    "tabs":{\r\n      "main": "Main",\r\n      "room": "Room"\r\n    },\r\n    "inputPlaceholder": "Type your message",\r\n    "templateMessages": {\r\n      "header": "Template messages"\r\n    },\r\n    "buttons":{\r\n      "removeMessage": "Remove message",\r\n      "send": "Send",\r\n      "chatRules": "Chat rules",\r\n      "hideChat": "Hide Chat",\r\n      "showChat": "Show Chat"\r\n    },\r\n    "menu":{\r\n      "answer": "Answer",\r\n      "showProfile": "Show profile",\r\n      "invite": "Send invite",\r\n      "blackList": "To black list",\r\n      "ban": "ban"\r\n    },\r\n    "rankPlace": "place in ranking",\r\n    "months": ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"]\r\n  },\r\n  "settings":{\r\n    "title": "Settings",\r\n    "titleBlackList": "Black list",\r\n    "emptyBL": "Black list is empty",\r\n    "buttons":{\r\n      "confirm": "OK",\r\n      "showBL": "Show black list",\r\n      "hideBL": "Hide black list"\r\n    }\r\n  },\r\n  "dialogs":{\r\n    "invite": "You are invited to play by ",\r\n    "inviteTime": "Remaining: ",\r\n    "user": "User",\r\n    "rejectInvite": " has declined your invitation",\r\n    "timeoutInvite": " limit exceeded expectations ",\r\n    "seconds": " seconds",\r\n    "askDraw": " offers a draw",\r\n    "cancelDraw": "declined your proposal for a draw",\r\n    "askTakeBack": "asks to cancel turn. Allow him?",\r\n    "cancelTakeBack": " declined your request to cancel turn",\r\n    "accept": "Accept",\r\n    "decline": "Decline",\r\n    "yes": "Yes",\r\n    "no": "No",\r\n    "win": "Win.",\r\n    "lose": "Lose.",\r\n    "draw": "Draw.",\r\n    "gameOver": "Game over.",\r\n    "scores": "scores",\r\n    "opponentTimeout": "Opponent time is over",\r\n    "playerTimeout": "Your time is over",\r\n    "opponentThrow": "Opponent surrendered",\r\n    "playerThrow": "You surrendered",\r\n    "ratingUp": "You have risen in the overall ranking from ",\r\n    "ratingPlace": "You take ",\r\n    "on": " to ",\r\n    "place": " place in ranking",\r\n    "dialogPlayAgain": "Play with your opponent again?",\r\n    "playAgain": "Yes, play again",\r\n    "leave": "No, leave",\r\n    "waitingOpponent": "Waiting for opponent..",\r\n    "waitingTimeout": "Timeout",\r\n    "opponentLeave": "left the game",\r\n    "banMessage": "You can not write messages in chat since added to the black list ",\r\n    "banReason": "for the use of foul language and / or spam  ",\r\n    "loginError": "Authorisation Error. Refresh the page",\r\n    "loseOnLeave": "You will lose"\r\n  },\r\n  "history": {\r\n    "columns": {\r\n      "date": "Date",\r\n      "opponent": "Opponent",\r\n      "time": "Time",\r\n      "number": "#",\r\n      "elo": "Rating"\r\n    },\r\n    "close": "Close history window",\r\n    "showMore": "Show more",\r\n    "noHistory": "no history",\r\n    "placeholder": "Search by name",\r\n    "months": ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]\r\n  },\r\n  "rating": {\r\n    "tabs": {\r\n      "allPlayers": "All players"\r\n    },\r\n    "columns": {\r\n      "rank": "Place",\r\n      "userName": "Name",\r\n      "ratingElo": "Rating <br> Elo",\r\n      "win": "Win",\r\n      "lose": "Lose",\r\n      "dateCreate": "Registration <br> date",\r\n      "dateLastGame": "Last game"\r\n    },\r\n    "close": "Close rating window",\r\n    "placeholder": "Search by name",\r\n    "showMore": "More 500 players",\r\n    "jumpTop": "to rating top",\r\n    "place": " rank",\r\n    "you": "You",\r\n    "search": "Search",\r\n    "novice": "novice",\r\n    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]\r\n  },\r\n  "game": {\r\n    "resultMessages":{\r\n      "win": "Win",\r\n      "wins": "Win ",\r\n      "lose": "Lose",\r\n      "draw": "Draw",\r\n      "opponent": "Opponent",\r\n      "player": "Player",\r\n      "opponentThrow": " surrendered",\r\n      "playerThrow": "You surrendered",\r\n      "opponentTimeoutPre": "Opponent",\r\n      "timeoutPre": "",\r\n      "opponentTimeout": " time is over",\r\n      "playerTimeout": "Your time is over",\r\n      "opponentLeave": " leave game",\r\n      "playerLeave": "You leave game"\r\n    }\r\n  }\r\n}';});
+define('text!localization/en.JSON',[],function () { return '{\r\n  "name": "en",\r\n  "userList":{\r\n    "tabs":{\r\n      "free":"Free",\r\n      "inGame":"In Game",\r\n      "spectators": "Spectators"\r\n    },\r\n    "disconnected": {\r\n      "text": "No connection",\r\n      "button": "Reconnect",\r\n      "status": "Loading.."\r\n    },\r\n    "search": "Search",\r\n    "disableInvite": "Invites disable",\r\n    "playerDisableInvite": "Invites disable",\r\n    "buttons":{\r\n      "playRandom": "Play with a anyone",\r\n      "cancelPlayRandom": "Waiting a opponent...",\r\n      "invite": "Invite",\r\n      "cancel": "Cancel"\r\n    },\r\n    "rankPlace": "place in ranking",\r\n    "rankPlaceShort": "Place",\r\n    "ratingShort": "Rating"\r\n  },\r\n  "chat":{\r\n    "tabs":{\r\n      "main": "Main",\r\n      "room": "Room"\r\n    },\r\n    "inputPlaceholder": "Type your message",\r\n    "templateMessages": {\r\n      "header": "Template messages"\r\n    },\r\n    "buttons":{\r\n      "removeMessage": "Remove message",\r\n      "send": "Send",\r\n      "chatRules": "Chat rules",\r\n      "hideChat": "Hide Chat",\r\n      "showChat": "Show Chat"\r\n    },\r\n    "menu":{\r\n      "answer": "Answer",\r\n      "showProfile": "Show profile",\r\n      "invite": "Send invite",\r\n      "blackList": "To black list",\r\n      "ban": "ban"\r\n    },\r\n    "rankPlace": "place in ranking",\r\n    "months": ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"]\r\n  },\r\n  "settings":{\r\n    "title": "Settings",\r\n    "titleBlackList": "Black list",\r\n    "emptyBL": "Black list is empty",\r\n    "buttons":{\r\n      "confirm": "OK",\r\n      "showBL": "Show black list",\r\n      "hideBL": "Hide black list"\r\n    }\r\n  },\r\n  "dialogs":{\r\n    "invite": "You are invited to play by ",\r\n    "placeRating": " place in the rating",\r\n    "ratingElo": "with the rating ",\r\n    "inviteTime": "Remaining: ",\r\n    "user": "User",\r\n    "player": "The player",\r\n    "rejectInvite": " has declined your invitation",\r\n    "timeoutInvite": " limit exceeded expectations ",\r\n    "seconds": " seconds",\r\n    "askDraw": " offers a draw",\r\n    "cancelDraw": "declined your proposal for a draw",\r\n    "askTakeBack": "asks to cancel turn. Allow him?",\r\n    "cancelTakeBack": " declined your request to cancel turn",\r\n    "accept": "Accept",\r\n    "decline": "Decline",\r\n    "yes": "Yes",\r\n    "no": "No",\r\n    "win": "Win.",\r\n    "lose": "Lose.",\r\n    "draw": "Draw.",\r\n    "gameOver": "Game over.",\r\n    "scores": "scores",\r\n    "opponentTimeout": "Opponent time is over",\r\n    "playerTimeout": "Your time is over",\r\n    "opponentThrow": "Opponent surrendered",\r\n    "playerThrow": "You surrendered",\r\n    "ratingUp": "You have risen in the overall ranking from ",\r\n    "ratingPlace": "You take ",\r\n    "on": " to ",\r\n    "of": " of ",\r\n    "place": " place in ranking",\r\n    "dialogPlayAgain": "Play with your opponent again?",\r\n    "playAgain": "Yes, play again",\r\n    "leave": "No, leave",\r\n    "waitingOpponent": "Waiting for opponent..",\r\n    "waitingTimeout": "Timeout",\r\n    "opponentLeave": "left the game",\r\n    "banMessage": "You can not write messages in chat since added to the black list ",\r\n    "banReason": "for the use of foul language and / or spam  ",\r\n    "loginError": "Authorisation Error. Refresh the page",\r\n    "loseOnLeave": "You will lose"\r\n  },\r\n  "history": {\r\n    "columns": {\r\n      "date": "Date",\r\n      "opponent": "Opponent",\r\n      "time": "Time",\r\n      "number": "#",\r\n      "elo": "Rating"\r\n    },\r\n    "close": "Close history window",\r\n    "showMore": "Show more",\r\n    "noHistory": "no history",\r\n    "placeholder": "Search by name",\r\n    "months": ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]\r\n  },\r\n  "rating": {\r\n    "tabs": {\r\n      "allPlayers": "All players"\r\n    },\r\n    "columns": {\r\n      "rank": "Place",\r\n      "userName": "Name",\r\n      "ratingElo": "Rating <br> Elo",\r\n      "win": "Win",\r\n      "lose": "Lose",\r\n      "dateCreate": "Registration <br> date",\r\n      "dateLastGame": "Last game"\r\n    },\r\n    "close": "Close rating window",\r\n    "placeholder": "Search by name",\r\n    "showMore": "More 500 players",\r\n    "jumpTop": "to rating top",\r\n    "place": " rank",\r\n    "you": "You",\r\n    "search": "Search",\r\n    "novice": "novice",\r\n    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]\r\n  },\r\n  "game": {\r\n    "resultMessages":{\r\n      "win": "Win",\r\n      "wins": "Win ",\r\n      "lose": "Lose",\r\n      "draw": "Draw",\r\n      "opponent": "Opponent",\r\n      "player": "Player",\r\n      "opponentThrow": " surrendered",\r\n      "playerThrow": "You surrendered",\r\n      "opponentTimeoutPre": "Opponent",\r\n      "timeoutPre": "",\r\n      "opponentTimeout": " time is over",\r\n      "playerTimeout": "Your time is over",\r\n      "opponentLeave": " leave game",\r\n      "playerLeave": "You leave game"\r\n    }\r\n  }\r\n}';});
 
 define('modules/localization_manager',['EE', 'text!localization/ru.JSON', 'text!localization/en.JSON'],
 function(EE, RU, EN) {
@@ -6168,7 +6203,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.55";
+        this.version = "0.9.59";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -6189,8 +6224,9 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.enableConsole = opts.enableConsole || false;
         opts.showHidden = false;
         opts.showCheaters = false;
-        opts.apiEnable = !!opts.game && false;
+        opts.apiEnable = !!opts.game && opts.apiEnable;
         opts.api = "//" + (opts.api ?  opts.api : document.domain + "/api/");
+        opts.showRank = 'place';
 
         try{
             this.isAdmin = opts.isAdmin || window.LogicGame.isSuperUser();
@@ -6697,11 +6733,13 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         },
         win: {
             src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-win.ogg',
-            volume: 0.5
+            volume: 0.5,
+            enable: false
         },
         lose: {
             src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-lose.ogg',
-            volume: 0.5
+            volume: 0.5,
+            enable: false
         },
         invite: {
             src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-invite.ogg'

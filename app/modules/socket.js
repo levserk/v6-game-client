@@ -9,6 +9,7 @@ define(['EE'], function(EE) {
             this.domain = this.domain.substr(4);
         }
         this.game = opts.game||"test";
+        this.prefix = 'ws/';
         this.url = opts.url || this.game;
         this.https = opts.https || false;
         if (this.domain == "test.logic-games.spb.ru") this.domain = "logic-games.spb.ru";
@@ -33,8 +34,12 @@ define(['EE'], function(EE) {
         this.connectionCount++;
 
         try{
-
-            this.ws = new WebSocket (this.protocol+'://'+this.domain+':'+this.port+'/'+this.url);
+            //// TODO: test config, remove this
+            //if (window.location.hostname == "test.logic-games.spb.ru" && this.url != "domino"){
+            //    this.ws = new WebSocket (this.protocol + '://' + this.domain + '/' + this.prefix + this.url);
+            //}
+            //else
+                this.ws = new WebSocket (this.protocol + '://' + this.domain + ':' + this.port+'/' + this.url);
 
             this.ws.onclose = function (code, message) {
                 console.log('socket;', 'ws closed', code, message);

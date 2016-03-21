@@ -18,7 +18,7 @@ require(['require-cnf'], function () {
 
             window._client = new Client({
                 game: 'test2',
-                port: port,
+                port: 8078,
                 resultDialogDelay: 1000,
                 autoShowProfile: true,
                 idleTimeout: 0,
@@ -34,9 +34,8 @@ require(['require-cnf'], function () {
                     console.log('TEST!', inviteData);
                     return inviteData
                 },
-                generateInviteText: function(invite){
-                    return 'Вас пригласил пользователь ' + invite.from.userName + '(' + invite.from.getRank(invite.data.mode)+ ' место в рейтинге)'
-                        + ' в игру ' + invite.data.gameType + ' в режим ' + _client.getModeAlias(invite.data.mode);
+                generateInviteOptionsText: function(invite){
+                    return ' в игру ' + invite.data.gameType
                 },
                 initRating: function(conf, client){
                     conf.columns.splice(conf.columns.length-1, 0, {

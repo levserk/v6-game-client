@@ -272,7 +272,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             div.parent().hide();
             dialogTimeout = setTimeout(function(){
                 div.parent().show();
-                this.client.soundManager._playSound(data.result);
+                //this.client.soundManager._playSound(data.result);
             }.bind(this), data.action == 'user_leave' ? 1000 : client.opts.resultDialogDelay);
             div.addClass(GAME_CLASS);
 

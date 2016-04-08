@@ -21,10 +21,12 @@
 
 .v6-buttonsPanel .zoomOut {
     background-position: 0px 0px;
+    display: none;
 }
 
 .v6-buttonsPanel .zoomIn {
     background-position: -20px 0px;
+    display: none;
 }
 
 .v6-buttonsPanel .fullScreenOff {

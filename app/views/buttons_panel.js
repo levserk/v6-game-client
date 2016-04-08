@@ -56,7 +56,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-buttonsPanel.ejs', 'screenfull']
                 $btn.removeClass('soundOff').removeClass('soundOn').addClass(action).attr('data-action', action);
             },
             zoom: function(value) {
+
                 document.body.style['transform-origin'] = '0 0';
+                document.body.style['transition'] = 'all 0.2s ease-out 0s';
                 var zoom = 1, delta = 0.02;
                 if (document.body.style.transform && document.body.style.transform.substring(0,6) == "scale("){
                     try {
@@ -69,6 +71,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-buttonsPanel.ejs', 'screenfull']
                     if (zoom < 0) zoom = 1;
                 }
                 if (value > 0) zoom += delta; else zoom -= delta;
+                if (zoom > 1) {
+                    $('html').css('overflow-x', 'scroll');
+                } else {
+                    $('html').css('overflow-x', 'hidden');
+                }
                 document.body.style.transform = "scale(" + zoom + ")";
             },
             fullScreen: function(value){

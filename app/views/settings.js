@@ -12,6 +12,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
             events: {
                 'click .closeIcon': 'save',
                 'change input': 'changed',
+                'change select': 'changed',
                 'click .confirmBtn': 'save',
                 'click .removeBtn': 'removeUser',
                 'click .showBlackListBtn': 'showBlackList'
@@ -38,7 +39,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                 var $target = $(e.target),
                     type = $target.prop('type'),
                     property = $target.prop('name'),
-                    value = type == "radio" ? $target.val() : $target.prop('checked'),
+                    value = (type == "radio" || type == "select-one") ? $target.val() : $target.prop('checked'),
                     settings = this.client.settings,
                     defaultSettings = this.client.defaultSettings;
 
@@ -71,6 +72,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                         }
                         else {
                             $input = this.$el.find('input[name=' + property + ']:checked');
+                            if (!$input.length){
+                                $input = this.$el.find('[name=' + property + ']');
+                            }
                             value = $input.val();
                         }
                         if ($input) {
@@ -97,11 +101,19 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                         } else {
                             if (typeof value == "boolean")
                                 $input = this.$el.find('input[name=' + property + ']');
-                            else
+                            else {
                                 $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
-                            if ($input) {
-                                console.log('settings; load', property, value, $input.prop('type'));
+                            }
+                            if ($input.length) {
                                 $input.prop('checked', !!value);
+                            } else {// try find select
+                                $input = this.$el.find('[name=' + property + ']');
+                                $input.val(value);
+                                (this.$el.find('input[name=' + property + '][value=' + value + ']')).attr('selected', true);
+                            }
+
+                            if ($input.length) {
+                                console.log('settings; load', property, value, $input.prop('type'));
                             } else {
                                 console.error('settings;', 'input element not found! ', property, value);
                             }
@@ -118,9 +130,14 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                     value = settings[property];
                     if (typeof value == "boolean")
                         $input = this.$el.find('input[name=' + property + ']');
-                    else
+                    else {
                         $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
-                    if ($input) {
+                        if (!$input.length) {
+                            // try find select
+                            $input = this.$el.find('[name=' + property + '] [value=' + value + ']');
+                        }
+                    }
+                    if ($input.length) {
                         console.log('settings; default', {property: property, value: value, type: $input.prop('type')});
                         this.client._onSettingsChanged({property: property, value: value, type: $input.prop('type')});
                     } else {
@@ -177,9 +194,13 @@ define(['underscore', 'backbone', 'text!tpls/v6-settingsMain.ejs', 'text!tpls/v6
                         }
                         else {
                             $input = this.$el.find('input[name=' + property + ']:checked');
+                            if (!$input.length) {
+                                // try find select
+                                $input = this.$el.find('[name=' + property + ']');
+                            }
                             value = $input.val();
                         }
-                        if ($input) {
+                        if ($input.length) {
                             settings[property] = value;
                         } else {
                             settings[property] = this.client.settings[property]

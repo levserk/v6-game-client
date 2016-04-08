@@ -472,6 +472,7 @@ define('instances/room',['instances/time'], function(Time) {
         this.timeRoundStart = 0;
         this.history = [];
         this.userData = {};
+        this.result = null;
         var i;
         // init players
         if (typeof roomInfo.players[0] == "object") {
@@ -630,6 +631,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         this.wasPlaying = false;
         this.leaveGameTimeout = null;
         this.LEAVE_GAME_TIME = 1000;
+        this.state = 'nothing';
 
         client.on('relogin', function(){
             clearTimeout(this.leaveGameTimeout);
@@ -741,6 +743,9 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
                 break;
             case 'error':
                 console.error('game_manager;', 'error', data);
+                if (this.state == 'sending_turn') {
+                    this.state = 'waiting_for_actions(error)';
+                }
                 this.emit('error', data);
                 break;
         }
@@ -759,6 +764,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             return;
         }
         this.sendReady();
+        this.state = 'game_start';
     };
 
 
@@ -772,6 +778,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         room.score = data.score || room.score;
         var timeStart = Date.now();
         this.emit('game_start', room);
+        this.state = 'game_start';
         this.onRoundStart(data['initData'], true);
         room.load(data);
         for (var key in this.currentRoom.players){
@@ -785,7 +792,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
         var turn = this.getLastTurn(),
-            userTurnTime = turn ? turn.userTurnTime : 0;
+            userTurnTime = turn ? turn.userTurnTime : room.userTurnTime;
             userTurnTime = userTurnTime < 0 ? 0 :userTurnTime;
         this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart),userTurnTime);
     };
@@ -804,6 +811,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         room.score = data.score || room.score;
         var timeStart = Date.now();
         this.emit('game_start', room);
+        this.state = 'game_start';
         if (data.state == 'waiting'){
             console.log('game_manager', 'start spectate', 'waiting players ready to play');
             return;
@@ -842,11 +850,13 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         this.currentRoom.history = [];
         this.currentRoom.initData = data;
         this.currentRoom.timeRoundStart = Date.now();
+        this.currentRoom.result = null;
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
         for (var i = 0; i < this.currentRoom.players.length; i++){
             this.currentRoom.userData[this.currentRoom.players[i].userId].userTotalTime = 0;
         }
 
+        this.state = 'round_start';
         this.emit('round_start', {
             players: players,
             first: this.getPlayer(data.first),
@@ -894,7 +904,8 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         }
 
         data.message = this.getResultMessages(data);
-
+        this.state = 'round_end';
+        this.currentRoom.result = data;
         this.emit('round_end', data);
     };
 
@@ -910,6 +921,9 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
 
     GameManager.prototype.onTurn = function(data){
         console.log('game_manager;', 'emit turn', data);
+        if (this.state == 'sending_turn') {
+            this.state = 'waiting_for_actions';
+        }
         var room = this.currentRoom;
         if (!this.client.opts.newGameFormat){
             room.history.push(data.turn);
@@ -939,7 +953,15 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             }
             room.history.push(data);
         }
-        this.emit('turn', data);
+        try {
+            this.emit('turn', data);
+        } catch (error) {
+            console.error('game_manager;', 'emit turn, error:', error);
+            if (this.currentRoom.isPlayer && this.client.opts.reconnectOnError ){
+                console.log('game_manager;', 'restart after error');
+                this.client.socket.ws.close();
+            }
+        }
         var nextPlayer = data.nextPlayer;
         // reset time on first turn if need
         if (!data.nextPlayer && !this.timeInterval && (room.timeMode == 'reset_every_turn' || room.timeStartMode == 'after_turn')){
@@ -1123,7 +1145,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             console.warn('game_manager;', 'not your turn!');
             return false;
         }
-        if (this.currentRoom.timeMode != 'common' && this.currentRoom.userTime < 300) {
+        if (this.currentRoom.timeMode != 'common' && this.currentRoom.userTime < 1) {
             console.warn('game_manager;', 'your time is out!');
             return false;
         }
@@ -1133,6 +1155,7 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             $('.dialogDraw').remove();
         }
         this.client.send('game_manager', 'turn', 'server', turn);
+        this.state = 'sending_turn';
         return true;
     };
 
@@ -1398,9 +1421,53 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
         try {
             var time = this.currentRoom.getTime(user, fGetFromUserData);
             this.emit('time', time);
+            this.writeGameDebug(time);
+            this.checkConnectionDelay(time);
         } catch (e) {
             console.error('game_manager; emitTime', e);
         }
+    };
+
+    GameManager.prototype.checkConnectionDelay = function(time){
+        if (!this.currentRoom.isPlayer || !this.client.opts.reconnectOnDelay) {
+            return;
+        }
+        var delay = Date.now() - this.client.socket.timeLastMessage;
+
+        if (!delay || delay < 5000 || !time.user) {
+            return;
+        }
+
+        if (time.user.isPlayer && this.state == 'sending_turn' && delay > 15000){
+            this.client.socket.ws.close();
+            clearInterval(this.timeInterval);
+            console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
+            if (window.Rollbar){
+                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
+                    " " + this.state + " delay:" + delay);
+            }
+            return;
+        }
+
+        if(!time.user.isPlayer && delay > 30000) {
+            this.client.socket.ws.close();
+            clearInterval(this.timeInterval);
+            console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
+            if (window.Rollbar){
+                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
+                    " " + this.state + " delay:" + delay);
+            }
+            return;
+        }
+    };
+
+
+    GameManager.prototype.writeGameDebug = function(time){
+        var msg = 'Ход игрока: ' + time.user.userName +
+                ' | осталось на ход: ' + time.userTimeS + "с." + "<br>" +
+                'время ответа от сервера: ' + (new Time(Date.now() - this.client.socket.timeLastMessage).timeS)+ "с." + "<br>" +
+                'game_state: ' + this.state;
+        this.client.writeDebug(msg);
     };
 
 
@@ -2987,14 +3054,20 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
         }
 
         function newInvite(invite) {
+            var inviteGame = client.getModeAlias(invite.data.mode);
+            if (typeof this.client.opts.generateInviteGameText == "function")
+                inviteGame = this.client.opts.generateInviteGameText(invite.data.mode, inviteGame);
+
             var html = locale.player + ' <b>' + invite.from.userName + '</b> '
                 + '(' +(client.opts.showRank == 'place' ?
                 invite.from.getRank(invite.data.mode) + locale['placeRating'] :
                 locale['ratingElo'] + invite.from.getRank(invite.data.mode)) + ')'
                 + locale.invite
-                + (client.modes.length > 1 ? locale['of'] +  '<b>'+client.getModeAlias(invite.data.mode) + '</b>' : '');
+                + (client.modes.length > 1 ? locale['of'] +  '<b>' + inviteGame + '</b>' : '');
+
             if (typeof this.client.opts.generateInviteOptionsText == "function")
                 html += this.client.opts.generateInviteOptionsText(invite);
+
             var div = showDialog(html, {
                 buttons: {
                     "Принять": { text: locale['accept'], click: function() {
@@ -3857,6 +3930,7 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
             events: {
                 'click .closeIcon': 'save',
                 'change input': 'changed',
+                'change select': 'changed',
                 'click .confirmBtn': 'save',
                 'click .removeBtn': 'removeUser',
                 'click .showBlackListBtn': 'showBlackList'
@@ -3883,7 +3957,7 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
                 var $target = $(e.target),
                     type = $target.prop('type'),
                     property = $target.prop('name'),
-                    value = type == "radio" ? $target.val() : $target.prop('checked'),
+                    value = (type == "radio" || type == "select-one") ? $target.val() : $target.prop('checked'),
                     settings = this.client.settings,
                     defaultSettings = this.client.defaultSettings;
 
@@ -3916,6 +3990,9 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
                         }
                         else {
                             $input = this.$el.find('input[name=' + property + ']:checked');
+                            if (!$input.length){
+                                $input = this.$el.find('[name=' + property + ']');
+                            }
                             value = $input.val();
                         }
                         if ($input) {
@@ -3942,11 +4019,19 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
                         } else {
                             if (typeof value == "boolean")
                                 $input = this.$el.find('input[name=' + property + ']');
-                            else
+                            else {
                                 $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
-                            if ($input) {
-                                console.log('settings; load', property, value, $input.prop('type'));
+                            }
+                            if ($input.length) {
                                 $input.prop('checked', !!value);
+                            } else {// try find select
+                                $input = this.$el.find('[name=' + property + ']');
+                                $input.val(value);
+                                (this.$el.find('input[name=' + property + '][value=' + value + ']')).attr('selected', true);
+                            }
+
+                            if ($input.length) {
+                                console.log('settings; load', property, value, $input.prop('type'));
                             } else {
                                 console.error('settings;', 'input element not found! ', property, value);
                             }
@@ -3963,9 +4048,14 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
                     value = settings[property];
                     if (typeof value == "boolean")
                         $input = this.$el.find('input[name=' + property + ']');
-                    else
+                    else {
                         $input = this.$el.find('input[name=' + property + '][value=' + value + ']');
-                    if ($input) {
+                        if (!$input.length) {
+                            // try find select
+                            $input = this.$el.find('[name=' + property + '] [value=' + value + ']');
+                        }
+                    }
+                    if ($input.length) {
                         console.log('settings; default', {property: property, value: value, type: $input.prop('type')});
                         this.client._onSettingsChanged({property: property, value: value, type: $input.prop('type')});
                     } else {
@@ -4022,9 +4112,13 @@ define('views/settings',['underscore', 'backbone', 'text!tpls/v6-settingsMain.ej
                         }
                         else {
                             $input = this.$el.find('input[name=' + property + ']:checked');
+                            if (!$input.length) {
+                                // try find select
+                                $input = this.$el.find('[name=' + property + ']');
+                            }
                             value = $input.val();
                         }
-                        if ($input) {
+                        if ($input.length) {
                             settings[property] = value;
                         } else {
                             settings[property] = this.client.settings[property]
@@ -4109,7 +4203,9 @@ define('views/buttons_panel',['underscore', 'backbone', 'text!tpls/v6-buttonsPan
                 $btn.removeClass('soundOff').removeClass('soundOn').addClass(action).attr('data-action', action);
             },
             zoom: function(value) {
+
                 document.body.style['transform-origin'] = '0 0';
+                document.body.style['transition'] = 'all 0.2s ease-out 0s';
                 var zoom = 1, delta = 0.02;
                 if (document.body.style.transform && document.body.style.transform.substring(0,6) == "scale("){
                     try {
@@ -4122,6 +4218,11 @@ define('views/buttons_panel',['underscore', 'backbone', 'text!tpls/v6-buttonsPan
                     if (zoom < 0) zoom = 1;
                 }
                 if (value > 0) zoom += delta; else zoom -= delta;
+                if (zoom > 1) {
+                    $('html').css('overflow-x', 'scroll');
+                } else {
+                    $('html').css('overflow-x', 'hidden');
+                }
                 document.body.style.transform = "scale(" + zoom + ")";
             },
             fullScreen: function(value){
@@ -4165,131 +4266,142 @@ define('views/buttons_panel',['underscore', 'backbone', 'text!tpls/v6-buttonsPan
         return ButtonsPanelView;
     });
 define('modules/views_manager',['views/user_list', 'views/dialogs', 'views/chat', 'views/settings', 'views/buttons_panel'],
-    function(userListView, dialogsView, v6ChatView, v6SettingsView, v6ButtonsView) {
-    var ViewsManager = function(client){
-        this.client = client;
-        this.userListView = null;
-        this.dialogsView = dialogsView;
-        this.chat = null;
+    function (userListView, dialogsView, v6ChatView, v6SettingsView, v6ButtonsView) {
+        var ViewsManager = function (client) {
+            this.client = client;
+            this.userListView = null;
+            this.dialogsView = dialogsView;
+            this.chat = null;
 
-        client.on('disconnected', function () {
-            this.closeAll();
-        }.bind(this));
-    };
-
-    ViewsManager.prototype.init = function() {
-        this.userListView = new userListView(this.client);
-        this.dialogsView.init(this.client);
-        this.v6ChatView = new v6ChatView(this.client);
-        this.settingsView = new v6SettingsView(this.client);
-        if (this.client.vkEnable) this.userListView.addInviteFriendButton();
-        if (this.client.conf.showButtonsPanel) this.showButtonPanel();
-
-        // append blocks
-        if ($('#left-block').length){
-            $('#left-block')
-                .empty()
-                .append(this.userListView.el)
-                .append(this.v6ChatView.el);
-        } else {
-
-            if (this.client.opts.blocks.userListId)
-                $('#'+this.client.opts.blocks.userListId).append(this.userListView.el);
-            else
-                $('body').append(this.userListView.el);
-
-            if (this.client.opts.blocks.chatId)
-                $('#'+this.client.opts.blocks.chatId).append(this.v6ChatView.el);
-            else
-                $('body').append(this.v6ChatView.el);
-        }
-    };
-
-    ViewsManager.prototype.closeAll = function(){
-        this.client.ratingManager.close();
-        this.client.historyManager.close();
-        if (!this.settingsView.isClosed) this.settingsView.save();
-    };
-
-    ViewsManager.prototype.showSettings = function () {
-        if (!this.client.isLogin) return;
-        this.settingsView.isClosed ? this.settingsView.show() : this.settingsView.save();
-    };
-
-    ViewsManager.prototype.showButtonPanel = function() {
-        this.client.opts.showButtonsPanel = true;
-        this.buttonsView = new v6ButtonsView(this.client);
-        this.userListView.$el.append(this.buttonsView.$el);
-    };
-
-
-    ViewsManager.prototype.showUserProfile = function (userId, userName) {
-        if (!this.$profileDiv) {
-            this.$profileDiv = $('<div id="v6-profileDiv">');
-        }
-        this.$profileDiv.addClass('v6-block-border');
-        this.$profileDiv.empty();
-        this.$profileDiv.append('<img  class="closeIcon" src="' + this.client.opts.images.close +  '">');
-        this.$profileDiv.append("<div class='stats-area-wrapper'></div>");
-        this.$profileDiv.find(".stats-area-wrapper").append("<h4 style='color: #444;font-size: 10pt;padding-left: 5px; text-align: center;'>" + userName + "</h4>");
-        this.closeAll();
-        if (window.LogicGame && window.LogicGame.hidePanels && window.ui) {
-            this.$profileDiv.find('img').click(function () {
-                window.LogicGame.hidePanels();
-            });
-            $.post("/gw/profile/loadProfile.php", {
-                sessionId: window._sessionId,
-                userId: window._userId,
-                playerId: userId
-            }, function (data) {
-                window.LogicGame.hidePanels();
-                var pData = JSON.parse(data);
-                if (!pData.profile.playerName) {
-                    console.warn('bad profile', pData.profile);
-                    return;
-                }
-                this.$profileDiv.find(".stats-area-wrapper").append(window.ui.userProfile.renderProfile(pData.profile));
-                showProfile.bind(this)();
-                window.ui.userProfile.bindActions(pData.profile);
-            }.bind(this))
-        } else {
-            this.$profileDiv.find('img').click(function () {
-                $(this.$profileDiv).hide();
+            client.on('disconnected', function () {
+                this.closeAll();
             }.bind(this));
-            showProfile.bind(this)();
-        }
+        };
 
-        function showProfile() {
-            if (this.client.opts.blocks.profileId) {
-                $('#'+ this.client.opts.blocks.profileId).append(this.$profileDiv);
+        ViewsManager.prototype.init = function () {
+            this.initDebug();
+            this.userListView = new userListView(this.client);
+            this.dialogsView.init(this.client);
+            this.v6ChatView = new v6ChatView(this.client);
+            this.settingsView = new v6SettingsView(this.client);
+            if (this.client.vkEnable) this.userListView.addInviteFriendButton();
+            // append blocks
+            if ($('#left-block').length) {
+                $('#left-block')
+                    .empty()
+                    .append(this.userListView.el)
+                    .append(this.v6ChatView.el);
             } else {
-                $('body').append(this.$profileDiv);
+
+                if (this.client.opts.blocks.userListId) {
+                    $('#' + this.client.opts.blocks.userListId).append(this.userListView.el);
+                } else {
+                    $('body').append(this.userListView.el);
+                }
+
+                if (this.client.opts.blocks.chatId) {
+                    $('#' + this.client.opts.blocks.chatId).append(this.v6ChatView.el);
+                } else {
+                    $('body').append(this.v6ChatView.el);
+                }
             }
-            this.client.historyManager.getProfileHistory(null, userId, 'v6-profileDiv');
-            this.showPanel(this.$profileDiv);
-        }
-    };
+            this.showButtonPanel();
+        };
 
+        ViewsManager.prototype.closeAll = function () {
+            this.client.ratingManager.close();
+            this.client.historyManager.close();
+            if (!this.settingsView.isClosed) this.settingsView.save();
+        };
 
-    ViewsManager.prototype.showPanel = function ($panel) {
-    // try use logic game show panel, auto hide others, opened the same
-        try{
-            if (window.ui && window.ui.showPanel) {
-                window.ui.showPanel({id: $panel.attr('id')})
-            } else{
-                $panel.show();
+        ViewsManager.prototype.showSettings = function () {
+            if (!this.client.isLogin) return;
+            this.settingsView.isClosed ? this.settingsView.show() : this.settingsView.save();
+        };
+
+        ViewsManager.prototype.showButtonPanel = function (id) {
+            id = id || this.client.opts.blocks.showPanelId;
+            var $parent = $('#' + id);
+            if ($parent.length) {
+                this.buttonsView = new v6ButtonsView(this.client);
+                $parent.append(this.buttonsView.$el);
             }
-        } catch (e){
-            console.error('views_manager;', 'show_panel', e);
-        }
-        if (!window._isVk)
-        $('html, body').animate({
-            scrollTop: $panel.offset().top - 350
-        }, 500);
-    };
+        };
 
-    return ViewsManager;
-});
+        ViewsManager.prototype.showUserProfile = function (userId, userName) {
+            if (!this.$profileDiv) {
+                this.$profileDiv = $('<div id="v6-profileDiv">');
+            }
+            this.$profileDiv.addClass('v6-block-border');
+            this.$profileDiv.empty();
+            this.$profileDiv.append('<img  class="closeIcon" src="' + this.client.opts.images.close + '">');
+            this.$profileDiv.append("<div class='stats-area-wrapper'></div>");
+            this.$profileDiv.find(".stats-area-wrapper").append("<h4 style='color: #444;font-size: 10pt;padding-left: 5px; text-align: center;'>" + userName + "</h4>");
+            this.closeAll();
+            if (window.LogicGame && window.LogicGame.hidePanels && window.ui) {
+                this.$profileDiv.find('img').click(function () {
+                    window.LogicGame.hidePanels();
+                });
+                $.post("/gw/profile/loadProfile.php", {
+                    sessionId: window._sessionId,
+                    userId: window._userId,
+                    playerId: userId
+                }, function (data) {
+                    window.LogicGame.hidePanels();
+                    var pData = JSON.parse(data);
+                    if (!pData.profile.playerName) {
+                        console.warn('bad profile', pData.profile);
+                        return;
+                    }
+                    this.$profileDiv.find(".stats-area-wrapper").append(window.ui.userProfile.renderProfile(pData.profile));
+                    showProfile.bind(this)();
+                    window.ui.userProfile.bindActions(pData.profile);
+                }.bind(this))
+            } else {
+                this.$profileDiv.find('img').click(function () {
+                    $(this.$profileDiv).hide();
+                }.bind(this));
+                showProfile.bind(this)();
+            }
+
+            function showProfile() {
+                if (this.client.opts.blocks.profileId) {
+                    $('#' + this.client.opts.blocks.profileId).append(this.$profileDiv);
+                } else {
+                    $('body').append(this.$profileDiv);
+                }
+                this.client.historyManager.getProfileHistory(null, userId, 'v6-profileDiv');
+                this.showPanel(this.$profileDiv);
+            }
+        };
+
+        ViewsManager.prototype.showPanel = function ($panel) {
+            // try use logic game show panel, auto hide others, opened the same
+            try {
+                if (window.ui && window.ui.showPanel) {
+                    window.ui.showPanel({ id: $panel.attr('id') })
+                } else {
+                    $panel.show();
+                }
+            } catch (e) {
+                console.error('views_manager;', 'show_panel', e);
+            }
+            if (!window._isVk) {
+                $('html, body').animate({
+                    scrollTop: $panel.offset().top - 350
+                }, 500);
+            }
+        };
+
+        ViewsManager.prototype.initDebug = function () {
+            var div = $('<div>')
+                .html('')
+                .attr('id', 'v6-debug-panel');
+            $('body').append(div);
+        };
+
+        return ViewsManager;
+    });
 /**
  * Obscene words detector for russian language
  *
@@ -5252,7 +5364,11 @@ define('modules/history_manager',['EE', 'translit', 'views/history', 'instances/
                 game.history = history;
             }
             console.log('history_manager;', 'game parsed', game);
-
+            if (!window._isVk) {
+                $('html, body').animate({
+                    scrollTop: 0
+                }, 500);
+            }
         }
         if (!this.isCancel) this.emit('game_load', game);
 
@@ -6203,7 +6319,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.59";
+        this.version = "0.9.69";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -6222,6 +6338,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.showButtonsPanel = opts.showButtonsPanel || false;
         opts.localization = opts.localization || {};
         opts.enableConsole = opts.enableConsole || false;
+        opts.reconnectOnError = opts.reconnectOnError || opts.game === 'checkers';
+        opts.reconnectOnDelay = opts.reconnectOnDelay || opts.game === 'checkers';
         opts.showHidden = false;
         opts.showCheaters = false;
         opts.apiEnable = !!opts.game && opts.apiEnable;
@@ -6248,6 +6366,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.lang = opts.lang || 'ru';
         this.locale = opts.localization;
         this.modesAlias = {};
+
+        this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
+        this.vkEnable =  (window.VK && window.VK.api && window._isVk);
+
         this.localizationManager = new LocalizationManager(this);
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
@@ -6258,9 +6380,6 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.ratingManager = new RatingManager(this);
         this.soundManager = new SoundManager(this);
         this.adminManager = new AdminManager(this);
-
-        this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
-        this.vkEnable =  (window.VK && window.VK.api && window._isVk);
 
         this.currentMode = null;
         this.reconnectTimeout = null;
@@ -6452,6 +6571,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.ratingManager.init();
         this.historyManager.init();
         this.relogin = false;
+        this.setWrapped(settings.wrapped);
     };
 
 
@@ -6618,6 +6738,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 this.viewsManager.settingsView.renderBlackList();
                 this.viewsManager.v6ChatView.reload();
                 break;
+            case 'wrapped': {
+                this.setWrapped(data.value)
+            }
+        }
+    };
+
+    Client.prototype.setWrapped = function(value) {
+        if (value === true) {
+            $('#main-wrapper').removeClass('lg-unwrapped');
+        } else {
+            $('#main-wrapper').addClass('lg-unwrapped');
         }
     };
 
@@ -6676,6 +6807,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.console.log = window.console.error =  window.console.warn = function(){}
     };
 
+    Client.prototype.writeDebug = function(html){
+        $('#v6-debug-panel').html(html);
+    };
+
     Client.prototype.enableConsole = function(){
         if (!window.console || !this.console) return;
         window.console.log = this.console.log;
@@ -6708,6 +6843,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     var defaultSettings = {
         blacklist: {},
+        wrapped: false,
         disableInvite: false,
         sounds: true
     };

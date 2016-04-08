@@ -1,5 +1,4 @@
 #v6Chat {
-    margin-top: 20px;
     position: relative;
     padding-bottom: 10px;
     padding-top: 10px;
@@ -30,7 +29,6 @@
     /* flex-grow: 1; */
     /* -webkit-flex-grow: 1;*/
     min-height: 390px;
-    margin: 10px 0px 0px 0px;
     box-shadow:none;
 }
 

@@ -16,6 +16,7 @@ define(['instances/time'], function(Time) {
         this.timeRoundStart = 0;
         this.history = [];
         this.userData = {};
+        this.result = null;
         var i;
         // init players
         if (typeof roomInfo.players[0] == "object") {

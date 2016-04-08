@@ -47,14 +47,20 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
         }
 
         function newInvite(invite) {
+            var inviteGame = client.getModeAlias(invite.data.mode);
+            if (typeof this.client.opts.generateInviteGameText == "function")
+                inviteGame = this.client.opts.generateInviteGameText(invite.data.mode, inviteGame);
+
             var html = locale.player + ' <b>' + invite.from.userName + '</b> '
                 + '(' +(client.opts.showRank == 'place' ?
                 invite.from.getRank(invite.data.mode) + locale['placeRating'] :
                 locale['ratingElo'] + invite.from.getRank(invite.data.mode)) + ')'
                 + locale.invite
-                + (client.modes.length > 1 ? locale['of'] +  '<b>'+client.getModeAlias(invite.data.mode) + '</b>' : '');
+                + (client.modes.length > 1 ? locale['of'] +  '<b>' + inviteGame + '</b>' : '');
+
             if (typeof this.client.opts.generateInviteOptionsText == "function")
                 html += this.client.opts.generateInviteOptionsText(invite);
+
             var div = showDialog(html, {
                 buttons: {
                     "Принять": { text: locale['accept'], click: function() {

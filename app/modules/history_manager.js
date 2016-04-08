@@ -188,7 +188,11 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
                 game.history = history;
             }
             console.log('history_manager;', 'game parsed', game);
-
+            if (!window._isVk) {
+                $('html, body').animate({
+                    scrollTop: 0
+                }, 500);
+            }
         }
         if (!this.isCancel) this.emit('game_load', game);
 

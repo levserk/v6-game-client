@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.59";
+        this.version = "0.9.69";
         opts.resultDialogDelay = opts.resultDialogDelay || 0;
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.reload = false;
@@ -24,6 +24,8 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         opts.showButtonsPanel = opts.showButtonsPanel || false;
         opts.localization = opts.localization || {};
         opts.enableConsole = opts.enableConsole || false;
+        opts.reconnectOnError = opts.reconnectOnError || opts.game === 'checkers';
+        opts.reconnectOnDelay = opts.reconnectOnDelay || opts.game === 'checkers';
         opts.showHidden = false;
         opts.showCheaters = false;
         opts.apiEnable = !!opts.game && opts.apiEnable;
@@ -50,6 +52,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.lang = opts.lang || 'ru';
         this.locale = opts.localization;
         this.modesAlias = {};
+
+        this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
+        this.vkEnable =  (window.VK && window.VK.api && window._isVk);
+
         this.localizationManager = new LocalizationManager(this);
         this.gameManager = new GameManager(this);
         this.userList = new UserList(this);
@@ -60,9 +66,6 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.ratingManager = new RatingManager(this);
         this.soundManager = new SoundManager(this);
         this.adminManager = new AdminManager(this);
-
-        this.vkWallPost = (opts.vk.url ? this.checkVKWallPostEnabled() : false);
-        this.vkEnable =  (window.VK && window.VK.api && window._isVk);
 
         this.currentMode = null;
         this.reconnectTimeout = null;
@@ -254,6 +257,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.ratingManager.init();
         this.historyManager.init();
         this.relogin = false;
+        this.setWrapped(settings.wrapped);
     };
 
 
@@ -420,6 +424,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 this.viewsManager.settingsView.renderBlackList();
                 this.viewsManager.v6ChatView.reload();
                 break;
+            case 'wrapped': {
+                this.setWrapped(data.value)
+            }
+        }
+    };
+
+    Client.prototype.setWrapped = function(value) {
+        if (value === true) {
+            $('#main-wrapper').removeClass('lg-unwrapped');
+        } else {
+            $('#main-wrapper').addClass('lg-unwrapped');
         }
     };
 
@@ -478,6 +493,10 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.console.log = window.console.error =  window.console.warn = function(){}
     };
 
+    Client.prototype.writeDebug = function(html){
+        $('#v6-debug-panel').html(html);
+    };
+
     Client.prototype.enableConsole = function(){
         if (!window.console || !this.console) return;
         window.console.log = this.console.log;
@@ -510,6 +529,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     var defaultSettings = {
         blacklist: {},
+        wrapped: false,
         disableInvite: false,
         sounds: true
     };

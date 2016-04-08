@@ -37,6 +37,9 @@ require(['require-cnf'], function () {
                 generateInviteOptionsText: function(invite){
                     return ' в игру ' + invite.data.gameType
                 },
+                //generateInviteGameText: function(moed, locale){
+                //    return 'режим ' + locale;
+                //},
                 initRating: function(conf, client){
                     conf.columns.splice(conf.columns.length-1, 0, {
                         id:'score', source:'score', title: client.locale.rating.columns.score, canOrder:true, undef: 100,
@@ -57,11 +60,7 @@ require(['require-cnf'], function () {
                     return '';
                 },
                 blocks:{
-                    userListId:'userListDiv',
-                    chatId:'chatDiv',
-                    ratingId:'ratingDiv',
-                    historyId:'ratingDiv',
-                    profileId:'ratingDiv'
+                    //showPanelId: 'userList'
                 },
                 sounds: {
                         start: {
@@ -126,6 +125,9 @@ require(['require-cnf'], function () {
 
             _client.gameManager.on('turn', function(data){
                 console.log('main;','turn', data);
+                if (Math.random()> 0.8) {
+                    throw Error('test turn error');
+                }
             });
 
             _client.gameManager.on('switch_player', function(data){

@@ -9,6 +9,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         this.wasPlaying = false;
         this.leaveGameTimeout = null;
         this.LEAVE_GAME_TIME = 1000;
+        this.state = 'nothing';
 
         client.on('relogin', function(){
             clearTimeout(this.leaveGameTimeout);
@@ -120,6 +121,9 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
                 break;
             case 'error':
                 console.error('game_manager;', 'error', data);
+                if (this.state == 'sending_turn') {
+                    this.state = 'waiting_for_actions(error)';
+                }
                 this.emit('error', data);
                 break;
         }
@@ -138,6 +142,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             return;
         }
         this.sendReady();
+        this.state = 'game_start';
     };
 
 
@@ -151,6 +156,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         room.score = data.score || room.score;
         var timeStart = Date.now();
         this.emit('game_start', room);
+        this.state = 'game_start';
         this.onRoundStart(data['initData'], true);
         room.load(data);
         for (var key in this.currentRoom.players){
@@ -164,7 +170,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         this.currentRoom.userTakeBacks = data['usersTakeBacks']?data['usersTakeBacks'][this.client.getPlayer().userId] : 0;
         // switch player
         var turn = this.getLastTurn(),
-            userTurnTime = turn ? turn.userTurnTime : 0;
+            userTurnTime = turn ? turn.userTurnTime : room.userTurnTime;
             userTurnTime = userTurnTime < 0 ? 0 :userTurnTime;
         this.switchPlayer(this.getPlayer(data.nextPlayer), data.userTime + (Date.now() - timeStart),userTurnTime);
     };
@@ -183,6 +189,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         room.score = data.score || room.score;
         var timeStart = Date.now();
         this.emit('game_start', room);
+        this.state = 'game_start';
         if (data.state == 'waiting'){
             console.log('game_manager', 'start spectate', 'waiting players ready to play');
             return;
@@ -221,11 +228,13 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         this.currentRoom.history = [];
         this.currentRoom.initData = data;
         this.currentRoom.timeRoundStart = Date.now();
+        this.currentRoom.result = null;
         var players = data.first == data.players[0]?[this.getPlayer(data.players[0]),this.getPlayer(data.players[1])]:[this.getPlayer(data.players[1]),this.getPlayer(data.players[0])];
         for (var i = 0; i < this.currentRoom.players.length; i++){
             this.currentRoom.userData[this.currentRoom.players[i].userId].userTotalTime = 0;
         }
 
+        this.state = 'round_start';
         this.emit('round_start', {
             players: players,
             first: this.getPlayer(data.first),
@@ -273,7 +282,8 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         }
 
         data.message = this.getResultMessages(data);
-
+        this.state = 'round_end';
+        this.currentRoom.result = data;
         this.emit('round_end', data);
     };
 
@@ -289,6 +299,9 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
 
     GameManager.prototype.onTurn = function(data){
         console.log('game_manager;', 'emit turn', data);
+        if (this.state == 'sending_turn') {
+            this.state = 'waiting_for_actions';
+        }
         var room = this.currentRoom;
         if (!this.client.opts.newGameFormat){
             room.history.push(data.turn);
@@ -318,7 +331,15 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             }
             room.history.push(data);
         }
-        this.emit('turn', data);
+        try {
+            this.emit('turn', data);
+        } catch (error) {
+            console.error('game_manager;', 'emit turn, error:', error);
+            if (this.currentRoom.isPlayer && this.client.opts.reconnectOnError ){
+                console.log('game_manager;', 'restart after error');
+                this.client.socket.ws.close();
+            }
+        }
         var nextPlayer = data.nextPlayer;
         // reset time on first turn if need
         if (!data.nextPlayer && !this.timeInterval && (room.timeMode == 'reset_every_turn' || room.timeStartMode == 'after_turn')){
@@ -502,7 +523,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             console.warn('game_manager;', 'not your turn!');
             return false;
         }
-        if (this.currentRoom.timeMode != 'common' && this.currentRoom.userTime < 300) {
+        if (this.currentRoom.timeMode != 'common' && this.currentRoom.userTime < 1) {
             console.warn('game_manager;', 'your time is out!');
             return false;
         }
@@ -512,6 +533,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             $('.dialogDraw').remove();
         }
         this.client.send('game_manager', 'turn', 'server', turn);
+        this.state = 'sending_turn';
         return true;
     };
 
@@ -777,9 +799,53 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         try {
             var time = this.currentRoom.getTime(user, fGetFromUserData);
             this.emit('time', time);
+            this.writeGameDebug(time);
+            this.checkConnectionDelay(time);
         } catch (e) {
             console.error('game_manager; emitTime', e);
         }
+    };
+
+    GameManager.prototype.checkConnectionDelay = function(time){
+        if (!this.currentRoom.isPlayer || !this.client.opts.reconnectOnDelay) {
+            return;
+        }
+        var delay = Date.now() - this.client.socket.timeLastMessage;
+
+        if (!delay || delay < 5000 || !time.user) {
+            return;
+        }
+
+        if (time.user.isPlayer && this.state == 'sending_turn' && delay > 15000){
+            this.client.socket.ws.close();
+            clearInterval(this.timeInterval);
+            console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
+            if (window.Rollbar){
+                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
+                    " " + this.state + " delay:" + delay);
+            }
+            return;
+        }
+
+        if(!time.user.isPlayer && delay > 30000) {
+            this.client.socket.ws.close();
+            clearInterval(this.timeInterval);
+            console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
+            if (window.Rollbar){
+                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
+                    " " + this.state + " delay:" + delay);
+            }
+            return;
+        }
+    };
+
+
+    GameManager.prototype.writeGameDebug = function(time){
+        var msg = 'Ход игрока: ' + time.user.userName +
+                ' | осталось на ход: ' + time.userTimeS + "с." + "<br>" +
+                'время ответа от сервера: ' + (new Time(Date.now() - this.client.socket.timeLastMessage).timeS)+ "с." + "<br>" +
+                'game_state: ' + this.state;
+        this.client.writeDebug(msg);
     };
 
 

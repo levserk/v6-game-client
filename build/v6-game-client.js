@@ -3461,7 +3461,7 @@ define('views/dialogs',['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], fun
 });
 
 
-define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public"><%= locale.tabs.main %></div>\r\n    <div class="tab" data-type="room" style="display: none;"><%= locale.tabs.room %></div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn"><%= locale.buttons.send %></div>\r\n    <select id="chat-select">\r\n        <option selected style="font-style: italic;"><%= locale.templateMessages.header %></option>\r\n        <option>Ваш ход!</option>\r\n        <option>Привет!</option>\r\n        <option>Молодец!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Спасибо, больше играть не могу. Ухожу!</option>\r\n        <option>Отличная партия. Спасибо!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Красиво!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Минуточку</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="showChat"><%= locale.buttons.showChat %></span>\r\n    <span class="hideChat"><%= locale.buttons.hideChat %></span>\r\n        <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n    <span class="chatRules"><%= locale.buttons.chatRules %></span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="answer"><span><%= locale.menu.answer %></span></li>\r\n    <li data-action="invite"><span><%= locale.menu.invite %></span></li>\r\n    <li data-action="showProfile"><span><%= locale.menu.showProfile %></span></li>\r\n    <li data-action="addToBlackList"><span><%= locale.menu.blackList %></span></li>\r\n    <li data-action="ban"><span><%= locale.menu.ban %></span></li>\r\n</ul>';});
+define('text!tpls/v6-chatMain.ejs',[],function () { return '<div class="tabs">\r\n    <div class="tab" data-type="public"><%= locale.tabs.main %></div>\r\n    <div class="tab" data-type="room" style="display: none;"><%= locale.tabs.room %></div>\r\n    <div class="tab" data-type="private" style="display: none;">игрок</div>\r\n</div>\r\n<div class="clear"></div>\r\n<div class="messagesWrap"><ul></ul></div>\r\n<div class="inputMsg" contenteditable="true"></div>\r\n<div class="layer1">\r\n    <div class="sendMsgBtn"><%= locale.buttons.send %></div>\r\n    <select id="chat-select">\r\n        <option selected style="font-style: italic;"><%= locale.templateMessages.header %></option>\r\n        <option class="v6-message-take-back">Возьми назад</option>\r\n        <option>Ваш ход!</option>\r\n        <option>Привет!</option>\r\n        <option>Здесь кто-нибудь умеет играть?</option>\r\n        <option>Кто со мной?</option>\r\n        <option>Спасибо!</option>\r\n        <option>Спасибо! Интересная игра!</option>\r\n        <option>Дай ссылку на твою страницу вконтакте</option>\r\n        <option>Снимаю шляпу!</option>\r\n        <option>Я восхищен!</option>\r\n        <option>Где вы так научились играть?</option>\r\n        <option>Еще увидимся!</option>\r\n        <option>Ухожу после этой партии. Спасибо!</option>\r\n        <option>Давай последнюю</option>\r\n    </select>\r\n</div>\r\n<div class="layer2">\r\n    <span class="showChat"><%= locale.buttons.showChat %></span>\r\n    <span class="hideChat"><%= locale.buttons.hideChat %></span>\r\n        <span class="chatAdmin">\r\n        <input type="checkbox" id="chatIsAdmin"/><label for="chatIsAdmin">От админа</label>\r\n    </span>\r\n    <span class="chatRules"><%= locale.buttons.chatRules %></span>\r\n</div>\r\n\r\n<ul class="menuElement noselect">\r\n    <li data-action="answer"><span><%= locale.menu.answer %></span></li>\r\n    <li data-action="invite"><span><%= locale.menu.invite %></span></li>\r\n    <li data-action="showProfile"><span><%= locale.menu.showProfile %></span></li>\r\n    <li data-action="addToBlackList"><span><%= locale.menu.blackList %></span></li>\r\n    <li data-action="ban"><span><%= locale.menu.ban %></span></li>\r\n</ul>';});
 
 
 define('text!tpls/v6-chatMsg.ejs',[],function () { return '<li class="chatMsg" data-msgId="<%= msg.time %>">\r\n    <div class="msgRow1">\r\n        <div class="smallRight time"><%= msg.t %></div>\r\n        <div class="smallRight rate"  title="<%= \'(\' + locale.rankPlace + \')\'%>"><%= (msg.rank || \'—\') %></div>\r\n        <div class="chatUserName"\r\n             data-userId="<%= msg.userId%>"\r\n             data-userName="<%= msg.userName %>"\r\n             title="<%= msg.userName + \', \' + locale.rankPlace + \': \' + (msg.rank || \' — \') %>"\r\n        > <span class="userName"><%= msg.userName %></span> </div>\r\n    </div>\r\n    <div class="msgRow2">\r\n        <div class="delete" title="<%= locale.buttons.removeMessage %>" style="background-image: url(<%= imgDel %>);"></div>\r\n        <div class="msgTextWrap">\r\n            <span class="v6-msgText"><%= _.escape(msg.text) %></span>\r\n        </div>\r\n    </div>\r\n</li>';});
@@ -3578,11 +3578,12 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 }
             },
 
-            showMenu: function(e, userId) {
+            showMenu: function(e, userId, userName) {
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
-                    OFFSET = 20, // отступ, чтобы не закрывало имя
-                    userName =  $(e.currentTarget).attr('data-userName') || $(e.currentTarget).attr('title');
+                    OFFSET = 20; // отступ, чтобы не закрывало имя
+
+                userName =  userName || $(e.currentTarget).attr('data-userName') || $(e.currentTarget).attr('title');
                 userId = userId || $(e.target).parent().attr('data-userid');
 
                 setTimeout(function() {
@@ -3614,8 +3615,9 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
 
                     this.$menu.attr('data-userId', userId);
                     this.$menu.attr('data-userName', userName);
+                    console.log('coords', document.getElementById('v6Chat').getBoundingClientRect(), coords);
                     this.$menu.css({
-                        left: OFFSET, // фиксированный отступ слева
+                        left: coords.left - document.getElementById('v6Chat').getBoundingClientRect().left + OFFSET, // фиксированный отступ слева
                         top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
                     }).slideDown();
                 }.bind(this), 0);
@@ -3749,6 +3751,11 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                     this.$rules.hide();
                 }.bind(this));
 
+                //скрываем возьми назад там где его нет
+                if (!this.client.opts.showChatTakeBack) {
+                    this.$el.find('.v6-message-take-back').hide()
+                }
+
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">'+this.locale.inputPlaceholder+'..</span>');
 
                 this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner" style="background: url(' + this.images.spin + ');"></div></li>');
@@ -3778,6 +3785,7 @@ define('views/chat',['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'tex
                 this.listenTo(this.client, 'disconnected', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
                 this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
+                Backbone.on('userClick', this.showMenu.bind(this))
             },
 
             setPublicTab: function(tabName){
@@ -4971,6 +4979,7 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             initialize: function(_conf, manager) {
                 this.conf = _conf;
                 this._manager = manager;
+                this.client = manager.client;
                 this.locale = manager.client.locale.history;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
@@ -5009,7 +5018,8 @@ define('views/history',['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs'
             userClicked: function (e){
                 var userId  = $(e.currentTarget).attr('data-userid');
                 var userName = $(e.currentTarget).html();
-                this._manager.client.onShowProfile(userId, userName);
+                this.client.viewsManager.v6ChatView.showMenu.bind(this.client.viewsManager.v6ChatView)(e, userId, userName);
+                //this._manager.client.onShowProfile(userId, userName);
             },
 
             tabClicked: function(e){
@@ -5708,7 +5718,8 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             userClicked: function (e){
                 var userId = $(e.currentTarget).attr('data-userid');
                 var userName = $(e.currentTarget).html();
-                this.manager.client.onShowProfile(userId, userName);
+                this.client.viewsManager.v6ChatView.showMenu.bind(this.client.viewsManager.v6ChatView)(e, userId, userName);
+                //this.manager.client.onShowProfile(userId, userName);
             },
 
             showMore: function() {
@@ -5741,6 +5752,7 @@ define('views/rating',['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 
             initialize: function(_conf, _manager) {
                 this.conf = _conf;
                 this.manager = _manager;
+                this.client = _manager.client;
                 this.locale = _manager.client.locale.rating;
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;
@@ -6308,43 +6320,130 @@ function(EE, RU, EN) {
 
     return LocalizationManager;
 });
+define('modules/options',[], function () {
+    
+    var Options = function (opts, gameVariationId) {
+        opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
+        opts.modes = opts.modes || opts.gameModes || ['default'];
+        opts.blocks = opts.blocks || {};
+        opts.vk = opts.vk || {};
+        opts.images = defaultImages;
+        opts.localization = opts.localization || {};
+
+        var gameOptions = gameVariationId ? gamesOptions[gameVariationId] : null;
+        opts = $.extend({}, defaultOptions, gameOptions, opts);
+        opts.idleTimeout = opts.idleTimeout * 1000;
+
+        return opts;
+    };
+
+    var defaultOptions = {
+        game: false,
+        modes: false,
+        blocks: {},
+        images: {},
+        vk: {},
+        sounds: {},
+        localization: {},
+        resultDialogDelay: 0,
+        reload: false,
+        turnTime: 60,
+        autoReconnect: true,
+        idleTimeout: 60,
+        loadRanksInRating: false,
+        autoShowProfile: false,
+        shortGuestNames: false,
+        newGameFormat: false,
+        showSpectators: false,
+        showButtonsPanel: false,
+        enableConsole: false,
+        reconnectOnError: false,
+        reconnectOnDelay: false,
+        showHidden: false,
+        showCheaters: false,
+        apiEnable: false,
+        api: document.domain + "/api/",
+        showRank: 'place',
+        isAdmin: false,
+        showChatTakeBack: false
+    };
+
+    var gamesOptions = {
+
+        "3": { // chess
+            showChatTakeBack: true
+        },
+
+        "8": { // gomoku
+            showChatTakeBack: true
+        },
+
+        "17": { // checkers
+            reconnectOnError: true,
+            reconnectOnDelay: true
+        }
+
+    };
+
+    var defaultSettings = {
+        blacklist: {},
+        wrapped: false,
+        disableInvite: false,
+        sounds: true
+    };
+
+    var defaultImages = {
+        close: '//logic-games.spb.ru/v6-game-client/app/i/close.png',
+        spin: '//logic-games.spb.ru/v6-game-client/app/i/spin.gif',
+        sortAsc: '//logic-games.spb.ru/v6-game-client/app/i/sort-asc.png',
+        sortDesc: '//logic-games.spb.ru/v6-game-client/app/i/sort-desc.png',
+        sortBoth: '//logic-games.spb.ru/v6-game-client/app/i/sort-both.png',
+        del: '//logic-games.spb.ru/v6-game-client/app/i/delete.png',
+        block: '//logic-games.spb.ru/v6-game-client/app/i/stop.png'
+    };
+
+    var defaultSounds = {
+        start: {
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-start.ogg',
+            volume: 0.5
+        },
+        turn: {
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-turn.ogg',
+            enable: false
+        },
+        win: {
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-win.ogg',
+            volume: 0.5,
+            enable: false
+        },
+        lose: {
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-game-lose.ogg',
+            volume: 0.5,
+            enable: false
+        },
+        invite: {
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-invite.ogg'
+        },
+        timeout: {
+            src: '//logic-games.spb.ru/v6-game-client/app/audio/v6-timeout.ogg'
+        }
+    };
+
+    return Options;
+});
 /*! Idle Timer v1.0.1 2014-03-21 | https://github.com/thorst/jquery-idletimer | (c) 2014 Paul Irish | Licensed MIT */
 !function(a){a.idleTimer=function(b,c){var d;"object"==typeof b?(d=b,b=null):"number"==typeof b&&(d={timeout:b},b=null),c=c||document,d=a.extend({idle:!1,timeout:3e4,events:"mousemove keydown wheel DOMMouseScroll mousewheel mousedown touchstart touchmove MSPointerDown MSPointerMove"},d);var e=a(c),f=e.data("idleTimerObj")||{},g=function(b){var d=a.data(c,"idleTimerObj")||{};d.idle=!d.idle,d.olddate=+new Date;var e=a.Event((d.idle?"idle":"active")+".idleTimer");a(c).trigger(e,[c,a.extend({},d),b])},h=function(b){var d=a.data(c,"idleTimerObj")||{};if(null==d.remaining){if("mousemove"===b.type){if(b.pageX===d.pageX&&b.pageY===d.pageY)return;if("undefined"==typeof b.pageX&&"undefined"==typeof b.pageY)return;var e=+new Date-d.olddate;if(200>e)return}clearTimeout(d.tId),d.idle&&g(b),d.lastActive=+new Date,d.pageX=b.pageX,d.pageY=b.pageY,d.tId=setTimeout(g,d.timeout)}},i=function(){var b=a.data(c,"idleTimerObj")||{};b.idle=b.idleBackup,b.olddate=+new Date,b.lastActive=b.olddate,b.remaining=null,clearTimeout(b.tId),b.idle||(b.tId=setTimeout(g,b.timeout))},j=function(){var b=a.data(c,"idleTimerObj")||{};null==b.remaining&&(b.remaining=b.timeout-(+new Date-b.olddate),clearTimeout(b.tId))},k=function(){var b=a.data(c,"idleTimerObj")||{};null!=b.remaining&&(b.idle||(b.tId=setTimeout(g,b.remaining)),b.remaining=null)},l=function(){var b=a.data(c,"idleTimerObj")||{};clearTimeout(b.tId),e.removeData("idleTimerObj"),e.off("._idleTimer")},m=function(){var b=a.data(c,"idleTimerObj")||{};if(b.idle)return 0;if(null!=b.remaining)return b.remaining;var d=b.timeout-(+new Date-b.lastActive);return 0>d&&(d=0),d};if(null===b&&"undefined"!=typeof f.idle)return i(),e;if(null===b);else{if(null!==b&&"undefined"==typeof f.idle)return!1;if("destroy"===b)return l(),e;if("pause"===b)return j(),e;if("resume"===b)return k(),e;if("reset"===b)return i(),e;if("getRemainingTime"===b)return m();if("getElapsedTime"===b)return+new Date-f.olddate;if("getLastActiveTime"===b)return f.lastActive;if("isIdle"===b)return f.idle}return e.on(a.trim((d.events+" ").split(" ").join("._idleTimer ")),function(a){h(a)}),f=a.extend({},{olddate:+new Date,lastActive:+new Date,idle:d.idle,idleBackup:d.idle,timeout:d.timeout,remaining:null,tId:null,pageX:null,pageY:null}),f.idle||(f.tId=setTimeout(g,f.timeout)),a.data(c,"idleTimerObj",f),e},a.fn.idleTimer=function(b){return this[0]?a.idleTimer(b,this[0]):this}}(jQuery);
 define("idleTimer", function(){});
 
 define('client',['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
         'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager',
-        'modules/localization_manager', 'EE', 'idleTimer'],
+        'modules/localization_manager','modules/options', 'EE', 'idleTimer'],
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,
-         SoundManager, AdminManager, LocalizationManager, EE) {
+         SoundManager, AdminManager, LocalizationManager, Options, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.69";
-        opts.resultDialogDelay = opts.resultDialogDelay || 0;
-        opts.modes = opts.modes || opts.gameModes || ['default'];
-        opts.reload = false;
-        opts.turnTime = opts.turnTime || 60;
-        opts.blocks = opts.blocks || {};
-        opts.images = defaultImages;
-        opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
-        opts.autoReconnect = opts.autoReconnect != false;
-        opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
-        opts.loadRanksInRating = false;
-        opts.autoShowProfile = !!opts.autoShowProfile || false;
-        opts.shortGuestNames = !!opts.shortGuestNames || false;
-        opts.newGameFormat = !!opts.newGameFormat || false;
-        opts.vk = opts.vk || {};
-        opts.showSpectators =  opts.showSpectators || false;
-        opts.showButtonsPanel = opts.showButtonsPanel || false;
-        opts.localization = opts.localization || {};
-        opts.enableConsole = opts.enableConsole || false;
-        opts.reconnectOnError = opts.reconnectOnError || opts.game === 'checkers';
-        opts.reconnectOnDelay = opts.reconnectOnDelay || opts.game === 'checkers';
-        opts.showHidden = false;
-        opts.showCheaters = false;
-        opts.apiEnable = !!opts.game && opts.apiEnable;
-        opts.api = "//" + (opts.api ?  opts.api : document.domain + "/api/");
-        opts.showRank = 'place';
+        this.version = "0.9.71";
+        opts = Options(opts, window._gameVariationId);
 
         try{
             this.isAdmin = opts.isAdmin || window.LogicGame.isSuperUser();

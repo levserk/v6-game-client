@@ -24,6 +24,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             initialize: function(_conf, manager) {
                 this.conf = _conf;
                 this._manager = manager;
+                this.client = manager.client;
                 this.locale = manager.client.locale.history;
                 this.tabs = _conf.tabs;
                 this.columns = _conf.columns;
@@ -62,7 +63,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-historyMain.ejs', 'text!tpls/v6-
             userClicked: function (e){
                 var userId  = $(e.currentTarget).attr('data-userid');
                 var userName = $(e.currentTarget).html();
-                this._manager.client.onShowProfile(userId, userName);
+                this.client.viewsManager.v6ChatView.showMenu.bind(this.client.viewsManager.v6ChatView)(e, userId, userName);
+                //this._manager.client.onShowProfile(userId, userName);
             },
 
             tabClicked: function(e){

@@ -54,7 +54,8 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             userClicked: function (e){
                 var userId = $(e.currentTarget).attr('data-userid');
                 var userName = $(e.currentTarget).html();
-                this.manager.client.onShowProfile(userId, userName);
+                this.client.viewsManager.v6ChatView.showMenu.bind(this.client.viewsManager.v6ChatView)(e, userId, userName);
+                //this.manager.client.onShowProfile(userId, userName);
             },
 
             showMore: function() {
@@ -87,6 +88,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             initialize: function(_conf, _manager) {
                 this.conf = _conf;
                 this.manager = _manager;
+                this.client = _manager.client;
                 this.locale = _manager.client.locale.rating;
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;

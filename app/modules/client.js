@@ -1,36 +1,12 @@
 define(['modules/game_manager', 'modules/invite_manager', 'modules/user_list', 'modules/socket', 'modules/views_manager',
         'modules/chat_manager', 'modules/history_manager', 'modules/rating_manager', 'modules/sound_manager', 'modules/admin_manager',
-        'modules/localization_manager', 'EE', 'idleTimer'],
+        'modules/localization_manager','modules/options', 'EE', 'idleTimer'],
 function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager, HistoryManager, RatingManager,
-         SoundManager, AdminManager, LocalizationManager, EE) {
+         SoundManager, AdminManager, LocalizationManager, Options, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.69";
-        opts.resultDialogDelay = opts.resultDialogDelay || 0;
-        opts.modes = opts.modes || opts.gameModes || ['default'];
-        opts.reload = false;
-        opts.turnTime = opts.turnTime || 60;
-        opts.blocks = opts.blocks || {};
-        opts.images = defaultImages;
-        opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
-        opts.autoReconnect = opts.autoReconnect != false;
-        opts.idleTimeout = 1000 * (opts.idleTimeout || 60);
-        opts.loadRanksInRating = false;
-        opts.autoShowProfile = !!opts.autoShowProfile || false;
-        opts.shortGuestNames = !!opts.shortGuestNames || false;
-        opts.newGameFormat = !!opts.newGameFormat || false;
-        opts.vk = opts.vk || {};
-        opts.showSpectators =  opts.showSpectators || false;
-        opts.showButtonsPanel = opts.showButtonsPanel || false;
-        opts.localization = opts.localization || {};
-        opts.enableConsole = opts.enableConsole || false;
-        opts.reconnectOnError = opts.reconnectOnError || opts.game === 'checkers';
-        opts.reconnectOnDelay = opts.reconnectOnDelay || opts.game === 'checkers';
-        opts.showHidden = false;
-        opts.showCheaters = false;
-        opts.apiEnable = !!opts.game && opts.apiEnable;
-        opts.api = "//" + (opts.api ?  opts.api : document.domain + "/api/");
-        opts.showRank = 'place';
+        this.version = "0.9.71";
+        opts = Options(opts, window._gameVariationId);
 
         try{
             this.isAdmin = opts.isAdmin || window.LogicGame.isSuperUser();

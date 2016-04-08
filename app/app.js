@@ -60,7 +60,7 @@ require(['require-cnf'], function () {
                     return '';
                 },
                 blocks:{
-                    //showPanelId: 'userList'
+                    historyId: 'ratingDiv'
                 },
                 sounds: {
                         start: {

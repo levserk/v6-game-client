@@ -101,11 +101,12 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 }
             },
 
-            showMenu: function(e, userId) {
+            showMenu: function(e, userId, userName) {
                 // клик на window.body сработает раньше, поэтому сдесь даже не нужно вызывать $menu.hide()
                 var coords = e.target.getBoundingClientRect(),
-                    OFFSET = 20, // отступ, чтобы не закрывало имя
-                    userName =  $(e.currentTarget).attr('data-userName') || $(e.currentTarget).attr('title');
+                    OFFSET = 20; // отступ, чтобы не закрывало имя
+
+                userName =  userName || $(e.currentTarget).attr('data-userName') || $(e.currentTarget).attr('title');
                 userId = userId || $(e.target).parent().attr('data-userid');
 
                 setTimeout(function() {
@@ -137,8 +138,9 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
 
                     this.$menu.attr('data-userId', userId);
                     this.$menu.attr('data-userName', userName);
+                    console.log('coords', document.getElementById('v6Chat').getBoundingClientRect(), coords);
                     this.$menu.css({
-                        left: OFFSET, // фиксированный отступ слева
+                        left: coords.left - document.getElementById('v6Chat').getBoundingClientRect().left + OFFSET, // фиксированный отступ слева
                         top: coords.top - document.getElementById('v6Chat').getBoundingClientRect().top + OFFSET
                     }).slideDown();
                 }.bind(this), 0);
@@ -272,6 +274,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                     this.$rules.hide();
                 }.bind(this));
 
+                //скрываем возьми назад там где его нет
+                if (!this.client.opts.showChatTakeBack) {
+                    this.$el.find('.v6-message-take-back').hide()
+                }
+
                 this.$placeHolderSpan = $('<span class="placeHolderSpan">'+this.locale.inputPlaceholder+'..</span>');
 
                 this.$spinnerWrap = $('<li class="spinnerWrap"><div class="spinner" style="background: url(' + this.images.spin + ');"></div></li>');
@@ -301,6 +308,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-chatMain.ejs', 'text!tpls/v6-cha
                 this.listenTo(this.client, 'disconnected', this._closeDialog.bind(this));
                 this.$messagesWrap.scroll(this.scrollEvent.bind(this));
                 this.$messagesWrap.on({'mousewheel DOMMouseScroll': this.bodyScroll.bind(this)});
+                Backbone.on('userClick', this.showMenu.bind(this))
             },
 
             setPublicTab: function(tabName){

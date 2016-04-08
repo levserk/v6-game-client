@@ -20,3 +20,8 @@
     -ms-user-select: none;
     user-select: none;
 }
+
+#gbContents .gbUsername:hover{
+    text-decoration: underline;
+    cursor: pointer;
+}

@@ -2,6 +2,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
     'use strict';
     var dialogs = (function() {
         var NOTIFICATION_CLASS = 'dialogNotification';
+        var NOTICE_CLASS = 'dialogNotice';
         var HIDEONCLICK_CLASS = 'dialogClickHide';
         var INVITE_CLASS = 'dialogInvite';
         var GAME_CLASS = 'dialogGame';
@@ -19,6 +20,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
         var tplRoundResult = _.template(tplRoundResultStr);
         var dialogTimeout;
         var inviteTimeout = 30;
+        var noticeTimeout;
         var tplInvite = '';
 
         function _subscribe(_client) {
@@ -393,6 +395,40 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
             return div;
         }
 
+        function showNotice(html, timeout) {
+            $('.'+NOTICE_CLASS).hide();
+            clearTimeout(noticeTimeout);
+
+            var field = document.getElementById('game-field') || document.getElementById('field') || document;
+            var options = {
+                resizable: false,
+                modal: false,
+                draggable: false,
+                position: {my: 'top', at: 'top', of: field},
+                dialogClass: NOTICE_CLASS,
+                minHeight: 0,
+                width: "auto",
+                maxWidth: 600
+            };
+
+            var div = $('<div>'), prevFocus = document.activeElement || document;
+            div.html(html).dialog(options);
+            div.addClass(HIDEONCLICK_CLASS);
+            div.parent().find(':button').attr('tabindex', '-1');
+            if (document.activeElement != null){
+                document.activeElement.blur();
+            }
+            $(prevFocus).focus();
+
+            if (timeout) {
+                noticeTimeout = setTimeout(function(){
+                    $('.'+NOTICE_CLASS).hide();
+                }, timeout);
+            }
+            return div;
+
+        }
+
 
         function onRoundStart() {
             clearInterval(roundResultInterval);
@@ -443,6 +479,7 @@ define(['underscore', 'text!tpls/v6-dialogRoundResult.ejs'], function(_, tplRoun
         return {
             init: _subscribe,
             showDialog: showDialog,
+            showNotice: showNotice,
             hideDialogs: hideDialogs,
             hideNotification: hideNotification,
             cancelTakeBack: function(){

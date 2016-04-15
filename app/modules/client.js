@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, Options, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.71";
+        this.version = "0.9.73";
         opts = Options(opts, window._gameVariationId);
 
         try{
@@ -233,9 +233,17 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         this.ratingManager.init();
         this.historyManager.init();
         this.relogin = false;
-        this.setWrapped(settings.wrapped);
+        this.applySettings();
     };
 
+    Client.prototype.applySettings = function() {
+        this.setWrapped(this.settings.wrapped);
+        if (this.settings.hideAdvertising) {
+            $('.lg-banner').hide();
+            $('.lg-vkgroup').hide();
+            $('#lg-activity-container').hide();
+        }
+    };
 
     Client.prototype.send = function (module, type, target, data) {
         if (!this.socket.isConnected){
@@ -389,7 +397,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
 
     Client.prototype._onSettingsChanged = function(data){
         this.emit('settings_changed', data);
-        switch (data.property){
+        switch (data.property) {
             case 'disableInvite':
                 this.getPlayer().disableInvite = data.value;
                 this.userList.onUserChanged(this.getPlayer());
@@ -400,9 +408,19 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
                 this.viewsManager.settingsView.renderBlackList();
                 this.viewsManager.v6ChatView.reload();
                 break;
-            case 'wrapped': {
-                this.setWrapped(data.value)
-            }
+            case 'wrapped':
+                this.setWrapped(data.value);
+                break;
+            case 'hideAdvertising':
+                if (data.value) {
+                    $('.lg-banner').hide();
+                    $('.lg-vkgroup').hide();
+                    $('#lg-activity-container').hide();
+                } else {
+                    $('.lg-banner').show();
+                    $('.lg-vkgroup').show();
+                }
+                break;
         }
     };
 
@@ -506,6 +524,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
     var defaultSettings = {
         blacklist: {},
         wrapped: false,
+        hideAdvertising: false,
         disableInvite: false,
         sounds: true
     };

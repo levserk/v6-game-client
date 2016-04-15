@@ -1,6 +1,7 @@
 define([], function () {
     'use strict';
     var Options = function (opts, gameVariationId) {
+        opts.lang = opts.lang || window._lang;
         opts.sounds = $.extend({}, defaultSounds, opts.sounds || {});
         opts.modes = opts.modes || opts.gameModes || ['default'];
         opts.blocks = opts.blocks || {};
@@ -16,6 +17,7 @@ define([], function () {
     };
 
     var defaultOptions = {
+        lang: 'ru',
         game: false,
         modes: false,
         blocks: {},
@@ -35,39 +37,39 @@ define([], function () {
         showSpectators: false,
         showButtonsPanel: false,
         enableConsole: false,
-        reconnectOnError: false,
-        reconnectOnDelay: false,
+        reconnectOnError: true,
+        reconnectOnDelay: true,
         showHidden: false,
         showCheaters: false,
         apiEnable: false,
         api: document.domain + "/api/",
         showRank: 'place',
         isAdmin: false,
-        showChatTakeBack: false
+        showChatTakeBack: false,
+        showFocusLost: false
     };
 
     var gamesOptions = {
 
         "3": { // chess
-            showChatTakeBack: true
+            showChatTakeBack: true,
+            showFocusLost: true
         },
 
         "8": { // gomoku
-            showChatTakeBack: true
+            showChatTakeBack: true,
+            showFocusLost: true
         },
 
         "17": { // checkers
             reconnectOnError: true,
             reconnectOnDelay: true
+        },
+
+        "30": { //balda
+            showFocusLost: true
         }
 
-    };
-
-    var defaultSettings = {
-        blacklist: {},
-        wrapped: false,
-        disableInvite: false,
-        sounds: true
     };
 
     var defaultImages = {

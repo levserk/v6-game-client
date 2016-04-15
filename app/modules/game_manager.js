@@ -10,6 +10,7 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
         this.leaveGameTimeout = null;
         this.LEAVE_GAME_TIME = 1000;
         this.state = 'nothing';
+        this.noticeFocusShowed = false;
 
         client.on('relogin', function(){
             clearTimeout(this.leaveGameTimeout);
@@ -406,6 +407,10 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
                 break;
             case 'focus':
                 this.emit('focus', {user: user, windowHasFocus: event.action == 'has'});
+                if (this.client.opts.showFocusLost && event.action !== 'has' && !user.isPlayer && !this.noticeFocusShowed) {
+                    this.noticeFocusShowed = true;
+                    this.client.viewsManager.dialogsView.showNotice(this.client.locale['dialogs']['focusLost'],5000)
+                }
                 break;
             default:
                 console.log('game_manager;', 'onUserEvent user:', user, 'event:', event);
@@ -820,10 +825,6 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             this.client.socket.ws.close();
             clearInterval(this.timeInterval);
             console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
-            if (window.Rollbar){
-                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
-                    " " + this.state + " delay:" + delay);
-            }
             return;
         }
 
@@ -831,10 +832,6 @@ define(['EE', 'instances/room', 'instances/turn', 'instances/game_event', 'insta
             this.client.socket.ws.close();
             clearInterval(this.timeInterval);
             console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
-            if (window.Rollbar){
-                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
-                    " " + this.state + " delay:" + delay);
-            }
             return;
         }
     };

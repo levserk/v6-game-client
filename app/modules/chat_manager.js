@@ -173,7 +173,7 @@ define(['EE', 'translit', 'antimat'], function(EE, translit) {
             type: type
         };
         if (this.client.opts.apiEnable) {
-            this.client.get('chat', rq, function(data){
+            this.client.get('chat/'+this.client.game+'/messages', rq, function(data){
                 this.onMessage({
                     type: 'load',
                     data: data

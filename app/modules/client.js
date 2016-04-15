@@ -5,7 +5,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, Options, EE) {
     'use strict';
     var Client = function(opts) {
-        this.version = "0.9.73";
+        this.version = "0.9.74";
         opts = Options(opts, window._gameVariationId);
 
         try{
@@ -498,10 +498,11 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.console.warn = this.console.warn;
     };
 
-    Client.prototype.get = function(target, params, callback) {
+    Client.prototype.get = function(url, params, callback) {
         //this.xhr = this.xhr || new XMLHttpRequest();
-        var xhr = new XMLHttpRequest(),
-            url = this.opts.api + target + '?game='+this.game;
+        var xhr = new XMLHttpRequest();
+        url = this.opts.api + url;
+        url += '?game='+this.game;
         //xhr.abort();
         for (var p in params) url += '&' + p +'='+params[p];
 

@@ -123,7 +123,7 @@ define(['EE', 'translit', 'views/rating'], function(EE, translit, RatingView) {
             offset: this.count
         };
         if (this.client.opts.apiEnable){
-            this.client.get('ratings', rq, function(data){
+            this.client.get('users/'+this.client.game+'/ratings', rq, function(data){
                 data['ratings']['infoUser'] = this.client.getPlayer();
                 this.onRatingsLoad(data.mode, data.ratings, data.column, data.order == 1 ? 'asc' : 'desc');
             }.bind(this))

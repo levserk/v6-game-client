@@ -1008,10 +1008,6 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             this.client.socket.ws.close();
             clearInterval(this.timeInterval);
             console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
-            if (window.Rollbar){
-                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
-                    " " + this.state + " delay:" + delay);
-            }
             return;
         }
 
@@ -1019,10 +1015,6 @@ define('modules/game_manager',['EE', 'instances/room', 'instances/turn', 'instan
             this.client.socket.ws.close();
             clearInterval(this.timeInterval);
             console.warn('game_manager;', 'checkConnectionDelay', 'reconnect!', time);
-            if (window.Rollbar){
-                window.Rollbar.error(window._userId + " reconnect after delay, user:" + time.user.userId +
-                    " " + this.state + " delay:" + delay);
-            }
             return;
         }
     };
@@ -4052,7 +4044,7 @@ define('modules/chat_manager',['EE', 'translit', 'antimat'], function(EE, transl
             type: type
         };
         if (this.client.opts.apiEnable) {
-            this.client.get('chat', rq, function(data){
+            this.client.get('chat/'+this.client.game+'/messages', rq, function(data){
                 this.onMessage({
                     type: 'load',
                     data: data
@@ -4796,7 +4788,7 @@ define('modules/history_manager',['EE', 'translit', 'views/history', 'instances/
             filter: this.historyView.getFilter()
         };
         if (this.client.opts.apiEnable) {
-            this.client.get('history', rq, function(data){
+            this.client.get('history/'+this.client.game+'/games', rq, function(data){
                 this.onHistoryLoad(data['mode'], data['history'], data['penalties'], data.userId);
             }.bind(this))
         } else {
@@ -4816,7 +4808,7 @@ define('modules/history_manager',['EE', 'translit', 'views/history', 'instances/
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;
         if (this.client.opts.apiEnable) {
-            this.client.get('history', { mode: mode, gameId: id, userId: userId }, function(data){
+            this.client.get('history/'+this.client.game+'/game', { mode: mode, gameId: id, userId: userId }, function(data){
                 this.onGameLoad(data.mode, data.game);
             }.bind(this))
         } else {
@@ -5301,7 +5293,7 @@ define('modules/rating_manager',['EE', 'translit', 'views/rating'], function(EE,
             offset: this.count
         };
         if (this.client.opts.apiEnable){
-            this.client.get('ratings', rq, function(data){
+            this.client.get('users/'+this.client.game+'/ratings', rq, function(data){
                 data['ratings']['infoUser'] = this.client.getPlayer();
                 this.onRatingsLoad(data.mode, data.ratings, data.column, data.order == 1 ? 'asc' : 'desc');
             }.bind(this))
@@ -5656,7 +5648,7 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
          SoundManager, AdminManager, LocalizationManager, Options, EE) {
     
     var Client = function(opts) {
-        this.version = "0.9.73";
+        this.version = "0.9.74";
         opts = Options(opts, window._gameVariationId);
 
         try{
@@ -6149,10 +6141,11 @@ function(GameManager, InviteManager, UserList, Socket, ViewsManager, ChatManager
         window.console.warn = this.console.warn;
     };
 
-    Client.prototype.get = function(target, params, callback) {
+    Client.prototype.get = function(url, params, callback) {
         //this.xhr = this.xhr || new XMLHttpRequest();
-        var xhr = new XMLHttpRequest(),
-            url = this.opts.api + target + '?game='+this.game;
+        var xhr = new XMLHttpRequest();
+        url = this.opts.api + url;
+        url += 'game='+this.game;
         //xhr.abort();
         for (var p in params) url += '&' + p +'='+params[p];
 

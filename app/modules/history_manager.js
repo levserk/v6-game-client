@@ -398,7 +398,7 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
             filter: this.historyView.getFilter()
         };
         if (this.client.opts.apiEnable) {
-            this.client.get('history', rq, function(data){
+            this.client.get('history/'+this.client.game+'/games', rq, function(data){
                 this.onHistoryLoad(data['mode'], data['history'], data['penalties'], data.userId);
             }.bind(this))
         } else {
@@ -418,7 +418,7 @@ define(['EE', 'translit', 'views/history', 'instances/turn', 'instances/game_eve
         mode = mode || this.currentMode || this.client.currentMode;
         this.isCancel = false;
         if (this.client.opts.apiEnable) {
-            this.client.get('history', { mode: mode, gameId: id, userId: userId }, function(data){
+            this.client.get('history/'+this.client.game+'/game', { mode: mode, gameId: id, userId: userId }, function(data){
                 this.onGameLoad(data.mode, data.game);
             }.bind(this))
         } else {

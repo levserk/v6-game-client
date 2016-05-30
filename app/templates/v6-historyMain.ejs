@@ -1,5 +1,11 @@
-<div id="v6-history">
-    <div class="historyHeader"><img class="closeIcon" src="<%= close %>" title="Закрыть окно истории"></div>
+<div id="v6-history" class="v6-block-border">
+    <div class="historyHeader">
+        <div class="historyFilter">
+            <input type="text" placeholder="<%= locale.placeholder %>" id="historyAutoComplete" value="">
+            <div class="delete" style="background-image: url(<%= imgDel %>)"></div>
+        </div>
+        <img class="closeIcon" src="<%= close %>" title="<%= locale.close %>">
+    </div>
     <div class="historyWrapper">
         <table class="historyTable">
             <thead>
@@ -8,7 +14,8 @@
             <tbody>
             </tbody>
         </table>
-        <div class="noHistory">Сохранения отсутствуют</div>
+        <div id="showMore"><%= locale.showMore%></div>
+        <div class="noHistory"><%= locale.noHistory %></div>
         <div class="loading"><img src="<%= spin %>"></div>
     </div>
 </div>

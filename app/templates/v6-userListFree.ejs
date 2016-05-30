@@ -1,0 +1,25 @@
+<% _.each(users, function(user) { %>
+<tr class="userListFree <%= user.isActive?'':'userListInactive' %> <%= user.waiting?'userListWaiting':'' %> <%= user.isPlayer?'userListPlayer':'' %>">
+    <td class="userName"
+        data-userId="<%= user.userId %>"
+        data-userName="<%= user.userName %>"
+        title="<%= user.userName%>"
+    > <%= user.userName %> </td>
+    <td class="userRank"><%= user.getRank() %></td>
+    <% if (user.isPlayer) { %>
+    <td class="userListPlayerInvite">
+        <% if (user.disableInvite ) { %>
+        <img src="<%= imgBlock %>" title="<%= locale.disableInvite %>" >
+        <% } %>
+    </td>
+    <% } else if (user.isInvited) { %>
+    <td class="inviteBtn activeInviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.cancel %></td>
+    <% } else {
+        if (!user.waiting && user.disableInvite) { %>
+        <td class="userListUserInvite"><img src="<%= imgBlock %>" title="<%= locale.playerDisableInvite %>"></td>
+        <% } else { %>
+            <td class="inviteBtn" data-userId="<%= user.userId %>"><%= locale.buttons.invite %></td>
+        <% }
+    } %>
+</tr>
+<% }) %>

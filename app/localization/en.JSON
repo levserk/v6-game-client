@@ -1,0 +1,166 @@
+{
+  "name": "en",
+  "userList":{
+    "tabs":{
+      "free":"Free",
+      "inGame":"In Game",
+      "spectators": "Spectators"
+    },
+    "disconnected": {
+      "text": "No connection",
+      "button": "Reconnect",
+      "status": "Loading.."
+    },
+    "search": "Search",
+    "disableInvite": "Invites disable",
+    "playerDisableInvite": "Invites disable",
+    "buttons":{
+      "playRandom": "Play with a anyone",
+      "cancelPlayRandom": "Waiting a opponent...",
+      "invite": "Invite",
+      "cancel": "Cancel"
+    },
+    "rankPlace": "place in ranking",
+    "rankPlaceShort": "Place",
+    "ratingShort": "Rating"
+  },
+  "chat":{
+    "tabs":{
+      "main": "Main",
+      "room": "Room"
+    },
+    "inputPlaceholder": "Type your message",
+    "templateMessages": {
+      "header": "Template messages"
+    },
+    "buttons":{
+      "removeMessage": "Remove message",
+      "send": "Send",
+      "chatRules": "Chat rules",
+      "hideChat": "Hide Chat",
+      "showChat": "Show Chat"
+    },
+    "menu":{
+      "answer": "Answer",
+      "dialog": "Open dialog",
+      "showProfile": "Show profile",
+      "invite": "Send invite",
+      "blackList": "To black list",
+      "ban": "ban"
+    },
+    "rankPlace": "place in ranking",
+    "months": ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"]
+  },
+  "settings":{
+    "title": "Settings",
+    "titleBlackList": "Black list",
+    "emptyBL": "Black list is empty",
+    "buttons":{
+      "confirm": "OK",
+      "showBL": "Show black list",
+      "hideBL": "Hide black list"
+    }
+  },
+  "dialogs":{
+    "invite": "You are invited to play by ",
+    "placeRating": " place in the rating",
+    "ratingElo": "with the rating ",
+    "inviteTime": "Remaining: ",
+    "user": "User",
+    "player": "The player",
+    "rejectInvite": " has declined your invitation",
+    "timeoutInvite": " limit exceeded expectations ",
+    "seconds": " seconds",
+    "askDraw": " offers a draw",
+    "cancelDraw": "declined your proposal for a draw",
+    "askTakeBack": "asks to cancel turn. Allow him?",
+    "cancelTakeBack": " declined your request to cancel turn",
+    "accept": "Accept",
+    "decline": "Decline",
+    "yes": "Yes",
+    "no": "No",
+    "win": "Win.",
+    "lose": "Lose.",
+    "draw": "Draw.",
+    "gameOver": "Game over.",
+    "scores": "scores",
+    "opponentTimeout": "Opponent time is over",
+    "playerTimeout": "Your time is over",
+    "opponentThrow": "Opponent surrendered",
+    "playerThrow": "You surrendered",
+    "ratingUp": "You have risen in the overall ranking from ",
+    "ratingPlace": "You take ",
+    "on": " to ",
+    "of": " of ",
+    "place": " place in ranking",
+    "dialogPlayAgain": "Play with your opponent again?",
+    "playAgain": "Yes, play again",
+    "leave": "No, leave",
+    "waitingOpponent": "Waiting for opponent..",
+    "waitingTimeout": "Timeout",
+    "opponentLeave": "left the game",
+    "playerLeave": "You left the game",
+    "banMessage": "You can not write messages in chat since added to the black list ",
+    "banReason": "for the use of foul language and / or spam  ",
+    "loginError": "Authorisation Error. Refresh the page",
+    "loseOnLeave": "You will lose",
+    "focusLost": "Opponent lost window focus",
+    "badConnection": "Bad connection",
+    "reConnection": "Reconnection"
+  },
+  "history": {
+    "columns": {
+      "date": "Date",
+      "opponent": "Opponent",
+      "time": "Time",
+      "number": "#",
+      "elo": "Rating"
+    },
+    "close": "Close history window",
+    "showMore": "Show more",
+    "noHistory": "no history",
+    "placeholder": "Search by name",
+    "months": ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+  },
+  "rating": {
+    "tabs": {
+      "allPlayers": "All players"
+    },
+    "columns": {
+      "rank": "Place",
+      "userName": "Name",
+      "ratingElo": "Rating <br> Elo",
+      "win": "Win",
+      "lose": "Lose",
+      "dateCreate": "Registration <br> date",
+      "dateLastGame": "Last game"
+    },
+    "close": "Close rating window",
+    "placeholder": "Search by name",
+    "showMore": "More 500 players",
+    "jumpTop": "to rating top",
+    "place": " rank",
+    "you": "You",
+    "search": "Search",
+    "novice": "novice",
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  },
+  "game": {
+    "resultMessages":{
+      "win": "Win",
+      "wins": "Win ",
+      "lose": "Lose",
+      "draw": "Draw",
+      "opponent": "Opponent",
+      "player": "Player",
+      "opponentThrow": " surrendered",
+      "playerThrow": "You surrendered",
+      "opponentTimeoutPre": "Opponent",
+      "timeoutPre": "",
+      "opponentTimeout": " time is over",
+      "playerTimeout": "Your time is over",
+      "opponentLeave": " leave game",
+      "playerLeave": "You leave game"
+    }
+  }
+}

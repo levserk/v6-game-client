@@ -1,0 +1,18 @@
+<div class="tabs notInGame">
+    <div data-type="free"> <%= tabs.free %> <span></span></div>
+    <div data-type="inGame"> <%= tabs.inGame %>  <span></span></div>
+    <div data-type="spectators" style="display: none"> <%= tabs.spectators %>  <span></span></div>
+</div>
+<div id="userListSearch">
+    <input type="text" id="filterUserList" placeholder="<%= search %>"/>
+    <span class="rankSwitch isActive"><%= rankPlaceShort %></span>
+    <span class="rankSlash">/</span>
+    <span class="ratingSwitch"><%= ratingShort %></span>
+</div>
+<div class="tableWrap">
+    <table cellspacing="0" class="playerList"></table>
+</div>
+
+<div class="btn" id="randomPlay">
+    <span><%= buttons.playRandom %></span>
+</div>

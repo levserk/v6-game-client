@@ -2,13 +2,40 @@
     position: relative;
     padding-bottom: 10px;
     padding-top: 10px;
-    border: 1px solid #b5b5b5;
-    width: 255px!important;
+    width: 255px;
     padding: 5px;
     background-color: #fff;
     font-family: Verdana, Geneva, sans-serif;
     font-size: 10pt;
     -webkit-user-select: none;
+    box-shadow:none;
+    cursor: default;
+}
+
+#left-block #userList{
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-box-orient: vertical;
+    -moz-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    flex-basis: 45%;
+    -webkit-flex-basis: 45%;
+    flex-grow: 1;
+    -webkit-flex-grow: 1;
+    margin: 0;
+}
+
+#left-block.chatHidden #userList{
+    flex-basis: 100%;
+    -webkit-flex-basis: 100%;
+    border-bottom: none;
 }
 
 #userList .tabs {
@@ -35,43 +62,102 @@
     font-size: 8pt;
 }
 
-#userList input {
+#userList #userListSearch {
     margin-top: 5px;
-    margin-left: 5px;
-    width: 125px;
-    height: 20px;
-    color: rgb(128, 128, 128);
-    border: 1px solid #ddd;
+    font-size: 12px;
+    color: #777;
+    text-align: left;
+    position: relative;
+    height: 22px;
 }
+
+#userList #userListSearch input {
+    border: 1px solid #ddd;
+    position: absolute;
+    padding-left: 4px;
+    box-sizing: border-box;
+    left: 0;
+    bottom: 0;
+    width: 49%;
+    padding-top: 4px;
+    cursor: text;
+    font-family: Verdana,Geneva,sans-serif;
+    font-size: 12px;
+    color: #777;
+}
+
+#userList #userListSearch span {
+    width: 49%;
+    position: absolute;
+    bottom: 2px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: pointer;
+}
+#userList #userListSearch .rankSwitch {
+    right: 0px;
+}
+#userList #userListSearch .ratingSwitch {
+    right: -49px;
+}
+#userList #userListSearch .rankSlash {
+    right: -42px;
+}#userList #userListSearch .isActive {
+    font-weight: bold;
+    color: black;
+}
+
+#userList input::-webkit-input-placeholder {color:#777; font-size: 12px; font-family: Verdana,Geneva,sans-serif; opacity: 1;}
+#userList input::-moz-placeholder          {color:#777; font-size: 12px; font-family: Verdana,Geneva,sans-serif; opacity: 1;}
+#userList input:-moz-placeholder           {color:#777; font-size: 12px; font-family: Verdana,Geneva,sans-serif; opacity: 1;}
+#userList input:-ms-input-placeholder      {color:#777; font-size: 12px; font-family: Verdana,Geneva,sans-serif; opacity: 1;}
 
 
 #userList .tabs div {
-    width: 50%;
-    float: left;
+    display: inline-block;
     text-align: center;
-    padding-top: 3px;
+    padding-top: 2px;
     height: 20px;
+    line-height: 18px;
+}
+
+#userList .tabs.notInGame div {
+    width: 49%;
+}
+
+#userList .tabs.inGame div {
+    font-size: 12px;
+    width: auto;
+    margin-left: -2px;
 }
 
 #userList .tableWrap {
-    height: 216px;
-    max-height: 216px;
+    height: 100px;
     overflow: auto;
+    overflow-x: hidden;
     border: 1px solid #ddd;
     background: #fff;
     box-shadow: 0 2px 2px rgba(0,0,0,.03);
     color: #444;
-    margin-top: 10px;
+    margin-top: 5px;
+    padding: 0px 3px 0px 3px;
+}
+
+#left-block #userList .tableWrap{
+    min-height: 100px;
+    flex-grow: 1;
+    -webkit-flex-grow: 1;
 }
 
 #userList .playerList {
     width: 100%;
-    table-layout: fixed;
+    /*table-layout: fixed;*/
 }
 
 #userList .btn {
     text-align: center;
-    background-color: rgba(100,142,163,.18);
+    background-color: rgba(227, 235, 238, 1);
     cursor: pointer;
     margin-top: 5px;
     box-shadow: 0 1px 0 rgba(0,0,0,.05);
@@ -80,6 +166,8 @@
     line-height: 30px;
     font-weight: 700;
     color: #069;
+    flex-basis: 30px;
+    -webkit-flex-basis: 30px;
 }
 
 #userList .active {
@@ -92,7 +180,7 @@
     color:#069;
     cursor: pointer;
     font-size: 8pt;
-    width: 70px;
+    width: 71px;
 }
 
 #userList .userName {
@@ -102,21 +190,88 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: block;
 }
 
-#userList .userName:hover {
-    background-color: #edf1f5;
+#userList .userListFree .userName:hover {
+    text-decoration: underline;
+}
+
+#userList .userListFree .userListPlayerInvite {
+    text-align: right;
+    padding-right: 20px;
+    height: 21px;
+}
+
+#userList .userListFree .userListPlayerInvite img{
+    height: 16px
+}
+
+#userList .userListFree.userListInactive {
+    color: rgb(194, 194, 194);
+}
+
+#userList .userListFree.userListWaiting .userName {
+    color: rgb(61, 155, 40);
+    font-weight: bold;
+}
+
+#userList .userListFree.userListPlayer .userName {
+    font-weight: bold;
+}
+
+#userList .userListFree.userListWaiting .inviteBtn {
+    color: rgb(61, 155, 40);
+    font-weight: bold;
+}
+
+#userList .userListFree .userListUserInvite {
+    text-align: right;
+    padding-right: 20px;
+}
+
+#userList .userListFree .userListUserInvite img{
+    height: 13px;
+    -webkit-filter: grayscale(100%);
+    -moz-filter: grayscale(100%);
+    filter: grayscale(100%);
 }
 
 #userList .userRank {
     color: #AAA;
     font-size: 9px;
     text-align: right;
-    padding-right: 25px;
+    padding-right: 12px;
+}
+
+#userList .userListGame.currentGame{
+    background-color: #edf1f5;
+}
+
+#userList .userListGame{
+    width: 20px;
+    cursor: pointer;
+}
+
+#userList .userListGame td:nth-child(1) span{
+    float: right;
+    text-align: right;
+}
+
+#userList .userListGame td:nth-child(2){
+    width: 20px;
+    text-align: center;
+}
+#userList .userListGameMode td{
+    text-align: center;
+    padding: 8px 0px 2px 0px;
+    border-bottom: 1px solid #DDDDDD;
+    color: #006699;
+    font-weight: bold;
 }
 
 #userList .inGame {
-    display: none;
+    /*display: none;*/
 }
 
 #userList tr.disconnected {
@@ -144,4 +299,8 @@
 
 #userList .disconnectText {
     color: #444;
+}
+
+#userList #vkInviteFriend {
+    position: absolute;
 }

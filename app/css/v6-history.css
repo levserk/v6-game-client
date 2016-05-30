@@ -22,7 +22,8 @@
 #v6-history .historyTable {
     font-size: 8pt;
     text-align: center;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0px;
     border: 1px solid #dcdcdc;
     width: 100%;
     color: #444;
@@ -48,6 +49,21 @@
     width: 32px;
 }
 
+#v6-history #showMore{
+    margin: 10px auto;
+    width: 100px;
+    background-image: linear-gradient(top,transparent,transparent);
+    color: #404040;
+    border: 1px solid grey;
+    border-radius: 2px;
+    cursor: pointer;
+    font-weight: 700;
+    text-align: center;
+
+    height: 28px;
+    line-height: 28px;
+}
+
 #v6-history .noHistory{
     font-weight: bold;
     text-align: center;
@@ -55,6 +71,20 @@
     border-left: 1px solid #dcdcdc;
     border-right: 1px solid #dcdcdc;
     padding: 4px;
+
+}
+#v6-history .historyFilter{
+     margin-right: 5px;
+     display: inline-block;
+     position: relative;
+}
+#v6-history .delete{
+    display: inline-block;
+    width: 18px;
+    height: 20px;
+    right: 0px;
+    position: absolute;
+    top: 0px;
 }
 
 .historyTable thead{
@@ -79,8 +109,8 @@
 
 .historyTable td {
     padding: 4px;
-    border-bottom: 1px solid #dcdcdc;
-    border-right: 1px solid #dcdcdc;
+    border: 1px solid #dcdcdc;
+    position: relative;
 }
 
 .historyTable tr.historyLose td:not(.sessionHeader) {
@@ -92,18 +122,24 @@
 .historyTable tr.historyDraw td:not(.sessionHeader) {
     background-color: #b3d1e0;
 }
-.historyTable tr td:not(.sessionHeader) {
+.historyTable tr {
     cursor: pointer;
 }
 
 .historyTable .userRank {
     color: gray;
     margin-left: 2px;
+    font-size: 9px;
+}
+
+.historyTable div.userRank {
+    padding-top: 5px;
 }
 
 .historyTable .userScore {
     float: right;
     font-weight: bold;
+    padding-top: 1px;
 }
 
 .historyTable .userName {
@@ -118,6 +154,8 @@
 
 .historyTable .eloDiff {
     font-size: 80%;
+    position: absolute;
+    right: 10px;
 }
 
 .historyTable .diffPositive {
@@ -126,4 +164,10 @@
 
 .historyTable .diffNegative {
     color: red;
+}
+
+.historyTable tr.historySelected td:not(.sessionHeader) {
+    border-bottom: 2px solid #3332ff;
+    border-top: 1px solid #3332ff;
+    box-shadow: 0px -1px 0px 0px #3332ff;
 }

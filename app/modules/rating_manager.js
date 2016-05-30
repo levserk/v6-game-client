@@ -1,38 +1,49 @@
-define(['EE', 'views/rating'], function(EE, RatingView) {
+define(['EE', 'translit', 'views/rating'], function(EE, translit, RatingView) {
     'use strict';
 
+    var locale;
     var RatingManager = function (client) {
         this.client = client;
-        this.currentRoom = null;
+        locale = client.locale['rating'];
         this.conf = {
             tabs:[
-                {id: 'all_players', title: 'все игроки'}
+                {id: 'all_players', title: locale.tabs['allPlayers']}
             ],
             subTabs:[
             ],
             columns:[
-                {  id:'rank',           source:'rank',        title:'Место',                    canOrder:false },
-                {  id:'userName',       source:'userName',    title:'Имя',                      canOrder:false },
-                {  id:'ratingElo',      source:'ratingElo',   title:'Рейтинг <br> Эло',         canOrder:true },
-                {  id:'win',            source:'win',         title:'Выиграл <br> у соперников',canOrder:true },
-                {  id:'percent',        source:'percent',     title:' % ',                      canOrder:false },
-                {  id:'dateCreate',     source:'dateCreate',  title:'Дата <br> регистрации',    canOrder:true }
+                {  id:'rank',           source:'rank',        title: locale.columns.rank,       canOrder:false },
+                {  id:'userName',       source:'userName',    title: locale.columns.userName,   canOrder:false },
+                {  id:'ratingElo',      source:'ratingElo',   title: locale.columns.ratingElo,  canOrder:true },
+                {  id:'win',            source:'win',         title: locale.columns.win,        canOrder:true },
+                {  id:'lose',           source:'lose',        title: locale.columns.lose,       canOrder:false },
+                {  id:'dateCreate',     source:'dateCreate',  title: locale.columns.dateCreate, canOrder:true }
             ]
         };
 
-        if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf);
+        if (client.isAdmin) this.conf.columns.push({  id:'timeLastGame',     source:'timeLastGame',  title: locale.columns.dateLastGame, canOrder:true });
+
+        if (typeof client.opts.initRating == "function") this.conf =  client.opts.initRating(this.conf, this.client);
         this.conf.images = client.opts.images;
 
         this.$container = (client.opts.blocks.ratingId?$('#'+client.opts.blocks.ratingId):$('body'));
+        this.maxCount = 500;
+        this.count = 0;
+
+        client.on('disconnected', function () {})
     };
 
     RatingManager.prototype = new EE();
 
 
     RatingManager.prototype.init = function(conf){
+        this.conf.subTabs = [];
         for (var i = 0 ; i < this.client.modes.length; i++)
             this.conf.subTabs.push({id:this.client.modes[i], title:this.client.getModeAlias(this.client.modes[i])});
-
+        if (this.ratingView && this.ratingView.$el){
+            this.ratingView.$el.remove();
+            this.ratingView.remove();
+        }
         this.ratingView = new RatingView(this.conf, this);
     };
 
@@ -53,12 +64,18 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             ratings.infoUser = this.formatRatingsRow(mode, ratings.infoUser, ratings.infoUser[mode].rank);
         }
         for (var i = 0; i < ratings.allUsers.length; i++) {
-            if (column == 'ratingElo' && order == 'desc') rank = i+1; // set rank on order by rating
+            if (!this.filter && column == 'ratingElo' && order == 'desc') {
+                rank = i + 1 + this.count;
+            } else {
+                if (this.client.opts.loadRanksInRating){
+                    rank =  ratings.allUsers[i][mode]['rank'] || false;
+                }
+            }
             ratings.allUsers[i] = this.formatRatingsRow(mode, ratings.allUsers[i], rank);
         }
-        setTimeout(function(){
-            this.$container.append(this.ratingView.render(ratings, mode, column, order).$el);
-        }.bind(this),200);
+
+        this.$container.append(this.ratingView.render(ratings, mode, column, order, this.count != 0, ratings.allUsers.length == this.maxCount).$el);
+        this.count += ratings.allUsers.length;
     };
 
 
@@ -68,33 +85,58 @@ define(['EE', 'views/rating'], function(EE, RatingView) {
             userName: info.userName,
             photo: undefined
         };
+        if (this.client.lang != 'ru'){
+            row.userName = translit(row.userName);
+        }
         for (var i in info[mode]){
             row[i] = info[mode][i];
         }
         if (rank !== false) row.rank = rank; // set rank on order
         else row.rank = '';
         if (this.client.getPlayer() && info.userId == this.client.getPlayer().userId) row.user = true;
-        if (this.client.userList.getUser(info.userId)) row.active = true;
+        if (this.client.userList.getUser(info.userId)) {
+            row.online = true;
+            if (this.client.userList.getUser(info.userId).isActive) row.active = true;
+
+        }
         row.percent = (row.games>0?Math.floor(row.win/row.games*100):0);
         if (Date.now() - info.dateCreate < 86400000)
             row.dateCreate = this.ratingView.NOVICE;
         else
             row.dateCreate = formatDate(info.dateCreate);
+        row.timeLastGame = formatDate(row.timeLastGame);
         return row;
     };
 
 
-    RatingManager.prototype.getRatings = function(mode, column, order){
+    RatingManager.prototype.getRatings = function(mode, column, order, filter, showMore){
+        if (!this.client.isLogin) return;
+        if (!showMore) this.count = 0;
         this.$container.append(this.ratingView.render(false).$el);
-        this.client.send('rating_manager', 'ratings', 'server', {
-            mode:mode||this.client.currentMode,
-            column : column,
-            order : order
-        });
+        this.filter = filter;
+        var rq = {
+            mode: mode||this.client.currentMode,
+            column: column,
+            order: order,
+            filter: filter,
+            count: this.maxCount,
+            offset: this.count
+        };
+        if (this.client.opts.apiEnable){
+            this.client.get('users/'+this.client.game+'/ratings', rq, function(data){
+                data['ratings']['infoUser'] = this.client.getPlayer();
+                this.onRatingsLoad(data.mode, data.ratings, data.column, data.order == 1 ? 'asc' : 'desc');
+            }.bind(this))
+        } else{
+            this.client.send('rating_manager', 'ratings', 'server', rq);
+        }
+        this.client.viewsManager.showPanel(this.ratingView.$el);
     };
 
     RatingManager.prototype.close = function(){
-        this.ratingView.close();
+        if (this.ratingView){
+            this.ratingView.close();
+        }
     };
 
     function formatDate(time) {

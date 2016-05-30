@@ -1,0 +1,46 @@
+.v6-buttonsPanel{
+    padding: 9px 0px 0px 0px;
+}
+
+.v6-buttonsPanel span {
+    box-shadow: 0 1px 0 rgba(0,0,0,.05);      
+    border: 1px solid rgba(0,0,0,.30);
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    text-align: center;
+    line-height: 22px;
+    border-radius: 3px;
+    background-color: rgba(227, 235, 238, 1);
+    background-image: url('//logic-games.spb.ru/v6-game-client/app/i/buttons.png');
+    background-position: 0px 0px;
+    background-size: 120px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+
+.v6-buttonsPanel .zoomOut {
+    background-position: 0px 0px;
+    display: none;
+}
+
+.v6-buttonsPanel .zoomIn {
+    background-position: -20px 0px;
+    display: none;
+}
+
+.v6-buttonsPanel .fullScreenOff {
+    background-position: -40px 0px;
+}
+
+.v6-buttonsPanel .fullScreenOn {
+    background-position: -60px 0px;
+}
+
+.v6-buttonsPanel .soundOff{
+    background-position: -80px 0px;
+}
+
+.v6-buttonsPanel .soundOn{
+    background-position: -100px 0px;
+}

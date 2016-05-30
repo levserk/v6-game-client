@@ -1,0 +1,27 @@
+.v6-block-border {
+    border: 1px solid #ccc;
+    box-shadow: inset 0 0 1px #ccc;
+}
+
+#guestBookPanel{
+    border: 1px solid #ccc;
+    box-shadow: inset 0 0 1px #ccc;
+}
+
+#profilePanel{
+    border: 1px solid #ccc;
+    box-shadow: inset 0 0 1px #ccc;
+}
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#gbContents .gbUsername:hover{
+    text-decoration: underline;
+    cursor: pointer;
+}

@@ -1,11 +1,158 @@
 .ui-dialog .ui-dialog-titlebar {
-    display: none;
+    /*display: none;*/
+    padding: 0;
+    border-radius: 0;
+    border: none;
 }
 
 .ui-dialog {
     font-size: 10pt;
+    padding: 0;
+}
+
+.ui-dialog .ui-dialog-content{
+    line-height: 20px;
+    padding-top: 1px;
+    padding-bottom: 1px;
 }
 
 .ui-dialog .dialog-buttonset {
     font-size: 10pt;
+}
+
+.ui-dialog .dialogDraggable {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: pointer;
+}
+
+.ui-dialog .inviteTime {
+     margin-top: 10px;
+}
+.ui-dialog .inviteTime span{
+    font-weight: bold;
+
+}
+.ui-dialog .roundResultTime {
+    margin-top: 10px;
+}
+.ui-dialog .roundResultTime span{
+    font-weight: bold;
+}
+
+/* disable images */
+.ui-widget-content {
+    background: #ffffff;
+}
+.ui-widget-header {
+    background: #F7F7F7;;
+}
+.ui-widget-header .ui-state-default {
+    background: #e6e6e6;
+}
+
+.ui-state-hover,
+.ui-widget-content .ui-state-hover,
+.ui-widget-header .ui-state-hover,
+.ui-state-focus,
+.ui-widget-content .ui-state-focus,
+.ui-widget-header .ui-state-focus {
+    background: #dadada;
+}
+
+
+.ui-state-default,
+.ui-widget-content .ui-state-default,
+.ui-widget-header .ui-state-default {
+    background: #e6e6e6;
+}
+
+.ui-state-hover,
+.ui-widget-content .ui-state-hover,
+.ui-widget-header .ui-state-hover,
+.ui-state-focus,
+.ui-widget-content .ui-state-focus,
+.ui-widget-header .ui-state-focus {
+    background: #dadada;
+}
+
+.ui-state-active,
+.ui-widget-content .ui-state-active,
+.ui-widget-header .ui-state-active {
+    background: #ffffff;
+}
+
+.ui-state-highlight,
+.ui-widget-content .ui-state-highlight,
+.ui-widget-header .ui-state-highlight {
+    background: #fbf9ee;
+}
+
+.ui-state-error,
+.ui-widget-content .ui-state-error,
+.ui-widget-header .ui-state-error {
+    background: #fef1ec;
+}
+
+.ui-widget-header button{
+    background: none !important;
+    border: none !important;
+    display: none;
+}
+
+.ui-icon,
+.ui-widget-content .ui-icon {
+    background-image: none;
+}
+.ui-widget-header .ui-icon {
+    background-image: none;
+}
+.ui-state-default .ui-icon {
+    background-image: none;
+}
+.ui-state-hover .ui-icon,
+.ui-state-focus .ui-icon {
+    background-image: none;
+}
+.ui-state-active .ui-icon {
+    background-image: none;
+}
+.ui-state-highlight .ui-icon {
+    background-image: none;
+}
+.ui-state-error .ui-icon,
+.ui-state-error-text .ui-icon {
+    background-image: none;
+}
+
+.vkWallPost {
+    margin-bottom: 10px;
+    margin-top: -5px;
+    color: blue;
+    font-size: 14px;
+    font-family: tahoma, verdana;
+    display: block;
+    text-decoration: underline;
+}
+
+.dialogNotice {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e4e4e4;
+    border-radius: 3px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    margin-top: 100px;
+    padding: 10px;
+    max-width: 600px;
+}
+
+.dialogNotice .ui-dialog-content {
+    color: #069;
+    font-size: 14px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.dialogNotice .ui-dialog-titlebar {
+    display: none;
 }

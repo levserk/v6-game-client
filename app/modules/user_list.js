@@ -1,21 +1,19 @@
-define(['EE'], function(EE) {
+define(['EE', 'translit'], function(EE, translit) {
     'use strict';
 
     var UserList = function(client){
-
         var self = this;
 
         this.client = client;
         this.users = [];
         this.rooms = [];
+        this.waiting = {};
 
-        client.on('login', function(user){
-            self.onUserLogin(user, true);
-        });
         client.on('disconnected', function(){
-            self.rooms = [];
-            self.users = [];
-        });
+            this.rooms = [];
+            this.users = [];
+            this.waiting = {};
+        }.bind(this));
         client.gameManager.on('round_end', function(data){
             if (data.ratings && data.mode){
                 for (var userId in data.ratings){
@@ -49,6 +47,13 @@ define(['EE'], function(EE) {
                 return false;
             }
         }
+        if (this.client.opts.showCheaters) {
+            for (var i = 0; i < this.client.modes.length; i++)
+                if (user[this.client.modes[i]].timeLastCheatGame){
+                    user.userName = 'cheater!' + user.userName;
+                    break;
+                }
+        }
         this.users.push(user);
         this.emit('new_user', user);
     };
@@ -59,21 +64,23 @@ define(['EE'], function(EE) {
             if (this.users[i].userId == userId){
                 var user = this.users[i];
                 this.users.splice(i, 1);
+                this.removeWaiting(user);
                 this.emit('leave_user', user);
                 return;
             }
         }
-        console.warn('user_list;', 'no user in list', userId);
+        console.warn('user_list;', 'onUserLeave; no user in list', userId);
     };
 
 
-    UserList.prototype.onGameStart = function(roomId, players){
+    UserList.prototype.onGameStart = function(roomId, players, mode){
         for (var i = 0; i < players.length; i++){
             players[i] = this.getUser(players[i]);
             players[i].isInRoom = true;
+            this.removeWaiting(players[i]);
         }
         var room = {
-            room:roomId, players: players
+            room:roomId, players: players, mode: mode
         };
         this.rooms.push(room);
         this.emit('new_room',room);
@@ -92,7 +99,27 @@ define(['EE'], function(EE) {
                 return;
             }
         }
-        console.warn('user_list;', 'no room in list', roomId, players);
+        console.warn('user_list;', 'onGameEnd; no room in list', roomId, players);
+    };
+
+
+    UserList.prototype.onUserChanged = function(userData){
+        for (var i = 0; i < this.users.length; i++){
+            if (this.users[i].userId == userData.userId){
+                this.users[i].update(userData);
+                if (!this.users[i].isPlayer) console.log('user_changed!', userData.isActive, userData);
+                if (this.client.opts.showCheaters) {
+                    for (var j = 0; j < this.client.modes.length; j++)
+                        if (this.users[i][this.client.modes[j]].timeLastCheatGame){
+                            this.users[i].userName = 'cheater!' + this.users[i].userName;
+                            break;
+                        }
+                }
+                this.emit('user_changed', this.users[i]);
+                return;
+            }
+        }
+        console.warn('user_list;', 'onUserChanged; no user in list', userData)
     };
 
 
@@ -105,7 +132,7 @@ define(['EE'], function(EE) {
 
     UserList.prototype.getUsers = function() {
         var invite = this.client.inviteManager.invite;
-        if (invite) {
+        if (invite) { // mark invited user
             return _.map(this.users, function(usr) {
                 if (usr.userId === invite.target) {
                     usr.isInvited = true;
@@ -118,38 +145,164 @@ define(['EE'], function(EE) {
     };
 
 
-    UserList.prototype.getUserList = function() {
-        var userList = [], invite = this.client.inviteManager.invite, user;
+    UserList.prototype.getUserList = function(filter) {
+        var userList = [], invite = this.client.inviteManager.invite, user,
+            sort = this.client.opts.showRank == 'place' ? 1 : -1;
         for (var i = 0; i < this.users.length; i++){
             user = this.users[i];
-            if (invite && user.userId == invite.target) {
+            if (invite && user.userId == invite.target) { // user is invited
                 user.isInvited = true;
             } else delete user.isInvited;
-            if (!user.isInRoom) userList.push(user);
+            user.waiting = (this.waiting && this.waiting[this.client.currentMode] == user);
+            if (user.isInRoom) continue;
+            if (this.client.settings.blacklist[user.userId] && !user.waiting) continue;
+            if (!user.isPlayer && !user.waiting && (!this.client.opts.showHidden && (user.disableInvite || !user.isActive))) continue;
+            if (filter && user.userName.toLowerCase().indexOf(filter) == -1) continue;
+            else userList.push(user);
         }
+
         userList.sort(function(a, b){
+            // sort by rank or time login
+            // player always is first
             var ar = a.getRank();
             if (isNaN(+ar)) {
-                ar = 99999999;
+                ar = a.timeLogin;
                 if (a.isPlayer) {
-                    ar = 10000000;
+                    sort == 1 ? ar = 99999998 : ar += 0.1;
                 }
             }
             var br = b.getRank();
             if (isNaN(+br)) {
-                br = 99999999;
+                br = b.timeLogin;
                 if (b.isPlayer) {
-                    br = 100000000;
+                    sort == 1 ? ar = 99999998 : ar += 0.1;
                 }
             }
-            return +(ar >br)
+            return sort == 1 ? ar - br : br - ar;
         });
+
         return userList;
     };
 
 
-    UserList.prototype.getRoomList = function() {
-        return this.rooms;
+    UserList.prototype.getFreeUserList = function() {
+        var userList = [], invite = this.client.inviteManager.invite, user;
+        for (var i = 0; i < this.users.length; i++){
+            user = this.users[i];
+            if (user.isPlayer){
+                continue;
+            }
+            if (invite && user.userId == invite.target) { // user is invited
+                continue;
+            }
+            if (user.isInRoom) {
+                continue;
+            }
+            userList.push(user);
+        }
+        return userList;
+    };
+
+
+    UserList.prototype.getRoomList = function(filter) {
+        var rooms = [], room, client = this.client;
+        for (var i = 0; i < this.rooms.length; i++) {
+            room = this.rooms[i];
+            // check room is current
+            room.current = (this.client.gameManager.currentRoom && this.client.gameManager.currentRoom.id == room.room);
+            if (!filter) {
+                rooms.push(room);
+            } else { // find user by filter in room
+                for (var j = 0; j < room.players.length; j++) {
+                    if (room.players[j].userName.toLowerCase().indexOf(filter) != -1) {
+                        rooms.push(room);
+                        break;
+                    }
+                }
+            }
+        }
+
+        rooms.sort(function(a, b){
+            var ar, br;
+            if (a.mode != b.mode){
+                ar = client.modes.indexOf(a.mode);
+                br = client.modes.indexOf(b.mode);
+            } else {
+                ar = UserList.getRoomRank(a);
+                br = UserList.getRoomRank(b);
+            }
+            return ar - br;
+        });
+
+        return rooms;
+    };
+
+
+    UserList.prototype.getSpectatorsList = function(filter) {
+        var spectators = [];
+        if (this.client.gameManager.currentRoom && this.client.gameManager.currentRoom.spectators.length) {
+            var user, invite = this.client.inviteManager.invite;
+            for (var i = 0; i < this.client.gameManager.currentRoom.spectators.length; i++) {
+                user = this.client.gameManager.currentRoom.spectators[i];
+                if (invite && user.userId == invite.target) { // user is invited
+                    user.isInvited = true;
+                } else {
+                    delete user.isInvited;
+                }
+                if (!filter || user.userName.toLowerCase().indexOf(filter) != -1) {
+                    spectators.push(user);
+                }
+            }
+        }
+
+        return spectators;
+    };
+
+
+    UserList.prototype.onWaiting = function(waiting){
+        if (!waiting) return;
+        var user;
+        for (var mode in waiting){
+            user = waiting[mode];
+            if (user) {
+                user = this.getUser(user);
+                if (user){
+                    this.waiting[mode] = user;
+                } else {
+                    console.error('waiting user no in list', waiting[mode], mode);
+                }
+            } else {
+                this.waiting[mode] = null;
+            }
+        }
+        this.emit('waiting', this.waiting);
+    };
+
+
+    UserList.prototype.removeWaiting = function(user) {
+        if (this.waiting) {
+            for (var mode in this.waiting) {
+                if (this.waiting[mode] == user){
+                    this.waiting[mode] = null;
+                }
+            }
+        }
+    };
+
+
+    UserList.getRoomRank = function(room) {
+        if (room.players.length) {
+            return Math.min(room.players[0].getNumberRank(room.mode), room.players[1].getNumberRank(room.mode))
+        }
+        return 0;
+    };
+
+
+    UserList.prototype.createUser = function(data) {
+        if (!data.userId || !data.userName){
+            console.error('user_list;', 'wrong data for User', data);
+        }
+        return new User(data, data.userId == this.player.userId, this.client);
     };
 
 
@@ -158,10 +311,47 @@ define(['EE'], function(EE) {
         for (var key in data){
             if (data.hasOwnProperty(key)) this[key] = data[key];
         }
+
         this.isPlayer = fIsPlayer || false;
+        this.disableInvite = data.disableInvite || false;
+        this.isActive  = (typeof data.isActive == 'boolean' ? data.isActive : true); // true default
+        this.fullName = this.userName;
+        this.timeLogin = Date.now();
+
+        if (client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
+            var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);
+            this.userName = 'Гость ' + nameNumber;
+        }
+
+        if (client.lang != 'ru') {
+            this.userName = translit(this.userName)
+        }
+
         this.getRank = function (mode) {
-            return this[mode||this._client.currentMode].rank || '—';
+            if (this._client.opts.showRank == 'place') {
+                return this[mode || this._client.currentMode].rank || '—';
+            } else {
+                return this[mode || this._client.currentMode].ratingElo || 1600;
+            }
         };
+
+        this.getNumberRank = function(mode) {
+            return this[mode||this._client.currentMode].rank || Number.POSITIVE_INFINITY;
+        };
+
+        this.update = function(data) {
+            for (var key in data){
+                if (data.hasOwnProperty(key)) this[key] = data[key];
+            }
+            this.disableInvite = data.disableInvite || false;
+            if (typeof data.isActive == 'boolean') this.isActive  = data.isActive;
+
+            if (this._client.opts.shortGuestNames && this.userName.substr(0,6) == 'Гость ' &&  this.userName.length > 11){
+                var nameNumber = this.userName.substr(6,1) + '..' + this.userName.substr(this.userName.length-2, 2);
+                this.userName = 'Гость ' + nameNumber;
+            }
+        };
+
         this._client = client;
     }
 

@@ -21,7 +21,11 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 'click .headTitles th': 'thClicked',
                 'click .headIcons th': 'thClicked',
                 'click .filterPanel span': 'tabClicked',
-                'click .ratingTable .userName': 'userClicked'
+                'click .ratingTable .userName': 'userClicked',
+                'click #ratingShowMore': 'showMore',
+                'keyup #ratingAutoComplete': 'filterChanged',
+                'click .delete': 'clearFilter',
+                'click #jumpTop': 'scrollTop'
             },
 
             thClicked: function(e){
@@ -30,7 +34,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     if (this.columns[i].id == id && this.columns[i].canOrder){
                         this.setColumnOrder(id);
                         console.log('log; rating col clicked',this.columns[i]);
-                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        this.getRatings();
                         break;
                     }
                 }
@@ -41,7 +45,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 for (var i = 0; i < this.subTabs.length; i++){
                     if (this.subTabs[i].id == id){
                         this.setActiveSubTab(id);
-                        this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id, this.currentCollumn.order < 0? 'desc':'asc');
+                        this.getRatings();
                         return;
                     }
                 }
@@ -50,31 +54,65 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             userClicked: function (e){
                 var userId = $(e.currentTarget).attr('data-userid');
                 var userName = $(e.currentTarget).html();
-                this.manager.client.onShowProfile(userId, userName);
+                this.client.viewsManager.v6ChatView.showMenu.bind(this.client.viewsManager.v6ChatView)(e, userId, userName);
+                //this.manager.client.onShowProfile(userId, userName);
+            },
+
+            showMore: function() {
+                this.getRatings(true);
+            },
+
+            filterChanged: function(e) {
+                if (e.type === 'keyup')
+                    if (e.keyCode == 13 || e.target.value.length == 0) {
+                        this.getRatings();
+                    }
+            },
+
+            clearFilter: function() {
+                this.$filter.val('');
+                this.getRatings();
+            },
+
+            getRatings: function(showmore) {
+                this.manager.getRatings(this.currentSubTab.id, this.currentCollumn.id,
+                    this.currentCollumn.order < 0? 'desc':'asc', this.$filter.val(), !!showmore);
+            },
+
+            scrollTop: function(){
+                $('html,body').animate({
+                    scrollTop: this.$el.offset().top
+                }, 300);
             },
 
             initialize: function(_conf, _manager) {
                 this.conf = _conf;
                 this.manager = _manager;
+                this.client = _manager.client;
+                this.locale = _manager.client.locale.rating;
                 this.tabs = _conf.tabs;
                 this.subTabs = _conf.subTabs;
                 this.columns = _conf.columns;
-                this.$el.html(this.tplMain({close:this.conf.images.close, spin: this.conf.images.spin}));
+                this.$el.html(this.tplMain({
+                    close:this.conf.images.close, spin: this.conf.images.spin, locale: this.locale
+                }));
 
                 this.$tabs = $(this.$el.find('.filterPanel').children()[0]);
                 this.$titles = this.$el.find('.headTitles');
                 this.$icons = this.$el.find('.headIcons');
                 this.$head = this.$icons.parent();
                 this.$tbody = $(this.$el.find('.ratingTable tbody')[0]);
+                this.$showMore = $(this.$el.find('#ratingShowMore'));
 
-                this.NOVICE = '<span style="color: #C42E21 !important;">новичок</span>';
+
+                this.NOVICE = '<span style="color: #C42E21 !important;">' + this.locale['novice'] + '</span>';
                 this.IMG_BOTH = '<img src="' + _conf.images.sortBoth + '">';
                 this.IMG_ASC= '<img src="' + _conf.images.sortAsc + '">';
                 this.IMG_DESC = '<img src="' + _conf.images.sortDesc + '">';
                 this.ACTIVE_TAB = 'activeLink';
                 this.UNACTIVE_TAB = 'unactiveLink';
                 this.SORT = 'sorted';
-                this.YOU = 'Вы:';
+                this.YOU = this.locale['you'] + ':';
                 this.HEAD_USER_CLASS = 'headUser';
                 this.ACTIVE_CLASS = 'active';
                 this.ONLINE_CLASS = 'online';
@@ -95,7 +133,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     this.$tabs.append(this.tplTab(this.tabs[i]));
                     this.setActiveTab(this.tabs[0].id);
                 }
-                if (this.subTabs.length>1) {
+                if (this.subTabs.length > 1) {
                     this.$tabs.append('<br>');
                     for (var i in this.subTabs){
                         this.$tabs.append(this.tplTab(this.subTabs[i]));
@@ -120,10 +158,15 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     this.$titles.append(this.tplTH(th));
                     th.value = col.canOrder?this.IMG_BOTH:'';
                     if (col.id == 'rank') th.value= "";
-                    if (col.id == 'userName') th.value = this.tplSearch();
+                    if (col.id == 'userName') {
+                        th.value = this.tplSearch({
+                            imgDel: this.conf.images.del, locale: this.locale
+                        });
+                    }
                     this.$icons.append(this.tplTH(th));
                 }
                 this.setColumnOrder('ratingElo');
+                this.$filter = $(this.$el.find('#ratingAutoComplete'));
             },
 
             renderRatings: function (ratings) {
@@ -143,6 +186,7 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                     var trclass = '';
                     if (row.user) trclass += this.USER_CLASS + ' ';
                     if (row.active) trclass += this.ACTIVE_CLASS;
+                    else if (row.online) trclass += this.ONLINE_CLASS;
                     this.$tbody.append(this.tplTR({
                         trclass: trclass,
                         userId: row.userId,
@@ -155,19 +199,22 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
             renderRow: function(row, isUser){
                 var columns = ""; var col;
                 for (var i = 0; i < this.columns.length; i++){
-                    if (row[this.columns[i].source] == undefined) row[this.columns[i].source] = this.columns[i].undef;
+                    if (row[this.columns[i].source] == null) row[this.columns[i].source] = this.columns[i].undef;
                     col = {
                         id: this.columns[i].id,
                         value: row[this.columns[i].source],
                         sup: ''
                     };
+                    if (typeof this.columns[i].func == "function"){
+                        col.value = this.columns[i].func(col.value);
+                    }
                     if (col.id == 'userName') col.value = this.tplUser({
                         userName: row.userName,
                         userId: row.userId
                     });
                     if (isUser){ // Render user rating row (infoUser)
                         if (col.id == 'rank') col.value = this.YOU;
-                        if (col.id == 'userName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + ' место)';
+                        if (col.id == 'userName') col.value += ' ('+(row.rank>0 ? row.rank : '-' ) + this.locale['place'] + ')';
                     }
                     if (col.id == 'userName' && row.photo) col.value += this.tplPhoto(row.photo); //TODO: photo, photo link
                     columns += this.tplTD(col);
@@ -220,22 +267,30 @@ define(['underscore', 'backbone', 'text!tpls/v6-ratingMain.ejs', 'text!tpls/v6-r
                 }
             },
 
-            render: function(ratings, mode, column, order) {
-                this.$head.find('.'+this.HEAD_USER_CLASS).remove();
-                this.$tbody.children().remove();
+            render: function(ratings, mode, column, order, append, showMore) {
                 this.$el.show();
                 this.setColumnOrder(column, order);
+
+                if (this.$filter.val() && this.$filter.val().length > 0) this.$filter.parent().find('.delete').show();
+                else this.$filter.parent().find('.delete').hide();
+
+                if (!showMore) this.$showMore.hide(); else this.$showMore.show();
                 if (mode) this.setActiveSubTab(mode);
                 if (!ratings) {
                     this.isClosed = false;
                     this.$el.find('.loading').show();
-                    this.$head.hide();
                 }
                 else {
-                    this.$head.show();
                     this.$el.find('.loading').hide();
+                    this.$head.find('.'+this.HEAD_USER_CLASS).remove();
+                    if (!append) this.$tbody.children().remove();
                     console.log('render ratings', ratings);
                     this.renderRatings(ratings);
+                }
+
+                if (this.manager.client.isAdmin && !this.$tabs.find('.adminLink').length){
+                    var $span = $('<span>').html('<a href="/admin">Админка</a>')
+                        .addClass('adminLink').appendTo(this.$tabs);
                 }
 
                 return this;

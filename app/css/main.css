@@ -1,53 +1,39 @@
-#endGameButton {
+.delete {
+    cursor: pointer;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.5;
+}
+
+.delete:hover {
+    opacity: 1;
+}
+
+.v6-buttons {
     position: absolute;
-    right: 5px;
-    top: 5px;
+    top: 0px;
+    right: 10px;
+}
+
+.v6-buttons div {
     color: blue;
-    text-align: center;
+    text-align: right;
     height: 20px;
     line-height: 20px;
     cursor: pointer;
 }
 
-#drawButton {
-    position: absolute;
-    right: 5px;
-    top: 25px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-
-#winButton {
-    position: absolute;
-    right: 5px;
-    top: 45px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-
-#ratingButton {
-    position: absolute;
-    right: 5px;
-    top: 65px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
-}
-#historyButton {
-    position: absolute;
-    right: 5px;
-    top: 85px;
-    color: blue;
-    text-align: center;
-    height: 20px;
-    line-height: 20px;
-    cursor: pointer;
+#left-block{
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-box-orient: vertical;
+    -moz-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
 }

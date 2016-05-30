@@ -1,5 +1,5 @@
-<div id="v6-rating">
-    <img class="closeIcon" src="<%= close %>" title="Закрыть окно рейтинга">
+<div id="v6-rating" class="v6-block-border">
+    <img class="closeIcon" src="<%= close %>" title="<%= locale.close %>">
     <div>
         <!-- rating filter panel -->
         <div class="filterPanel">
@@ -7,6 +7,7 @@
 
             </div>
         </div>
+        <div class="loading"><img src="<%= spin %>"></div>
         <!-- rating table -->
         <table class="ratingTable" cellspacing="0">
             <thead>
@@ -22,17 +23,15 @@
             </tbody>
         </table>
 
-        <div class="loading"><img src="<%= spin %>"></div>
-
         <!-- div show more -->
         <div class="chat-button chat-post" id="ratingShowMore">
-            <span>Ещё 500 игроков</span>
+            <span><%= locale.showMore %></span>
         </div>
 
         <!-- div bottom buttons -->
         <div class="footButtons">
-            <div style="float:left"><span class="activeLink" id="jumpTop">[в начало рейтинга]</span></div>
-            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[закрыть]</span> </div>
+            <div style="float:left"><span class="activeLink" id="jumpTop">[<%= locale.jumpTop%>]</span></div>
+            <div style="float:right"><span class="activeLink" id="closeRatingBtn">[<%= locale.close %>]</span> </div>
         </div>
     </div>
 </div>

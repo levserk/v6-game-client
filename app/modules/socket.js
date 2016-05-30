@@ -5,14 +5,22 @@ define(['EE'], function(EE) {
         opts = opts || {};
         this.port = opts.port||'8080';
         this.domain = opts.domain || document.domain;
+        if (this.domain.substr(0,4) == 'www.'){
+            this.domain = this.domain.substr(4);
+        }
         this.game = opts.game||"test";
+        this.prefix = 'ws/';
         this.url = opts.url || this.game;
         this.https = opts.https || false;
+        if (this.domain == "test.logic-games.spb.ru") this.domain = "logic-games.spb.ru";
+        if (this.domain != 'logic-games.spb.ru') this.https = false;
         this.protocol = (this.https?'wss':'ws');
+        this.connectionCount = 0;
 
         this.isConnecting = true;
         this.isConnected = false;
-
+        this.reconnectTimeout = null;
+        this.timeOutInterval = 45000
     };
 
     Socket.prototype  = new EE();
@@ -20,12 +28,15 @@ define(['EE'], function(EE) {
 
     Socket.prototype.init = function(){
         var self = this;
-        self.isConnecting = true;
-        self.isConnected = false;
+        this.isConnecting = true;
+        this.isConnected = false;
+        this.timeConnection = this.timeLastMessage = Date.now();
+        this.connectionCount++;
 
         try{
+            this.clear();
 
-            this.ws = new WebSocket (this.protocol+'://'+this.domain+':'+this.port+'/'+this.url);
+            this.ws = new WebSocket (this.protocol + '://' + this.domain + ':' + this.port+'/' + this.url);
 
             this.ws.onclose = function (code, message) {
                 console.log('socket;', 'ws closed', code, message);
@@ -37,6 +48,15 @@ define(['EE'], function(EE) {
             };
 
             this.ws.onmessage = function (data, flags) {
+                clearTimeout(self.reconnectTimeout);
+                self.reconnectTimeout = setTimeout(function(){
+                    if (Date.now() - self.timeLastMessage >= self.timeOutInterval){
+                        console.log('socket;', 'ws timeout', Date.now() - self.timeLastMessage);
+                        self.ws.close();
+                        self.onDisconnect();
+                    }
+                }, self.timeOutInterval);
+                self.timeLastMessage = Date.now();
 
                 if (data.data == 'ping') {
                     self.ws.send('pong');
@@ -78,13 +98,14 @@ define(['EE'], function(EE) {
 
     Socket.prototype.onConnect = function(){
         this.isConnected = true;
+        this.connectionCount = 0;
         this.emit("connection");
     };
 
 
     Socket.prototype.onDisconnect = function(){
         this.isConnected = false;
-        this.emit("disconnection")
+        this.emit("disconnection");
     };
 
 
@@ -108,6 +129,16 @@ define(['EE'], function(EE) {
             return;
         }
         this.ws.send(data);
+    };
+
+    Socket.prototype.clear = function() {
+        if (this.ws){
+            this.ws.onclose = null;
+            this.ws.onerror = null;
+            this.ws.onmessage = null;
+            this.ws.onopen = null;
+            this.ws = undefined;
+        }
     };
 
     return Socket;
